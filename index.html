@@ -1,1 +1,2308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>Escalada â€¢ Painel Executivo (SEBRAE)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    defer
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <!-- Chart.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- (Opcional) date adapter simples -->
+  <script defer src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/index.min.js"></script>
+
+  <!-- Lucide (com fallback + logs) -->
+  <script>
+    // =========================
+    // [UI] Lucide loader pattern
+    // =========================
+    function loadLucideWithFallback() {
+      const PRIMARY = "https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js";
+      const FALLBACK = "https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js";
+
+      function inject(src) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.defer = true;
+          s.src = src;
+          s.onload = () => resolve(src);
+          s.onerror = () => reject(new Error("Failed to load: " + src));
+          document.head.appendChild(s);
+        });
+      }
+
+      console.debug("[UI] [icons] loading lucide (primary)", { src: PRIMARY });
+      const timeoutMs = 2500;
+
+      return Promise.race([
+        inject(PRIMARY),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Lucide primary timeout")), timeoutMs)),
+      ])
+        .then((src) => {
+          console.info("[UI] [icons] lucide loaded", { src });
+          return true;
+        })
+        .catch((err) => {
+          console.warn("[UI] [icons] primary failed, trying fallback", { err: String(err) });
+          return inject(FALLBACK)
+            .then((src) => {
+              console.info("[UI] [icons] lucide loaded (fallback)", { src });
+              return true;
+            })
+            .catch((err2) => {
+              console.error("[UI] [icons] fallback failed; continuing without icons", { err: String(err2) });
+              return false; // never block UI
+            });
+        });
+    }
+
+    function renderIconsNow() {
+      try {
+        if (window.lucide && typeof window.lucide.createIcons === "function") {
+          window.lucide.createIcons();
+          console.debug("[UI] [icons] createIcons() ok");
+        } else {
+          console.debug("[UI] [icons] lucide not available yet");
+        }
+      } catch (e) {
+        console.error("[UI] [icons] createIcons error; continuing", { err: String(e) });
+      }
+    }
+
+    // Ãcones: carregamento simples e seguro (evita loop de mutaÃ§Ãµes)
+    document.addEventListener("DOMContentLoaded", () => {
+      loadLucideWithFallback().then(() => renderIconsNow());
+    });
+  </script>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --sidenav-width: 260px;
+      --sidenav-peek: 0px;
+      --sidenav-collapsed: 72px;
+      --ink: #0b1f33;
+      --muted: #3f5263;
+      --line: #c7d2e0;
+      --surface: #ffffff;
+      --surface-soft: #eef3f8;
+      --ink-strong: #081420;
+      --ink-soft: #1a2b3b;
+      --idv-green: #36dd00;
+      --idv-blue: #3c41cc;
+      --idv-magenta: #ff00ff;
+      --brand: #3c41cc;
+      --brand-2: #36dd00;
+      --accent: #ff00ff;
+      --success: #36dd00;
+      --warning: #3c41cc;
+      --danger: #ff00ff;
+      --shadow: 0 16px 32px rgba(16, 24, 40, 0.12);
+      --shadow-soft: 0 8px 18px rgba(16, 24, 40, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #eef2f8;
+      color: var(--ink);
+      position: relative;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(rgba(11, 31, 51, 0.06) 1px, transparent 1px);
+      background-size: 28px 28px;
+      opacity: 0.45;
+      z-index: -1;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: transparent;
+      opacity: 0;
+      z-index: -2;
+    }
+
+    h1, h2, h3, .font-display {
+      font-family: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    .card {
+      border-radius: 1.25rem;
+      border: 1px solid var(--line);
+      background: #f3f6fb;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card.soft {
+      background: #eef3fb;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .card.outline {
+      border-style: dashed;
+      box-shadow: none;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.75rem;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+    }
+
+    .chip strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .chip.soft {
+      background: var(--surface-soft);
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.7rem;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .badge strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .badge.brand {
+      background: #fff;
+      color: var(--brand);
+      border-color: var(--brand);
+    }
+
+    .btn {
+      border-radius: 0.85rem;
+      padding: 0.55rem 0.9rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-sm {
+      padding: 0.4rem 0.7rem;
+      font-size: 0.72rem;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 10px 18px rgba(8, 20, 32, 0.18);
+    }
+
+    .btn-primary:hover {
+      background: #2f34a6;
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--line);
+      box-shadow: var(--shadow);
+      background: #eef2f8;
+    }
+
+    .btn-ghost {
+      border: 1px solid transparent;
+      color: var(--muted);
+      background: transparent;
+    }
+
+    .btn-ghost:hover {
+      color: var(--ink);
+      background: #eef2f8;
+    }
+
+    .nav-btn {
+      border-radius: 0.9rem;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid transparent;
+      color: var(--muted);
+      transition: background 0.2s ease, color 0.2s ease, border 0.2s ease;
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .nav-btn:hover {
+      background: #eef2f8;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .nav-btn.nav-active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+      box-shadow: 0 10px 20px rgba(8, 20, 32, 0.18);
+    }
+
+    .input,
+    select,
+    input[type="date"],
+    input[type="text"] {
+      border-radius: 0.9rem;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    select[multiple] {
+      height: auto;
+    }
+
+    .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .kpi {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .kpi .value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .kpi .delta {
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .kpi .delta.positive {
+      color: var(--success);
+    }
+
+    .kpi .delta.negative {
+      color: var(--danger);
+    }
+
+    .kpi-compact {
+      gap: 0.2rem;
+    }
+
+    .kpi-compact .value {
+      font-size: 1.15rem;
+    }
+
+    .kpi-compact .label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .progress {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(11, 31, 51, 0.12);
+      overflow: hidden;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--brand);
+    }
+
+    .metric-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .metric .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .metric .value {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--ink);
+    }
+
+    .section-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, rgba(11, 31, 51, 0.06), rgba(11, 31, 51, 0.02), rgba(11, 31, 51, 0.06));
+      background-size: 200% 100%;
+      animation: shimmer 1.1s infinite;
+      border-radius: 1rem;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 0% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    @keyframes rise {
+      0% { opacity: 0; transform: translateY(12px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      animation: rise 0.6s ease both;
+    }
+
+    .delay-1 { animation-delay: 0.08s; }
+    .delay-2 { animation-delay: 0.16s; }
+    .delay-3 { animation-delay: 0.24s; }
+    .delay-4 { animation-delay: 0.32s; }
+
+
+
+    table thead th {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .table-row {
+      border-bottom: 1px solid rgba(11, 31, 51, 0.08);
+    }
+
+    canvas {
+      max-width: 100%;
+      display: block;
+    }
+
+    .app-shell {
+      background: rgba(239, 243, 250, 0.92);
+      border: 1px solid rgba(11, 31, 51, 0.12);
+      border-radius: 2rem;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(4px);
+      position: relative;
+      min-height: 100vh;
+    }
+
+    .section-band {
+      border-top: 1px solid rgba(11, 31, 51, 0.08);
+      border-bottom: 1px solid rgba(11, 31, 51, 0.08);
+      background: #eef2f8;
+    }
+
+    .text-slate-600 {
+      color: var(--muted) !important;
+    }
+
+    .text-slate-500 {
+      color: #54657a !important;
+    }
+
+    .wrap-hero {
+      background: #e9eef7;
+      border: 1px solid rgba(11, 31, 51, 0.12);
+      border-radius: 1.5rem;
+    }
+
+    .wrap-panel {
+      background: #f4f6fa;
+      border: 1px solid rgba(11, 31, 51, 0.12);
+      border-radius: 1.4rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .wrap-soft {
+      background: #f4f6fa;
+      border: 1px solid rgba(11, 31, 51, 0.1);
+      border-radius: 1.4rem;
+    }
+
+    .wrap-accent-blue {
+      background: transparent;
+    }
+
+    .wrap-accent-green {
+      background: transparent;
+    }
+
+    .wrap-accent-magenta {
+      background: transparent;
+    }
+
+    .wrap-atmosphere {
+      background: #f4f6fa;
+      border: 1px solid rgba(11, 31, 51, 0.08);
+      border-radius: 1.5rem;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background: rgba(8, 20, 32, 0.4);
+      display: none;
+      place-items: center;
+      z-index: 50;
+      padding: 1.5rem;
+    }
+
+    .modal-backdrop:not(.hidden) {
+      display: grid;
+    }
+
+    .modal-card {
+      width: min(520px, 92vw);
+      background: #fff;
+      border-radius: 1.25rem;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+    }
+
+    .content-wrap {
+      padding-left: var(--sidenav-width);
+      transition: padding-left 0.2s ease;
+    }
+
+    .sidenav-closed .content-wrap {
+      padding-left: var(--sidenav-collapsed);
+    }
+
+    .sidenav {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: var(--sidenav-width);
+      transform: translateX(0);
+      transition: transform 0.2s ease;
+      z-index: 40;
+      overflow: visible;
+      background: #e6ebf8;
+      box-shadow: 4px 0 18px rgba(8, 20, 32, 0.12);
+      border-radius: 1.5rem;
+    }
+
+    .sidenav-closed .sidenav {
+      transform: translateX(calc(-1 * (var(--sidenav-width) - var(--sidenav-peek))));
+    }
+
+    .modal-open .blur-target {
+      filter: blur(3px);
+    }
+
+    .modal-open #filterModal {
+      filter: none;
+    }
+
+
+
+    .sidenav-closed #sidebarContent {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      padding: 1.1rem;
+      background: linear-gradient(180deg, #e9eef9 0%, #e3e9f7 100%);
+    }
+
+    .sidebar-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      height: 100%;
+    }
+
+    .sidebar-head {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.75rem;
+    }
+
+    .sidebar-head-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .sidebar-toggle {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      line-height: 1;
+      transition: left 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      z-index: 41;
+    }
+
+    .sidenav-closed .sidebar-toggle {
+      left: calc(var(--sidenav-width) - var(--sidenav-peek) + 12px);
+    }
+
+    .sidebar-toggle:hover {
+      background: #eef2f8;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding-top: 54px;
+    }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      border: 1px solid transparent;
+      padding: 0.6rem 0.7rem;
+      border-radius: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .sidebar-nav a .lucide {
+      width: 18px;
+      height: 18px;
+    }
+
+    .sidebar-nav a:hover {
+      background: #eef2f8;
+      border-color: var(--line);
+      color: var(--ink);
+    }
+
+    .sidebar-nav a.nav-active {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(8, 20, 32, 0.18);
+    }
+
+    .sidebar-brand {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 1rem;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+      text-decoration: none;
+      color: var(--ink);
+    }
+
+    .sidebar-brand img {
+      width: 42px;
+      height: 42px;
+      border-radius: 0.9rem;
+      object-fit: contain;
+      background: #e9eef7;
+    }
+
+    .sidebar-brand .brand-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--ink);
+    }
+
+    .sidebar-brand .brand-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .sidenav-closed .sidebar-brand,
+    .sidenav-closed .sidebar-head-text {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar-section-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin: 1rem 0 0.4rem;
+    }
+
+    .sidebar-content > .sidebar-section-label:first-child {
+      margin-top: 0;
+    }
+
+    .uf-pills {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .uf-pill {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 0.9rem;
+      padding: 0.5rem 0.7rem;
+      font-weight: 600;
+      color: var(--ink);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.15s ease, border 0.15s ease, color 0.15s ease;
+    }
+
+    .uf-pill:hover {
+      border-color: var(--line);
+      background: #f5f7fb;
+    }
+
+    .uf-pill.active {
+      background: #fff;
+      border-color: var(--brand);
+      color: var(--brand);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen sidenav-closed">
+  <script>
+    // =========================================================
+    // [UI] padrÃµes de log e helpers
+    // =========================================================
+    console.info("[UI] dashboard boot");
+
+    function fmtInt(n) {
+      const x = Number(n || 0);
+      return x.toLocaleString("pt-BR");
+    }
+    function fmtPct(p) {
+      const x = Number(p || 0);
+      return (x * 100).toFixed(1).replace(".", ",") + "%";
+    }
+    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+    function downloadText(filename, content, mime = "text/plain;charset=utf-8") {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 500);
+    }
+
+    function dateFromStr(dateStr) {
+      const [y, m, d] = String(dateStr || "").split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(Date.UTC(y, m - 1, d));
+    }
+
+    function shiftDate(dateStr, days) {
+      const base = dateFromStr(dateStr);
+      if (!base) return dateStr;
+      base.setUTCDate(base.getUTCDate() + days);
+      return base.toISOString().slice(0, 10);
+    }
+
+    function diffDaysInclusive(a, b) {
+      const da = dateFromStr(a);
+      const db = dateFromStr(b);
+      if (!da || !db) return 0;
+      return Math.floor((db - da) / (24 * 60 * 60 * 1000)) + 1;
+    }
+
+    function hashString(str) {
+      let h = 0;
+      const s = String(str || "");
+      for (let i = 0; i < s.length; i++) {
+        h = (h << 5) - h + s.charCodeAt(i);
+        h |= 0;
+      }
+      return Math.abs(h);
+    }
+
+    const CHANNELS = ["Portal", "WhatsApp", "Escola", "Evento", "Parceiro", "Telefone"];
+    const UF_SIGLAS = {
+      "Acre": "AC",
+      "Alagoas": "AL",
+      "AmapÃ¡": "AP",
+      "Amazonas": "AM",
+      "Bahia": "BA",
+      "CearÃ¡": "CE",
+      "Distrito Federal": "DF",
+      "EspÃ­rito Santo": "ES",
+      "GoiÃ¡s": "GO",
+      "MaranhÃ£o": "MA",
+      "Mato Grosso": "MT",
+      "Mato Grosso do Sul": "MS",
+      "Minas Gerais": "MG",
+      "ParÃ¡": "PA",
+      "ParaÃ­ba": "PB",
+      "ParanÃ¡": "PR",
+      "Pernambuco": "PE",
+      "PiauÃ­": "PI",
+      "Rio de Janeiro": "RJ",
+      "Rio Grande do Norte": "RN",
+      "Rio Grande do Sul": "RS",
+      "RondÃ´nia": "RO",
+      "Roraima": "RR",
+      "Santa Catarina": "SC",
+      "SÃ£o Paulo": "SP",
+      "Sergipe": "SE",
+      "Tocantins": "TO"
+    };
+    const KPI_TARGETS = {
+      atendimentos: 120000,
+      inscricoes: 45000,
+      inscritos: 45000,
+      conversaoAtendimento: 0.32
+    };
+    const SLA_TARGET_MIN = 30;
+
+    function deriveChannel(e) {
+      if (e.channel) return e.channel;
+      const seed = `${e.user_id || ""}|${e.date || ""}|${e.type || ""}|${e.uf || ""}`;
+      return CHANNELS[hashString(seed) % CHANNELS.length];
+    }
+
+    function deriveDuration(e) {
+      if (Number.isFinite(e.duration_min)) return e.duration_min;
+      const seed = `${e.user_id || ""}|${e.date || ""}|${e.type || ""}`;
+      return 8 + (hashString(seed) % 42);
+    }
+
+    function ufSigla(name) {
+      return UF_SIGLAS[name] || String(name || "").slice(0, 2).toUpperCase();
+    }
+
+    function ensureDerivedFields(events) {
+      for (const e of events) {
+        if (e.type === "acao") e.type = "atendimento";
+        e.channel = deriveChannel(e);
+        e.duration_min = deriveDuration(e);
+      }
+    }
+
+    // =========================================================
+    // Dados
+    // - Troque DATA_URL pra apontar pro seu endpoint no Netlify/Supabase
+    // - Se falhar, entra um mock profissional (para vocÃª validar UI)
+    // =========================================================
+    const DATA_URL = "./data/escalada_dashboard.json"; // <- ajuste aqui quando tiver dados reais
+
+    /**
+     * Formato esperado (exemplo):
+     * {
+     *   "generated_at": "2026-01-26T00:00:00Z",
+     *   "events": [
+     *     {
+     *       "date": "2025-09-12",
+     *       "uf": "Pernambuco",
+     *       "city": "Recife",
+     *       "lat": -8.05,
+     *       "lng": -34.9,
+     *       "type": "inscricao" | "atendimento", // "acao" (legado) Ã© tratado como "atendimento"
+     *       "publico": "Estudante" | "Professor" | "Parceiro",
+     *       "material_type": "E-book" | "VÃ­deo" | "Material Interativo",
+     *       "macrotema": "Autoconhecimento..." | "...",
+     *       "user_id": "123",
+     *       "actions_total_user": 0
+     *     }
+     *   ]
+     * }
+     */
+
+    function buildMockData() {
+      console.warn("[UI] using mock data (DATA_URL not found)");
+      const ufsNE = ["MaranhÃ£o","PiauÃ­","CearÃ¡","Rio Grande do Norte","ParaÃ­ba","Pernambuco","Alagoas","Sergipe","Bahia"];
+      const cities = {
+        "Pernambuco": [{c:"Recife",lat:-8.05,lng:-34.9},{c:"Caruaru",lat:-8.28,lng:-35.98}],
+        "CearÃ¡": [{c:"Fortaleza",lat:-3.73,lng:-38.52},{c:"Juazeiro do Norte",lat:-7.21,lng:-39.31}],
+        "MaranhÃ£o": [{c:"SÃ£o LuÃ­s",lat:-2.53,lng:-44.30},{c:"Imperatriz",lat:-5.52,lng:-47.48}],
+        "Bahia": [{c:"Salvador",lat:-12.97,lng:-38.51},{c:"Feira de Santana",lat:-12.26,lng:-38.96}],
+        "ParaÃ­ba": [{c:"JoÃ£o Pessoa",lat:-7.12,lng:-34.86},{c:"Campina Grande",lat:-7.23,lng:-35.88}],
+        "PiauÃ­": [{c:"Teresina",lat:-5.09,lng:-42.80}],
+        "Rio Grande do Norte": [{c:"Natal",lat:-5.79,lng:-35.21}],
+        "Alagoas": [{c:"MaceiÃ³",lat:-9.65,lng:-35.71}],
+        "Sergipe": [{c:"Aracaju",lat:-10.91,lng:-37.07}],
+      };
+      const macro = [
+        "Autoconhecimento e Projeto de Vida",
+        "CompetÃªncias Empreendedoras",
+        "Ferramentas e AplicaÃ§Ãµes",
+        "ColaboraÃ§Ã£o e GestÃ£o",
+        "Empreendedorismo e Carreira",
+        "Cidadania e Sustentabilidade",
+        "Pensamento CrÃ­tico",
+        "InteligÃªncia Artificial",
+        "Habilidades Socioemocionais",
+        "Cultura Digital",
+      ];
+      const material = ["E-book","VÃ­deo","Material Interativo"];
+      const publico = ["Estudante","Professor","Parceiro"];
+      const channels = CHANNELS;
+
+      const start = new Date("2025-04-01T00:00:00Z");
+      const end = new Date("2025-12-31T00:00:00Z");
+
+      const dayMs = 24*60*60*1000;
+
+      // usuÃ¡rios mock
+      const users = Array.from({length: 15000}, (_, i) => ({
+        id: String(100000 + i),
+        actions_total_user: Math.floor(Math.random()*6), // 0..5
+        publico: publico[Math.floor(Math.random()*publico.length)]
+      }));
+
+      function pickUF() {
+        // favorece alguns estados para simular concentraÃ§Ã£o
+        const r = Math.random();
+        if (r < 0.22) return "Pernambuco";
+        if (r < 0.38) return "CearÃ¡";
+        if (r < 0.50) return "MaranhÃ£o";
+        if (r < 0.60) return "Bahia";
+        return ufsNE[Math.floor(Math.random()*ufsNE.length)];
+      }
+
+      const events = [];
+      const totalEvents = 110000; // suficiente p/ grÃ¡ficos e tabelas
+      for (let i=0; i<totalEvents; i++) {
+        const t = start.getTime() + Math.floor(Math.random()*((end.getTime()-start.getTime())/dayMs))*dayMs;
+        const d = new Date(t);
+        const date = d.toISOString().slice(0,10);
+
+        const uf = pickUF();
+        const cityOptions = cities[uf] || [{c:"",lat:-10,lng:-45}];
+        const cityPick = cityOptions[Math.floor(Math.random()*cityOptions.length)];
+
+        const u = users[Math.floor(Math.random()*users.length)];
+        const typeRoll = Math.random();
+        const type = typeRoll < 0.22 ? "inscricao" : "atendimento";
+
+        events.push({
+          date,
+          uf,
+          city: cityPick.c,
+          lat: cityPick.lat + (Math.random()-0.5)*0.12,
+          lng: cityPick.lng + (Math.random()-0.5)*0.12,
+          type,
+          publico: u.publico,
+          material_type: material[Math.floor(Math.random()*material.length)],
+          macrotema: macro[Math.floor(Math.random()*macro.length)],
+          channel: channels[Math.floor(Math.random()*channels.length)],
+          duration_min: 10 + Math.floor(Math.random()*50),
+          user_id: u.id,
+          actions_total_user: u.actions_total_user,
+        });
+      }
+
+      return { generated_at: new Date().toISOString(), events };
+    }
+
+    async function loadData() {
+      console.debug("[UI] [data] fetching", { url: DATA_URL, host: location.host });
+      const t0 = performance.now();
+      try {
+        const res = await fetch(DATA_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const json = await res.json();
+        console.info("[UI] [data] loaded", { ms: Math.round(performance.now()-t0), events: json?.events?.length || 0 });
+        return json;
+      } catch (e) {
+        console.error("[UI] [data] failed; fallback to mock", { err: String(e) });
+        return buildMockData();
+      }
+    }
+
+    // =========================================================
+    // Estado + filtros
+    // =========================================================
+    const state = {
+      page: "overview",
+      raw: null,
+      filtered: [],
+      summaryText: "",
+      filters: {
+        dateFrom: "2025-04-01",
+        dateTo: "2025-12-31",
+        uf: "Todos",
+        publico: "Todos",
+      }
+    };
+
+    function inRange(d, a, b) { return d >= a && d <= b; }
+
+    function filterEvents(filtersOverride = {}) {
+      const f = { ...state.filters, ...filtersOverride };
+      const { dateFrom, dateTo, uf, publico } = f;
+
+      const filtered = [];
+      for (const e of state.raw.events) {
+        if (!inRange(e.date, dateFrom, dateTo)) continue;
+        if (uf !== "Todos" && e.uf !== uf) continue;
+        if (publico !== "Todos" && e.publico !== publico) continue;
+        filtered.push(e);
+      }
+
+      return filtered;
+    }
+    function applyFilters() {
+      state.filtered = filterEvents();
+      console.debug("[UI] [filters] applied", { filtered: state.filtered.length, filters: { ...state.filters } });
+    }
+
+    // =========================================================
+    // AgregaÃ§Ãµes
+    // =========================================================
+    function uniq(arr) { return Array.from(new Set(arr)).sort(); }
+
+    function aggKpis(events) {
+      // totais
+      let atend = 0, inscr = 0;
+      const usersInscritos = new Set();
+      const usersAtendidos = new Set();
+      const usersAny = new Set();
+
+      for (const e of events) {
+        usersAny.add(e.user_id);
+        if (e.type === "atendimento") {
+          atend++;
+          usersAtendidos.add(e.user_id);
+        }
+        if (e.type === "inscricao") {
+          inscr++;
+          usersInscritos.add(e.user_id);
+        }
+      }
+
+      const conv = usersInscritos.size ? (usersAtendidos.size / usersInscritos.size) : 0;
+
+      return {
+        atendimentos: atend,
+        inscricoes: inscr,
+        usersAny: usersAny.size,
+        inscritos: usersInscritos.size,
+        atendidos: usersAtendidos.size,
+        conversaoAtendimento: conv
+      };
+    }
+
+    function seriesByDate(events, type) {
+      const m = new Map();
+      for (const e of events) {
+        if (type && e.type !== type) continue;
+        m.set(e.date, (m.get(e.date)||0)+1);
+      }
+      const labels = Array.from(m.keys()).sort();
+      return { labels, values: labels.map(d => m.get(d)) };
+    }
+
+    function topByKey(events, key, whereFn = null, limit = 10) {
+      const m = new Map();
+      for (const e of events) {
+        if (whereFn && !whereFn(e)) continue;
+        const k = e[key] ?? "N/A";
+        m.set(k, (m.get(k)||0)+1);
+      }
+      return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).slice(0,limit);
+    }
+
+    function topByCombo(events, keyA, keyB, limit = 5) {
+      const m = new Map();
+      for (const e of events) {
+        const a = e[keyA] ?? "N/A";
+        const b = e[keyB] ?? "N/A";
+        const k = `${a} â€¢ ${b}`;
+        m.set(k, (m.get(k)||0)+1);
+      }
+      return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).slice(0,limit);
+    }
+
+    function shareConcentration(sortedPairs) {
+      const total = sortedPairs.reduce((s, [,v])=>s+v, 0) || 1;
+      const top3 = sortedPairs.slice(0,3).reduce((s, [,v])=>s+v, 0);
+      const top5 = sortedPairs.slice(0,5).reduce((s, [,v])=>s+v, 0);
+      return { total, top3: top3/total, top5: top5/total };
+    }
+
+    function insights(events) {
+      const k = aggKpis(events);
+
+      const byUfAt = topByKey(events, "uf", (e)=>e.type==="atendimento", 10);
+      const conc = shareConcentration(byUfAt);
+
+      const macroTop = topByKey(events, "macrotema", null, 5);
+      const matTop = topByKey(events, "material_type", null, 5);
+
+      // crescimento simples: compara Ãºltimos 30 dias vs 30 anteriores (se houver)
+      const dates = seriesByDate(events, "inscricao").labels;
+      let growth = null;
+      if (dates.length >= 60) {
+        const last30 = new Set(dates.slice(-30));
+        const prev30 = new Set(dates.slice(-60, -30));
+        let a=0,b=0;
+        for (const e of events) {
+          if (e.type !== "inscricao") continue;
+          if (last30.has(e.date)) a++;
+          if (prev30.has(e.date)) b++;
+        }
+        growth = b ? (a-b)/b : null;
+      }
+
+      const flags = [];
+      if (conc.top5 > 0.70) flags.push("ConcentraÃ§Ã£o alta: Top 5 UFs somam " + fmtPct(conc.top5) + " dos atendimentos.");
+      if (k.conversaoAtendimento < 0.20) flags.push("ConversÃ£o inscritoâ†’atendido baixa: " + fmtPct(k.conversaoAtendimento) + " (oportunidade de reforÃ§ar jornada/atendimento).");
+      if (growth !== null) flags.push("VariaÃ§Ã£o recente de inscriÃ§Ãµes (30d vs 30d anteriores): " + (growth>=0?"+":"") + fmtPct(growth));
+
+      return {
+        kpis: k,
+        byUfAt,
+        macroTop,
+        matTop,
+        flags
+      };
+    }
+
+    function seriesStats(labels, values) {
+      const total = values.reduce((s, v)=>s+v, 0);
+      const maxVal = values.length ? Math.max(...values) : 0;
+      const maxIdx = values.indexOf(maxVal);
+      return {
+        total,
+        avg: values.length ? total / values.length : 0,
+        maxVal,
+        maxLabel: labels[maxIdx] || "â€”"
+      };
+    }
+
+    function computeCoverage(events) {
+      const ufs = new Set();
+      const cities = new Set();
+      const dates = new Set();
+      const users = new Set();
+      const userActions = new Map();
+      let atendCount = 0;
+
+      for (const e of events) {
+        if (e.uf) ufs.add(e.uf);
+        if (e.city) cities.add(`${e.uf || ""}|${e.city}`);
+        if (e.date) dates.add(e.date);
+        if (e.user_id) users.add(e.user_id);
+        if (e.type === "atendimento") atendCount++;
+        const actions = Number(e.actions_total_user || 0);
+        if (e.user_id) {
+          const prev = userActions.get(e.user_id) || 0;
+          if (actions > prev) userActions.set(e.user_id, actions);
+        }
+      }
+
+      let actionsSum = 0;
+      for (const v of userActions.values()) actionsSum += v;
+
+      const days = dates.size || 1;
+      return {
+        ufs: ufs.size,
+        cities: cities.size,
+        days: dates.size,
+        users: users.size,
+        atendPerDay: atendCount / days,
+        avgActions: userActions.size ? actionsSum / userActions.size : 0
+      };
+    }
+
+    function computeDataQuality(events) {
+      const total = events.length || 1;
+      let withCity = 0;
+      let withCoords = 0;
+      let withMacro = 0;
+      let withMaterial = 0;
+      let dupes = 0;
+      const seen = new Set();
+
+      for (const e of events) {
+        if (e.city) withCity++;
+        if (Number.isFinite(e.lat) && Number.isFinite(e.lng)) withCoords++;
+        if (e.macrotema) withMacro++;
+        if (e.material_type) withMaterial++;
+        const key = `${e.user_id || ""}|${e.date || ""}|${e.type || ""}|${e.macrotema || ""}`;
+        if (seen.has(key)) dupes++;
+        else seen.add(key);
+      }
+
+      return {
+        completeness: (withCity + withCoords + withMacro + withMaterial) / (4 * total),
+        geocoverage: withCoords / total,
+        dupRate: dupes / total
+      };
+    }
+
+    function computeSla(events) {
+      if (!events.length) return { avg: 0, p90: 0, within: 0 };
+      const durations = events.map((e)=>deriveDuration(e)).filter(Number.isFinite);
+      durations.sort((a,b)=>a-b);
+      const total = durations.reduce((s,v)=>s+v,0);
+      const avg = durations.length ? total / durations.length : 0;
+      const p90 = durations[Math.floor(durations.length * 0.9)] || 0;
+      const within = durations.length ? durations.filter(d=>d <= SLA_TARGET_MIN).length / durations.length : 0;
+      return { avg, p90, within };
+    }
+
+    function buildSummary(events) {
+      const k = aggKpis(events);
+      const byUf = topByKey(events, "uf", (e)=>e.type==="atendimento", 3);
+      const topUf = byUf[0];
+      const macroTop = topByKey(events, "macrotema", null, 1)[0];
+      const matTop = topByKey(events, "material_type", null, 1)[0];
+      const channelTop = topByKey(events, "channel", null, 1)[0];
+
+      const days = uniq(events.map(e=>e.date)).length || 1;
+      const atendPerDay = k.atendimentos / days;
+      const conv = k.conversaoAtendimento;
+
+      return [
+        `Volume do perÃ­odo: ${fmtInt(k.atendimentos)} atendimentos e ${fmtInt(k.inscricoes)} inscriÃ§Ãµes, com ${fmtInt(k.inscritos)} inscritos.`,
+        `UF lÃ­der: ${topUf ? `${topUf[0]} (${fmtInt(topUf[1])})` : "â€”"}; mÃ©dia de ${fmtInt(Math.round(atendPerDay))} atendimentos/dia.`,
+        `PreferÃªncia: ${macroTop ? macroTop[0] : "â€”"} e ${matTop ? matTop[0] : "â€”"}. Canal dominante: ${channelTop ? channelTop[0] : "â€”"}. ConversÃ£o inscritoâ†’atendido em ${fmtPct(conv)}.`
+      ];
+    }
+
+    function computePreviousKpis() {
+      const days = diffDaysInclusive(state.filters.dateFrom, state.filters.dateTo);
+      if (!days) return null;
+      const prevTo = shiftDate(state.filters.dateFrom, -1);
+      const prevFrom = shiftDate(state.filters.dateFrom, -days);
+      const prevEvents = filterEvents({ dateFrom: prevFrom, dateTo: prevTo });
+      return { range: { from: prevFrom, to: prevTo }, kpis: aggKpis(prevEvents) };
+    }
+
+    function formatDelta(current, previous) {
+      if (!previous) return { text: "Sem base histÃ³rica", cls: "" };
+      const delta = (current - previous) / previous;
+      const sign = delta >= 0 ? "+" : "";
+      return {
+        text: `${sign}${fmtPct(delta)} vs perÃ­odo anterior`,
+        cls: delta >= 0 ? "positive" : "negative"
+      };
+    }
+
+    function updateDeltaEl(id, current, previous) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const { text, cls } = formatDelta(current, previous);
+      el.textContent = text;
+      el.classList.remove("positive", "negative");
+      if (cls) el.classList.add(cls);
+    }
+
+    function updateProgress(barId, value, target) {
+      const el = document.getElementById(barId);
+      if (!el) return;
+      const pct = target ? clamp((value / target) * 100, 0, 100) : 0;
+      el.style.width = `${pct}%`;
+    }
+
+    // =========================================================
+    // UI: charts + map
+    // =========================================================
+    const chartPalette = ["#3c41cc","#36dd00","#ff00ff"];
+    const charts = {};
+    const maps = new Map();
+
+    function configureCharts() {
+      if (!window.Chart || configureCharts.done) return;
+      Chart.defaults.font.family = "\"IBM Plex Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif";
+      Chart.defaults.color = "#3f5263";
+      Chart.defaults.borderColor = "rgba(11, 31, 51, 0.08)";
+      Chart.defaults.plugins.tooltip.backgroundColor = "rgba(15, 23, 42, 0.9)";
+      Chart.defaults.plugins.tooltip.titleColor = "#fff";
+      Chart.defaults.plugins.tooltip.bodyColor = "#e2e8f0";
+      configureCharts.done = true;
+    }
+    function destroyChart(id) {
+      if (charts[id]) {
+        charts[id].destroy();
+        delete charts[id];
+      }
+    }
+
+    function renderLineChart(canvasId, labels, values, title) {
+      destroyChart(canvasId);
+      if (!window.Chart) {
+        console.warn("[UI] [chart] Chart.js not available; skipping", { canvasId });
+        return;
+      }
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+
+      charts[canvasId] = new Chart(ctx, {
+        type: "line",
+        data: { labels, datasets: [{
+          label: title,
+          data: values,
+          tension: 0.35,
+          pointRadius: 0,
+          borderWidth: 2,
+          borderColor: chartPalette[0],
+          backgroundColor: "transparent",
+          fill: false
+        }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, title: { display: false } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 8 }, grid: { display: false } },
+            y: { grid: { color: "rgba(11, 31, 51, 0.08)" }, ticks: { maxTicksLimit: 5 } }
+          }
+        }
+      });
+    }
+
+    function renderBarChart(canvasId, pairs, title) {
+      destroyChart(canvasId);
+      if (!window.Chart) {
+        console.warn("[UI] [chart] Chart.js not available; skipping", { canvasId });
+        return;
+      }
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+
+      const labels = pairs.map(([k]) => k);
+      const values = pairs.map(([,v]) => v);
+
+      charts[canvasId] = new Chart(ctx, {
+        type: "bar",
+        data: { labels, datasets: [{
+          label: title,
+          data: values,
+          backgroundColor: values.map((_, i)=>chartPalette[i % chartPalette.length]),
+          borderRadius: 8,
+          maxBarThickness: 26
+        }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { autoSkip: false, maxRotation: 0, minRotation: 0 }, grid: { display: false } },
+            y: { grid: { color: "rgba(11, 31, 51, 0.08)" } }
+          }
+        }
+      });
+    }
+
+    function renderDoughnut(canvasId, pairs, title) {
+      destroyChart(canvasId);
+      if (!window.Chart) {
+        console.warn("[UI] [chart] Chart.js not available; skipping", { canvasId });
+        return;
+      }
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+
+      charts[canvasId] = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: pairs.map(([k]) => k),
+          datasets: [{
+            label: title,
+            data: pairs.map(([,v]) => v),
+            backgroundColor: pairs.map((_, i)=>chartPalette[i % chartPalette.length]),
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "right", labels: { boxWidth: 10, usePointStyle: true } } },
+          cutout: "65%"
+        }
+      });
+    }
+
+    function renderUfPills(pairs) {
+      const box = document.getElementById("ufPills");
+      if (!box) return;
+      const selected = state.filters.uf || "Todos";
+      const items = pairs.length ? pairs : [];
+      box.innerHTML = "";
+      for (const [uf, count] of items) {
+        const btn = document.createElement("button");
+        btn.className = "uf-pill" + (selected === uf ? " active" : "");
+        btn.title = uf;
+        btn.innerHTML = `<span>${ufSigla(uf)}</span><span class="text-slate-500">${fmtInt(count)}</span>`;
+        btn.addEventListener("click", () => {
+          state.filters.uf = uf;
+          const ufSel = document.getElementById("fUf");
+          if (ufSel) ufSel.value = uf;
+          applyFilters();
+          render();
+        });
+        box.appendChild(btn);
+      }
+    }
+
+    function ensureMap(containerId) {
+      if (!window.L) return null;
+      if (maps.has(containerId)) return maps.get(containerId);
+
+      const el = document.getElementById(containerId);
+      if (!el) return null;
+
+      const map = L.map(containerId, { zoomControl: true, preferCanvas: true }).setView([-10.5, -44.0], 4);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 18,
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      const layer = L.layerGroup().addTo(map);
+      const markers = L.layerGroup().addTo(map);
+
+      const ctx = { map, layer, markers };
+      maps.set(containerId, ctx);
+
+      console.info("[UI] [map] initialized", { containerId });
+      return ctx;
+    }
+
+    function renderMapPoints(containerId, events) {
+      if (!window.L) {
+        console.warn("[UI] [map] Leaflet not available; skipping map render");
+        return;
+      }
+      const ctx = ensureMap(containerId);
+      if (!ctx) return;
+
+      ctx.layer.clearLayers();
+      ctx.markers.clearLayers();
+
+      // â€œheat-likeâ€: cÃ­rculos com opacidade proporcional (simples, sem plugin extra)
+      const pts = events
+        .filter(e => Number.isFinite(e.lat) && Number.isFinite(e.lng))
+        .slice(0, 4000); // proteÃ§Ã£o perf
+
+      const byCell = new Map();
+      for (const e of pts) {
+        const key = `${Math.round(e.lat*20)/20},${Math.round(e.lng*20)/20}`;
+        byCell.set(key, (byCell.get(key)||0)+1);
+      }
+
+      const cells = Array.from(byCell.entries())
+        .map(([k,v]) => ({ k, v, lat: Number(k.split(",")[0]), lng: Number(k.split(",")[1]) }))
+        .sort((a,b)=>b.v-a.v)
+        .slice(0, 350);
+
+      for (const c of cells) {
+        const radius = 20000 + clamp(c.v, 1, 300) * 600; // metros
+        L.circle([c.lat, c.lng], {
+          radius,
+          stroke: false,
+          fillOpacity: clamp(c.v/220, 0.08, 0.35),
+        }).addTo(ctx.layer);
+      }
+
+      // Top cidades (marcadores)
+      const cityCounts = topByKey(pts, "city", null, 10);
+      for (const [city, count] of cityCounts) {
+        const e = pts.find(x => x.city === city);
+        if (!e) continue;
+        L.marker([e.lat, e.lng]).addTo(ctx.markers)
+          .bindPopup(`<b>${city}</b><br/>Registros: ${fmtInt(count)}<br/>UF: ${e.uf}`);
+      }
+
+      requestAnimationFrame(() => {
+        try { ctx.map.invalidateSize(); } catch {}
+      });
+
+      console.debug("[UI] [map] rendered", { containerId, cells: cells.length, markers: cityCounts.length });
+    }
+
+    // =========================================================
+    // Render (pÃ¡ginas)
+    // =========================================================
+    function setPage(page) {
+      state.page = page;
+      location.hash = page;
+      render();
+    }
+
+    const PAGES = new Set(["overview", "territory", "engagement", "content", "export"]);
+
+    function currentHashPage() {
+      const h = (location.hash || "").replace("#", "").trim();
+      if (!h) return "overview";
+      return PAGES.has(h) ? h : "overview";
+    }
+
+    function render() {
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      const setHtml = (id, html) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+      };
+
+      const coverage = computeCoverage(state.filtered);
+      const quality = computeDataQuality(state.filtered);
+      const sla = computeSla(state.filtered);
+
+      // nav active
+      document.querySelectorAll("[data-nav]").forEach(btn => {
+        const active = btn.getAttribute("data-nav") === state.page;
+        btn.classList.toggle("nav-active", active);
+        btn.setAttribute("aria-current", active ? "page" : "false");
+      });
+
+      // show page
+      document.querySelectorAll("[data-page]").forEach(sec => {
+        sec.classList.toggle("hidden", sec.getAttribute("data-page") !== state.page);
+      });
+
+      // KPIs + insights
+      const ins = insights(state.filtered);
+      setText("kpiAtend", fmtInt(ins.kpis.atendimentos));
+      setText("kpiAtivos", fmtInt(ins.kpis.inscritos));
+      setText("kpiConv", fmtPct(ins.kpis.conversaoAtendimento));
+
+      setText("kpiAtendTarget", fmtInt(KPI_TARGETS.atendimentos));
+      setText("kpiAtivosTarget", fmtInt(KPI_TARGETS.inscritos));
+      setText("kpiConvTarget", fmtPct(KPI_TARGETS.conversaoAtendimento));
+
+      updateProgress("kpiAtendBar", ins.kpis.atendimentos, KPI_TARGETS.atendimentos);
+      updateProgress("kpiAtivosBar", ins.kpis.inscritos, KPI_TARGETS.inscritos);
+      updateProgress("kpiConvBar", ins.kpis.conversaoAtendimento, KPI_TARGETS.conversaoAtendimento);
+
+      const prev = computePreviousKpis();
+      updateDeltaEl("kpiAtendDelta", ins.kpis.atendimentos, prev?.kpis.atendimentos || 0);
+      updateDeltaEl("kpiAtivosDelta", ins.kpis.inscritos, prev?.kpis.inscritos || 0);
+      updateDeltaEl("kpiConvDelta", ins.kpis.conversaoAtendimento, prev?.kpis.conversaoAtendimento || 0);
+
+      setText("slaAvg", `${sla.avg.toFixed(1).replace(".", ",")} min`);
+      setText("slaP90", `${sla.p90.toFixed(0)} min`);
+      setText("slaWithin", fmtPct(sla.within));
+
+      const sIns = seriesByDate(state.filtered, "inscricao");
+      const sAt = seriesByDate(state.filtered, "atendimento");
+      const insStats = seriesStats(sIns.labels, sIns.values);
+      const atStats = seriesStats(sAt.labels, sAt.values);
+      const topUf = ins.byUfAt[0];
+      const topShare = shareConcentration(ins.byUfAt);
+      const macroTop = ins.macroTop[0];
+      const matTop = ins.matTop[0];
+
+      setText("inscrPeak", `${fmtInt(insStats.maxVal)} em ${insStats.maxLabel}`);
+      setText("inscrAvg", `${fmtInt(insStats.avg)} / dia`);
+      setText("atendAvg", `${fmtInt(atStats.avg)} / dia`);
+      setText("atendTopUf", topUf ? `${topUf[0]} (${fmtInt(topUf[1])})` : "â€”");
+      setText("atendTopShare", `Top 5: ${fmtPct(topShare.top5)}`);
+      setText("macroTopLabel", macroTop ? `${macroTop[0]} (${fmtInt(macroTop[1])})` : "â€”");
+      setText("materialTopLabel", matTop ? `${matTop[0]} (${fmtInt(matTop[1])})` : "â€”");
+
+      const topCities = topByKey(state.filtered, "city", null, 6).filter(([c])=>c);
+      const topCitiesHtml = topCities.length ? topCities.map(([city, count], idx) => `
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-slate-700">${idx + 1}. ${city}</span>
+          <span class="text-slate-500">${fmtInt(count)}</span>
+        </div>
+      `).join("") : `<div class="text-sm text-slate-500">Sem dados para o recorte atual.</div>`;
+      setHtml("topCitiesList", topCitiesHtml);
+
+      setText("funnelInscr", fmtInt(ins.kpis.inscritos));
+      setText("funnelAtend", fmtInt(ins.kpis.atendimentos));
+      setText("funnelAtendPct", fmtPct(ins.kpis.conversaoAtendimento));
+      updateProgress("funnelAtendBar", ins.kpis.atendidos, ins.kpis.inscritos || 1);
+
+      const topMix = topByCombo(state.filtered, "macrotema", "material_type", 5);
+      const topMixHtml = topMix.length ? topMix.map(([label, count]) => `
+        <li class="flex items-center justify-between text-sm">
+          <span>${label}</span>
+          <span class="text-slate-500">${fmtInt(count)}</span>
+        </li>
+      `).join("") : `<li class="text-sm text-slate-500">Sem combinaÃ§Ãµes no recorte atual.</li>`;
+      setHtml("topMixList", topMixHtml);
+
+      // Charts por pÃ¡gina
+      if (state.page === "overview") {
+        renderLineChart("chartInscrLine", sIns.labels, sIns.values, "InscriÃ§Ãµes");
+        renderMapPoints("map", state.filtered);
+        const baseForUf = filterEvents({ uf: "Todos" });
+        const topUfGlobal = topByKey(baseForUf, "uf", null, 3);
+        renderUfPills(topUfGlobal);
+        renderDoughnut("chartMacro", ins.macroTop, "Macrotema");
+        renderDoughnut("chartMaterial", ins.matTop, "Tipo de material");
+      }
+
+      if (state.page === "territory") {
+        renderBarChart("chartUfAtend2", ins.byUfAt.slice(0, 12), "Atendimentos por UF");
+        renderMapPoints("mapTerritory", state.filtered);
+        setText("terrUfs", `${coverage.ufs} UFs`);
+        setText("terrCities", `${coverage.cities} cidades`);
+        setText("terrUsers", fmtInt(coverage.users));
+        setText("terrAtendDay", fmtInt(Math.round(coverage.atendPerDay)));
+        setText("terrCompleteness", fmtPct(quality.completeness));
+        setText("terrGeo", fmtPct(quality.geocoverage));
+        updateProgress("terrCompletenessBar", quality.completeness, 1);
+        updateProgress("terrGeoBar", quality.geocoverage, 1);
+      }
+
+      if (state.page === "engagement") {
+        renderLineChart("chartAtendLine", sAt.labels, sAt.values, "Atendimentos");
+        const topPub = topByKey(state.filtered, "publico", null, 10);
+        renderDoughnut("chartPublico", topPub, "PÃºblico");
+        const topChannel = topByKey(state.filtered, "channel", null, 10);
+        renderDoughnut("chartChannels", topChannel, "Canais");
+      }
+
+      if (state.page === "content") {
+        const topMacro = topByKey(state.filtered, "macrotema", null, 10);
+        const topMat = topByKey(state.filtered, "material_type", null, 10);
+        renderDoughnut("chartMacroBar", topMacro, "Macrotemas (Top)");
+        renderDoughnut("chartMatBar", topMat, "Materiais (Top)");
+      }
+
+      if (state.page === "export") {
+        renderTable();
+      }
+
+      renderIconsNow();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("tblBody");
+      const info = document.getElementById("tblInfo");
+      const q = (document.getElementById("tblSearch").value || "").toLowerCase().trim();
+
+      const rows = state.filtered
+        .filter(e => {
+          if (!q) return true;
+          return (
+            String(e.uf||"").toLowerCase().includes(q) ||
+            String(e.city||"").toLowerCase().includes(q) ||
+            String(e.type||"").toLowerCase().includes(q) ||
+            String(e.publico||"").toLowerCase().includes(q) ||
+            String(e.channel||"").toLowerCase().includes(q) ||
+            String(e.material_type||"").toLowerCase().includes(q) ||
+            String(e.macrotema||"").toLowerCase().includes(q) ||
+            String(e.date||"").toLowerCase().includes(q)
+          );
+        })
+        .slice(0, 5000); // proteÃ§Ã£o
+
+      info.textContent = `Mostrando ${fmtInt(rows.length)} registros (limite 5.000 nesta visualizaÃ§Ã£o).`;
+
+      tbody.innerHTML = "";
+      for (const e of rows.slice(0, 60)) {
+        const tr = document.createElement("tr");
+        tr.className = "table-row";
+        tr.innerHTML = `
+          <td class="py-2 pr-3 text-sm">${e.date}</td>
+          <td class="py-2 pr-3 text-sm">${e.uf}</td>
+          <td class="py-2 pr-3 text-sm">${e.city || "-"}</td>
+          <td class="py-2 pr-3 text-sm">${e.type}</td>
+          <td class="py-2 pr-3 text-sm">${e.publico}</td>
+          <td class="py-2 pr-3 text-sm">${e.channel || "-"}</td>
+          <td class="py-2 pr-3 text-sm">${e.material_type}</td>
+          <td class="py-2 pr-3 text-sm">${e.macrotema}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // =========================================================
+    // Boot
+    // =========================================================
+    function fillFilterOptions() {
+      const ufs = uniq(state.raw.events.map(e=>e.uf).filter(Boolean));
+      const pubs = uniq(state.raw.events.map(e=>e.publico).filter(Boolean));
+
+      const ufSel = document.getElementById("fUf");
+      ufSel.innerHTML = `<option value="Todos">Todos</option>`;
+      for (const uf of ufs) {
+        const opt = document.createElement("option");
+        opt.value = uf;
+        opt.textContent = uf;
+        ufSel.appendChild(opt);
+      }
+
+      const pubSel = document.getElementById("fPublico");
+      pubSel.innerHTML = `<option value="Todos">Todos</option>` + pubs.map(p=>`<option>${p}</option>`).join("");
+    }
+
+    function wireUi() {
+      // nav
+      document.querySelectorAll("[data-nav]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          if (btn.tagName.toLowerCase() === "a") e.preventDefault();
+          setPage(btn.getAttribute("data-nav"));
+        });
+      });
+
+      // filtros
+      const bind = (id, fn) => document.getElementById(id).addEventListener("input", fn);
+      bind("fFrom", (e)=>{ state.filters.dateFrom = e.target.value; applyFilters(); render(); });
+      bind("fTo", (e)=>{ state.filters.dateTo = e.target.value; applyFilters(); render(); });
+
+      document.getElementById("fUf").addEventListener("change", (e)=>{
+        state.filters.uf = e.target.value;
+        applyFilters(); render();
+      });
+
+      bind("fPublico", (e)=>{ state.filters.publico = e.target.value; applyFilters(); render(); });
+
+      const modal = document.getElementById("filterModal");
+      const btnOpen = document.getElementById("btnOpenFilters");
+      const btnClose = document.getElementById("btnCloseFilters");
+      const btnApply = document.getElementById("btnApplyFilters");
+      const closeModal = () => {
+        if (!modal) return;
+        modal.classList.add("hidden");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modal-open");
+      };
+      const openModal = () => {
+        if (!modal) return;
+        modal.classList.remove("hidden");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("modal-open");
+      };
+      if (btnOpen) btnOpen.addEventListener("click", openModal);
+      if (btnClose) btnClose.addEventListener("click", closeModal);
+      if (btnApply) btnApply.addEventListener("click", () => {
+        applyFilters();
+        render();
+        closeModal();
+      });
+      if (modal) {
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) closeModal();
+        });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeModal();
+      });
+
+      const sidebarToggle = document.getElementById("sidebarToggle");
+      const syncSidebarAria = () => {
+        const expanded = !document.body.classList.contains("sidenav-closed");
+        if (sidebarToggle) sidebarToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+      };
+      const openSidebar = () => {
+        document.body.classList.remove("sidenav-closed");
+        syncSidebarAria();
+      };
+      const closeSidebar = () => {
+        document.body.classList.add("sidenav-closed");
+        syncSidebarAria();
+      };
+      const toggleSidebar = () => {
+        if (document.body.classList.contains("sidenav-closed")) {
+          openSidebar();
+        } else {
+          closeSidebar();
+        }
+      };
+      if (sidebarToggle) sidebarToggle.addEventListener("click", toggleSidebar);
+      document.addEventListener("keydown", (e) => {
+        if (e.key.toLowerCase() === "m") toggleSidebar();
+        if (e.ctrlKey && e.key.toLowerCase() === "b") toggleSidebar();
+        if (e.key === "Escape") closeSidebar();
+      });
+      syncSidebarAria();
+
+      document.getElementById("btnExportCsv").addEventListener("click", ()=>{
+        const cols = ["date","uf","city","type","publico","material_type","macrotema","channel","duration_min","user_id"];
+        const lines = [cols.join(",")];
+        for (const e of state.filtered.slice(0, 200000)) { // proteÃ§Ã£o
+          const row = cols.map(c => {
+            const v = (e[c] ?? "");
+            const s = String(v).replaceAll('"','""');
+            return `"${s}"`;
+          });
+          lines.push(row.join(","));
+        }
+        const stamp = new Date().toISOString().slice(0,19).replaceAll(":","-");
+        downloadText(`escalada_export_${stamp}.csv`, lines.join("\n"), "text/csv;charset=utf-8");
+      });
+
+      document.getElementById("tblSearch").addEventListener("input", ()=>{
+        if (state.page === "export") renderTable();
+      });
+
+      window.addEventListener("hashchange", ()=>{
+        state.page = currentHashPage();
+        render();
+      });
+    }
+
+    async function boot() {
+      // skeleton off depois
+      const skeleton = document.getElementById("skeleton");
+      const app = document.getElementById("app");
+      const bootError = document.getElementById("bootError");
+
+      try {
+        state.raw = await loadData();
+        ensureDerivedFields(state.raw.events || []);
+        configureCharts();
+
+        // defaults de per?odo pelos dados
+        const dates = uniq(state.raw.events.map(e=>e.date)).sort();
+        if (dates.length) {
+          state.filters.dateFrom = dates[0];
+          state.filters.dateTo = dates[dates.length-1];
+          document.getElementById("fFrom").value = state.filters.dateFrom;
+          document.getElementById("fTo").value = state.filters.dateTo;
+        }
+
+        fillFilterOptions();
+        wireUi();
+
+        applyFilters();
+
+        state.page = currentHashPage();
+        if (skeleton) skeleton.classList.add("hidden");
+        if (app) app.classList.remove("hidden");
+
+        render();
+        console.info("[UI] dashboard ready", { page: state.page, filtered: state.filtered.length });
+      } catch (e) {
+        console.error("[UI] boot failed", { err: String(e) });
+        if (skeleton) skeleton.classList.add("hidden");
+        if (app) app.classList.remove("hidden");
+        if (bootError) {
+          bootError.textContent = "Falha ao inicializar o painel. Alguns grÃ¡ficos podem nÃ£o carregar; verifique a conexÃ£o com CDN/dados.";
+          bootError.classList.remove("hidden");
+        }
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", boot);
+  </script>
+
+  <!-- Skeleton -->
+  <div id="skeleton" class="p-6 max-w-7xl mx-auto">
+    <div class="h-5 w-52 skeleton mb-4"></div>
+    <div class="h-9 w-80 skeleton mb-6"></div>
+      <div class="grid grid-cols-12 gap-4">
+      <div class="col-span-12 lg:col-span-3 card p-5">
+        <div class="h-4 w-24 skeleton mb-3"></div>
+        <div class="h-9 w-full skeleton mb-3"></div>
+        <div class="h-9 w-full skeleton mb-3"></div>
+        <div class="h-9 w-full skeleton mb-3"></div>
+        <div class="h-32 w-full skeleton"></div>
+      </div>
+      <div class="col-span-12 lg:col-span-9 grid gap-4">
+        <div class="grid grid-cols-12 gap-4">
+          <div class="col-span-12 md:col-span-3 card p-5"><div class="h-20 skeleton"></div></div>
+          <div class="col-span-12 md:col-span-3 card p-5"><div class="h-20 skeleton"></div></div>
+          <div class="col-span-12 md:col-span-3 card p-5"><div class="h-20 skeleton"></div></div>
+          <div class="col-span-12 md:col-span-3 card p-5"><div class="h-20 skeleton"></div></div>
+        </div>
+        <div class="card p-5"><div class="h-72 skeleton"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="hidden app-shell">
+    <aside id="sidebar" class="sidebar sidenav">
+      <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Alternar menu lateral" aria-expanded="false">&#9776;</button>
+
+      <div id="sidebarContent" class="sidebar-content">
+        <div class="sidebar-section-label">Painel</div>
+
+        <nav id="sidebarNav" class="sidebar-nav flex flex-col gap-1" aria-label="Navegação do painel">
+          <a href="#overview" data-nav="overview">
+            <span class="flex items-center gap-2">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              <span>Vis&atilde;o geral</span>
+            </span>
+          </a>
+          <a href="#territory" data-nav="territory">
+            <span class="flex items-center gap-2">
+              <i data-lucide="map" class="w-4 h-4"></i>
+              <span>Territ&oacute;rio</span>
+            </span>
+          </a>
+          <a href="#engagement" data-nav="engagement">
+            <span class="flex items-center gap-2">
+              <i data-lucide="activity" class="w-4 h-4"></i>
+              <span>Engajamento</span>
+            </span>
+          </a>
+          <a href="#content" data-nav="content">
+            <span class="flex items-center gap-2">
+              <i data-lucide="book-open" class="w-4 h-4"></i>
+              <span>Conte&uacute;dos</span>
+            </span>
+          </a>
+          <a href="#export" data-nav="export">
+            <span class="flex items-center gap-2">
+              <i data-lucide="table" class="w-4 h-4"></i>
+              <span>Exporta&ccedil;&atilde;o</span>
+            </span>
+          </a>
+        </nav>
+      </div>
+
+    </aside>
+    <div class="content-wrap">
+      <div class="max-w-7xl mx-auto px-6 pb-12 pt-6">
+        <div id="bootError" class="hidden mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900">
+          Falha ao inicializar o painel. Alguns gr&aacute;ficos podem n&atilde;o carregar; verifique a conex&atilde;o com CDN/dados.
+        </div>
+      <header class="mb-4 section-band rounded-2xl p-3 wrap-hero blur-target">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white flex items-center justify-center border border-slate-200 shadow-sm">
+            <img
+              src="https://mimiim.netlify.app/bandeira_escalada.png"
+              alt="Escalada"
+              class="w-5 h-5 object-contain"
+              loading="lazy"
+            />
+          </div>
+          <h1 class="text-xl md:text-2xl font-display">Escalada &bull; Painel Executivo</h1>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btnOpenFilters" class="btn btn-outline btn-sm" title="Filtros">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            Filtros
+          </button>
+          <button id="btnExportCsv" class="btn btn-primary btn-sm" title="Exportar CSV filtrado">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            Exportar CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div class="card p-3 kpi kpi-compact">
+          <div class="label">Atendimentos</div>
+          <div id="kpiAtend" class="value">&mdash;</div>
+          <div class="flex items-center justify-between text-[11px] text-slate-600">
+            <span id="kpiAtendDelta" class="delta">&mdash;</span>
+            <span>Meta <strong id="kpiAtendTarget">&mdash;</strong></span>
+          </div>
+          <div class="progress mt-2"><span id="kpiAtendBar"></span></div>
+        </div>
+        <div class="card p-3 kpi kpi-compact">
+          <div class="label">Inscritos</div>
+          <div id="kpiAtivos" class="value">&mdash;</div>
+          <div class="flex items-center justify-between text-[11px] text-slate-600">
+            <span id="kpiAtivosDelta" class="delta">&mdash;</span>
+            <span>Meta <strong id="kpiAtivosTarget">&mdash;</strong></span>
+          </div>
+          <div class="progress mt-2"><span id="kpiAtivosBar"></span></div>
+        </div>
+        <div class="card p-3 kpi kpi-compact">
+          <div class="label">Convers&atilde;o (inscrito&rarr;atendido)</div>
+          <div id="kpiConv" class="value">&mdash;</div>
+          <div class="flex items-center justify-between text-[11px] text-slate-600">
+            <span id="kpiConvDelta" class="delta">&mdash;</span>
+            <span>Meta <strong id="kpiConvTarget">&mdash;</strong></span>
+          </div>
+          <div class="progress mt-2"><span id="kpiConvBar"></span></div>
+        </div>
+      </div>
+      </header>
+
+    <main class="grid gap-4 main wrap-atmosphere p-3 blur-target">
+        <!-- PAGES -->
+        <section data-page="overview" class="grid grid-cols-12 gap-4 wrap-accent-blue wrap-soft p-4">
+          <div class="col-span-12 lg:col-span-6 card p-5 reveal">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <h2 class="section-title">Inscri&ccedil;&otilde;es ao longo do tempo</h2>
+                <div class="text-sm text-slate-600">Identifica picos, sazonalidade e impacto de campanhas.</div>
+                <div class="flex flex-wrap gap-2 mt-2 text-xs text-slate-600">
+                  <span class="badge">Pico <strong id="inscrPeak">&mdash;</strong></span>
+                  <span class="badge">M&eacute;dia <strong id="inscrAvg">&mdash;</strong></span>
+                </div>
+              </div>
+              <button data-nav="overview" class="chip soft">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>Linha do tempo
+              </button>
+            </div>
+            <div class="mt-4 h-52">
+              <canvas id="chartInscrLine"></canvas>
+            </div>
+          </div>
+
+          <div class="col-span-12 lg:col-span-4 card p-5 reveal">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="section-title">Mapa de densidade</h2>
+                <div class="text-sm text-slate-600">Distribui&ccedil;&atilde;o territorial dos registros.</div>
+              </div>
+              <button data-nav="territory" class="chip soft">
+                <i data-lucide="map" class="w-4 h-4"></i>Territ&oacute;rio
+              </button>
+            </div>
+            <div id="map" class="mt-4 h-[220px] rounded-2xl overflow-hidden"></div>
+          </div>
+
+          <div class="col-span-12 lg:col-span-2 card p-5 reveal delay-1">
+            <div>
+              <h2 class="section-title">Atendimentos por UF (Top)</h2>
+              <div class="text-sm text-slate-600">Priorize recursos onde a demanda &bull; maior.</div>
+            </div>
+            <div id="ufPills" class="mt-4 uf-pills"></div>
+          </div>
+
+          <div class="col-span-12 lg:col-span-6 card p-5 reveal delay-2">
+              <div class="flex items-center justify-between">
+                <h2 class="section-title">Interesses por Macrotema</h2>
+                <button data-nav="content" class="chip soft">Conte&uacute;dos</button>
+              </div>
+              <div class="text-sm text-slate-600">Pauta estrat&eacute;gica e trilhas priorit&aacute;rias.</div>
+              <div class="flex flex-wrap gap-2 mt-2 text-xs text-slate-600">
+                <span class="badge">Top <strong id="macroTopLabel">&mdash;</strong></span>
+              </div>
+              <div class="mt-4 h-56">
+                <canvas id="chartMacro"></canvas>
+              </div>
+          </div>
+          <div class="col-span-12 lg:col-span-6 card p-5 reveal delay-3">
+              <div class="flex items-center justify-between">
+                <h2 class="section-title">Interesses por tipo de material</h2>
+                <button data-nav="content" class="chip soft">Conte&uacute;dos</button>
+              </div>
+              <div class="text-sm text-slate-600">Formato preferido pelos participantes.</div>
+              <div class="flex flex-wrap gap-2 mt-2 text-xs text-slate-600">
+                <span class="badge">Top <strong id="materialTopLabel">&mdash;</strong></span>
+              </div>
+              <div class="mt-4 h-56">
+                <canvas id="chartMaterial"></canvas>
+              </div>
+          </div>
+        </section>
+
+        <section data-page="territory" class="hidden grid grid-cols-12 gap-4 wrap-accent-green wrap-soft p-4">
+          <div class="col-span-12 lg:col-span-4 card p-5">
+            <h2 class="section-title">Cobertura territorial</h2>
+            <div class="text-sm text-slate-600">Amplitude geogr&aacute;fica do per&iacute;odo.</div>
+            <div class="grid grid-cols-2 gap-3 mt-4">
+              <div class="metric">
+                <span class="label">UFs ativas</span>
+                <span id="terrUfs" class="value">&mdash;</span>
+              </div>
+              <div class="metric">
+                <span class="label">Cidades</span>
+                <span id="terrCities" class="value">&mdash;</span>
+              </div>
+              <div class="metric">
+                <span class="label">Usu&aacute;rios &uacute;nicos</span>
+                <span id="terrUsers" class="value">&mdash;</span>
+              </div>
+              <div class="metric">
+                <span class="label">Atend./dia</span>
+                <span id="terrAtendDay" class="value">&mdash;</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-span-12 lg:col-span-4 card p-5">
+            <h2 class="section-title">Mapa de densidade</h2>
+            <div class="text-sm text-slate-600">Distribui&ccedil;&atilde;o territorial dos registros.</div>
+            <div id="mapTerritory" class="mt-4 h-[220px] rounded-2xl overflow-hidden"></div>
+          </div>
+
+          <div class="col-span-12 lg:col-span-4 card p-5">
+            <h2 class="section-title">Top cidades</h2>
+            <div class="text-sm text-slate-600">Concentra&ccedil;&atilde;o urbana e oportunidades regionais.</div>
+            <div id="topCitiesList" class="mt-4 grid gap-2"></div>
+          </div>
+
+          <div class="col-span-12 card p-5">
+            <h2 class="section-title">Atendimentos por UF (Top 12)</h2>
+            <div class="mt-4 h-64"><canvas id="chartUfAtend2"></canvas></div>
+          </div>
+        </section>
+
+        <section data-page="engagement" class="hidden grid grid-cols-12 gap-4 wrap-accent-magenta wrap-soft p-4">
+          <div class="col-span-12 lg:col-span-7 card p-5">
+            <h2 class="section-title">Atendimentos ao longo do tempo</h2>
+            <div class="text-sm text-slate-600">Picos podem indicar eventos regionais ou gargalos.</div>
+            <div class="flex flex-wrap gap-2 mt-2 text-xs text-slate-600">
+              <span class="badge">M&eacute;dia <strong id="atendAvg">&mdash;</strong></span>
+            </div>
+            <div class="mt-4 h-64"><canvas id="chartAtendLine"></canvas></div>
+          </div>
+          <div class="col-span-12 lg:col-span-5 card p-5">
+            <h2 class="section-title">Funil de engajamento</h2>
+            <div class="text-sm text-slate-600">Convers&otilde;es entre etapas da jornada.</div>
+            <div class="grid gap-3 mt-4 text-sm">
+              <div class="flex items-center justify-between">
+                <span>Inscritos</span>
+                <strong id="funnelInscr">&mdash;</strong>
+              </div>
+              <div>
+                <div class="flex items-center justify-between">
+                  <span>Atendimentos</span>
+                  <span><strong id="funnelAtend">&mdash;</strong>&mdash;<span id="funnelAtendPct">&mdash;</span></span>
+                </div>
+                <div class="progress mt-1"><span id="funnelAtendBar"></span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-span-12 md:col-span-6 card p-5">
+            <h2 class="section-title">Distribui&ccedil;&atilde;o por p&uacute;blico</h2>
+            <div class="text-sm text-slate-600">Segmenta&ccedil;&atilde;o para estrat&eacute;gia.</div>
+            <div class="mt-4 h-64"><canvas id="chartPublico"></canvas></div>
+          </div>
+          <div class="col-span-12 md:col-span-6 card p-5">
+            <h2 class="section-title">Canais de entrada</h2>
+            <div class="text-sm text-slate-600">Origem dos atendimentos e capilaridade.</div>
+            <div class="mt-4 h-64"><canvas id="chartChannels"></canvas></div>
+          </div>
+
+        </section>
+
+        <section data-page="content" class="hidden grid grid-cols-12 gap-4 wrap-soft p-4">
+          <div class="col-span-12 card p-5">
+            <h2 class="section-title">Macrotemas (Top)</h2>
+            <div class="text-sm text-slate-600">Base para planejamento de portf&oacute;lio.</div>
+            <div class="mt-4 h-72"><canvas id="chartMacroBar"></canvas></div>
+          </div>
+
+          <div class="col-span-12 card p-5">
+            <h2 class="section-title">Tipos de material (Top)</h2>
+            <div class="text-sm text-slate-600">Guia de formato preferido.</div>
+            <div class="mt-4 h-72"><canvas id="chartMatBar"></canvas></div>
+          </div>
+
+          <div class="col-span-12 card p-5">
+            <h2 class="section-title">Combina&ccedil;&otilde;es mais acionadas</h2>
+            <div class="text-sm text-slate-600">Cruzamento macrotema &bull; material.</div>
+            <ul id="topMixList" class="mt-4 grid gap-2 text-sm text-slate-700"></ul>
+          </div>
+
+        </section>
+
+        <section data-page="export" class="hidden card p-5 wrap-soft">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h2 class="section-title">Tabela + busca</h2>
+              <div id="tblInfo" class="text-sm text-slate-600">&mdash;</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <input id="tblSearch" placeholder="Buscar (UF, cidade, tipo, p&uacute;blico...)"
+                class="input w-72 max-w-full" />
+            </div>
+          </div>
+
+          <div class="mt-4 overflow-auto rounded-2xl border border-slate-200">
+            <table class="min-w-[1020px] w-full">
+              <thead class="bg-slate-100/80 text-left">
+                <tr>
+                  <th class="py-2 px-3">Data</th>
+                  <th class="py-2 px-3">UF</th>
+                  <th class="py-2 px-3">Cidade</th>
+                  <th class="py-2 px-3">Tipo</th>
+                  <th class="py-2 px-3">P&uacute;blico</th>
+                  <th class="py-2 px-3">Canal</th>
+                  <th class="py-2 px-3">Material</th>
+                  <th class="py-2 px-3">Macrotema</th>
+                </tr>
+              </thead>
+              <tbody id="tblBody" class="bg-white/90"></tbody>
+            </table>
+          </div>
+
+          <div class="mt-4 grid md:grid-cols-2 gap-4">
+            <div class="card soft p-4">
+              <h3 class="section-title">Dicion&aacute;rio de dados</h3>
+              <ul class="mt-2 text-sm text-slate-600 list-disc pl-5 grid gap-1">
+                <li><strong>date</strong> &bull; data do registro.</li>
+                <li><strong>type</strong> &bull; inscri&ccedil;&atilde;o ou atendimento.</li>
+                <li><strong>publico</strong> &bull; perfil do participante.</li>
+                <li><strong>channel</strong> &bull; origem do atendimento.</li>
+                <li><strong>duration_min</strong> &bull; tempo estimado do atendimento (minutos).</li>
+                <li><strong>macrotema</strong> &bull; tema principal do conte&uacute;do.</li>
+              </ul>
+            </div>
+            <div class="card soft p-4">
+              <h3 class="section-title">Uso recomendado</h3>
+              <div class="mt-2 text-sm text-slate-600 grid gap-2">
+                <div>Utilize filtros para gerar recortes regionais e compartilhar com coordena&ccedil;&otilde;es locais.</div>
+                <div>O CSV exportado respeita filtros e mant&eacute;m colunas adicionais para auditoria.</div>
+                <div>Resultados desta tela s&atilde;o limitados a 5.000 linhas para performance.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-xs text-slate-500 mt-2">
+            * Para export completo, use o bot&atilde;o &ldquo;Exportar CSV&rdquo; no topo (respeita filtros).
+          </div>
+        </section>
+
+        <footer class="text-xs text-slate-500 mt-2">
+          &copy; Escalada &bull; Relat&oacute;rio executivo &bull; Vers&atilde;o est&aacute;tica para an&aacute;lise institucional.
+        </footer>
+      </main>
+      </div>
+    </div>
+  </div>
+
+  <div id="filterModal" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card">
+      <div class="flex items-center justify-between">
+        <h2 class="section-title">Filtros</h2>
+        <button id="btnCloseFilters" class="btn btn-ghost btn-sm" title="Fechar">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="grid gap-4 mt-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label">De</label>
+            <input id="fFrom" type="date" class="input w-full mt-1" />
+          </div>
+          <div>
+            <label class="label">At&eacute;</label>
+            <input id="fTo" type="date" class="input w-full mt-1" />
+          </div>
+        </div>
+        <div>
+          <label class="label">UF</label>
+          <select id="fUf" class="input w-full mt-1"></select>
+        </div>
+        <div>
+          <label class="label">P&uacute;blico</label>
+          <select id="fPublico" class="input w-full mt-1"></select>
+        </div>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button id="btnApplyFilters" class="btn btn-primary btn-sm">Aplicar</button>
+      </div>
+    </div>
+  </div>
+  <!-- padrÃ£o solicitado: clearInterval(poller) quando detectar window.circleUser.email (mesmo se aqui nÃ£o usar) -->
+  <script>
+    (function () {
+      let poller = setInterval(() => {
+        try {
+          const email = window.circleUser && window.circleUser.email;
+          if (email) {
+            console.info("[UI] [circle] detected user email", { email: String(email) });
+            clearInterval(poller);
+            console.debug("[UI] [circle] clearInterval(poller) executed");
+          }
+        } catch (e) {
+          console.warn("[UI] [circle] poll error (ignored)", { err: String(e) });
+        }
+      }, 800);
+    })();
+  </script>
+</body>
+</html>
 
