@@ -1,0 +1,361 @@
+cep,uf,cidade,bairro,logradouro,lat,lng,city_source,geo_source,updated_at
+01238010,SP,São Paulo,Higienópolis,Rua Dona Veridiana,-23.5417015,-46.650936,brasilapi,brasilapi,2026-02-23T23:49:03.857Z
+02552110,SP,São Paulo,Vila Bandeirantes,Rua Dias de Oliveira,-23.4963115,-46.6627535,brasilapi,brasilapi,2026-02-23T23:49:03.860Z
+02634030,SP,São Paulo,Jardim Peri,Rua Marina Eston,-23.4586058,-46.6510956,brasilapi,brasilapi,2026-02-23T23:49:04.040Z
+02860001,SP,São Paulo,Vila Souza,Avenida Deputado Cantídio Sampaio,-23.4722999,-46.6731251,brasilapi,brasilapi,2026-02-23T23:49:03.869Z
+02995250,SP,São Paulo,Parque Nações Unidas,Rua Jair da Rosa Pinto,-23.5475,-46.63611,brasilapi,open-meteo,2026-02-23T23:49:04.791Z
+03557010,SP,São Paulo,Jardim Hercilia,Rua Coroatá,-23.5383495,-46.5025688,brasilapi,brasilapi,2026-02-23T23:49:04.061Z
+04455250,SP,São Paulo,Vila Campo Grande,Rua João Bressane,-23.5475,-46.63611,brasilapi,open-meteo,2026-02-23T23:49:04.800Z
+04842310,SP,São Paulo,Parque Grajaú,Rua João Teixeira de Oliveira,-23.7468471,-46.6857852,brasilapi,brasilapi,2026-02-23T23:49:04.228Z
+05069020,SP,São Paulo,Lapa de Baixo,Rua Engenheiro Fox,-23.5475,-46.63611,brasilapi,open-meteo,2026-02-23T23:49:04.970Z
+05182030,SP,São Paulo,Cidade D'Abril,Rua Fernandez Cabalero,-23.5475,-46.63611,brasilapi,open-meteo,2026-02-23T23:49:05.147Z
+05359001,SP,São Paulo,Vila Butantã,Avenida Nossa Senhora da Assunção,-23.5738625,-46.7420765,brasilapi,brasilapi,2026-02-23T23:49:04.982Z
+05510021,SP,São Paulo,Butantã,Rua M.M.D.C.,-23.5726605,-46.7076115,brasilapi,brasilapi,2026-02-23T23:49:04.993Z
+06147110,SP,Osasco,Santa Maria,Rua Capitão Carlos Lamarca,-23.5325,-46.79167,brasilapi,open-meteo,2026-02-23T23:49:05.363Z
+07054170,SP,Guarulhos,Jardim Vila Galvão,Rua Braúlio Muniz,-23.46278,-46.53333,brasilapi,open-meteo,2026-02-23T23:49:05.361Z
+09220200,SP,Santo André,Vila Metalúrgica,Rua Gibraltar,-23.66389,-46.53833,brasilapi,open-meteo,2026-02-23T23:49:05.402Z
+09332110,SP,Mauá,Chácara Maria Aparecida,Rua Flor de Lotus,-23.66778,-46.46139,brasilapi,open-meteo,2026-02-23T23:49:05.532Z
+11320010,SP,São Vicente,Centro,Avenida Quintino Bocaiuva,-23.966902,-46.3751959,brasilapi,brasilapi,2026-02-23T23:49:05.558Z
+12215830,SP,São José dos Campos,Jardim São José Centro,Praça Platina,-23.1910418,-45.8719568,brasilapi,brasilapi,2026-02-23T23:49:05.622Z
+12225600,SP,São José dos Campos,Parque Novo Horizonte,Rua dos Ferreiros,-23.1943909,-45.7877698,brasilapi,brasilapi,2026-02-23T23:49:05.615Z
+12226837,SP,São José dos Campos,Jardim Santa Hermínia,Rua Francisco Cunha Laranjeira,-23.2110097,-45.7813207,brasilapi,brasilapi,2026-02-23T23:49:05.726Z
+12227710,SP,São José dos Campos,Jardim Uirá,Rua das Seriemas,-23.17944,-45.88694,brasilapi,open-meteo,2026-02-23T23:49:05.937Z
+12246023,SP,São José dos Campos,Parque Residencial Aquarius,Rua Célio José dos Santos,-23.2212052,-45.9089085,brasilapi,brasilapi,2026-02-23T23:49:05.818Z
+12248899,SP,São José dos Campos,Área Rural de São José dos Campos,Área Rural,-23.17944,-45.88694,brasilapi,open-meteo,2026-02-23T23:49:05.995Z
+13178574,SP,Sumaré,Residencial Real Parque Sumaré,Avenida Cabo Pedro Hoffman,-22.8292704,-47.2189548,brasilapi,brasilapi,2026-02-23T23:49:05.944Z
+14807197,SP,Araraquara,Jardim Nova Época,Avenida Júlio Prestes de Albuquerque,-21.79444,-48.17556,brasilapi,open-meteo,2026-02-23T23:49:06.191Z
+18526058,SP,Cerquilho,Jardim Bella Vista,Rua Monteiro Lobato,-23.165,-47.74361,brasilapi,open-meteo,2026-02-23T23:49:06.310Z
+18550041,SP,Boituva,Centro,Rua Barão do Rio Branco,-23.2868631,-47.6771704,brasilapi,brasilapi,2026-02-23T23:49:06.130Z
+19470000,SP,Presidente Epitácio,,,-21.765074,-52.11114,brasilapi,brasilapi,2026-02-23T23:49:06.205Z
+20510230,RJ,Rio de Janeiro,Tijuca,Rua Andrade Neves,-22.9311166,-43.2365354,brasilapi,brasilapi,2026-02-23T23:49:06.324Z
+20740570,RJ,Rio de Janeiro,Piedade,Rua do Tijolo,-22.90642,-43.18223,brasilapi,open-meteo,2026-02-23T23:49:06.561Z
+20761130,RJ,Rio de Janeiro,Engenho da Rainha,Rua Ibiapaba,-22.90642,-43.18223,brasilapi,open-meteo,2026-02-23T23:49:06.570Z
+20931005,RJ,Rio de Janeiro,Caju,Rua Carlos Seidl,-22.90642,-43.18223,brasilapi,open-meteo,2026-02-23T23:49:06.696Z
+21830315,RJ,Rio de Janeiro,Senador Camará,Rua Nova Escócia,-22.90642,-43.18223,brasilapi,open-meteo,2026-02-23T23:49:06.698Z
+21931310,RJ,Rio de Janeiro,Jardim Guanabara,Rua Breno Guimarães,-22.8069627,-43.2041835,brasilapi,brasilapi,2026-02-23T23:49:06.748Z
+22710255,RJ,Rio de Janeiro,Taquara,Rua Mapendi,-22.9275996,-43.376502,brasilapi,brasilapi,2026-02-23T23:49:06.761Z
+22713270,RJ,Rio de Janeiro,Taquara,Rua Asa de Telha,-22.90642,-43.18223,brasilapi,open-meteo,2026-02-23T23:49:06.888Z
+23017250,RJ,Rio de Janeiro,Campo Grande,Estrada do Cabuçu,-22.9193563,-43.5300447,brasilapi,brasilapi,2026-02-23T23:49:06.890Z
+23032410,RJ,Rio de Janeiro,Guaratiba,Rua Joaquim Barradas,-22.90642,-43.18223,brasilapi,open-meteo,2026-02-23T23:49:06.939Z
+23032770,RJ,Rio de Janeiro,Guaratiba,Rua Tucurui,-22.90642,-43.18223,brasilapi,open-meteo,2026-02-23T23:49:06.975Z
+23051390,,,,,,,,,2026-02-23T23:49:38.822Z
+23070310,RJ,Rio de Janeiro,Campo Grande,Rua Capitólio,-22.8975012,-43.5772628,brasilapi,brasilapi,2026-02-23T23:49:07.075Z
+23090615,RJ,Rio de Janeiro,Campo Grande,Rua Daniel Viola,-22.90642,-43.18223,brasilapi,open-meteo,2026-02-23T23:49:07.153Z
+24425004,RJ,São Gonçalo,Neves (Neves),Rua José Augusto Pereira dos Santos,-22.8529354,-43.099985,brasilapi,brasilapi,2026-02-23T23:49:07.161Z
+25540420,RJ,São João de Meriti,Vila Zulmira,Avenida Alfredo Maurício Brum,-22.80389,-43.37222,brasilapi,open-meteo,2026-02-23T23:49:07.449Z
+25540490,RJ,São João de Meriti,Vila Zulmira,Travessa Jataí,-22.7857895,-43.3935899,brasilapi,brasilapi,2026-02-23T23:49:07.346Z
+26113365,RJ,Belford Roxo,Das Graças,Rua Projetada,-22.76417,-43.39944,brasilapi,open-meteo,2026-02-23T23:49:07.545Z
+28026120,RJ,Campos dos Goytacazes,Parque Aurora,Rua Ayer Campos,-21.7828527,-41.3267287,brasilapi,brasilapi,2026-02-23T23:49:07.536Z
+29103036,,,,,,,,,2026-02-23T23:49:39.609Z
+29104356,ES,Vila Velha,Ilha dos Bentos,Rua Macieiras,-20.32972,-40.2925,brasilapi,open-meteo,2026-02-23T23:49:07.925Z
+29112116,ES,Vila Velha,Jardim Marilândia,Rua Ana Merotto Stefanon,-20.32972,-40.2925,brasilapi,open-meteo,2026-02-23T23:49:07.928Z
+29126120,ES,Vila Velha,Riviera da Barra,Avenida Cachoeiro de Itapemirim,-20.32972,-40.2925,brasilapi,open-meteo,2026-02-23T23:49:08.123Z
+29126162,ES,Vila Velha,Santa Paula I,Rua Ébano,-20.32972,-40.2925,brasilapi,open-meteo,2026-02-23T23:49:08.122Z
+29145402,ES,Cariacica,São Francisco,Rua Municipal,-20.26389,-40.42,brasilapi,open-meteo,2026-02-23T23:49:08.485Z
+29153630,ES,Cariacica,Presidente Médici,Rua Salvador Bessa,-20.26389,-40.42,brasilapi,open-meteo,2026-02-23T23:49:08.490Z
+29173702,ES,Serra,Praia de Capuba,Rua Porto Alegre,-20.12861,-40.30778,brasilapi,open-meteo,2026-02-23T23:49:08.886Z
+29314814,ES,Cachoeiro de Itapemirim,Monte Belo,Rua Nairton Pinto,-20.84889,-41.11278,brasilapi,open-meteo,2026-02-23T23:49:08.872Z
+29345000,ES,Marataízes,,,-21.04333,-40.82444,brasilapi,open-meteo,2026-02-23T23:49:09.253Z
+29375000,ES,Venda Nova do Imigrante,,,-20.32693,-41.13427,brasilapi,open-meteo,2026-02-23T23:49:09.251Z
+29967000,ES,Conceição da Barra,Braço do Rio,,-18.59333,-39.73222,brasilapi,open-meteo,2026-02-23T23:49:09.632Z
+32809546,MG,Esmeraldas,São Francisco de Assis,Rua Bela Vista,-19.7625,-44.31389,brasilapi,open-meteo,2026-02-23T23:49:09.638Z
+33943010,MG,Ribeirão das Neves,Fortaleza (Justinópolis),Rua Um,-19.76694,-44.08667,brasilapi,open-meteo,2026-02-23T23:49:10.008Z
+35162450,MG,Ipatinga,Limoeiro,Avenida José Anatólio Barbosa,-19.4457672,-42.5906702,brasilapi,brasilapi,2026-02-23T23:49:09.834Z
+35162474,MG,Ipatinga,Barra Alegre,Avenida Francisco Rodrigues,-19.4300247,-42.5946232,brasilapi,brasilapi,2026-02-23T23:49:10.025Z
+35162528,MG,Ipatinga,Vila Celeste,Rua Mineirinho,-19.4527107,-42.5690873,brasilapi,brasilapi,2026-02-23T23:49:10.197Z
+35162861,MG,Ipatinga,Chácaras Madalena,Rua Mil Folhas,-19.4515328,-42.575263,brasilapi,brasilapi,2026-02-23T23:49:10.208Z
+35162869,MG,Ipatinga,Chácaras Madalena,Rua Macela,-19.4537443,-42.5773125,brasilapi,brasilapi,2026-02-23T23:49:10.385Z
+35162884,MG,Ipatinga,Barra Alegre,Rua Quatro,-19.46833,-42.53667,brasilapi,open-meteo,2026-02-23T23:49:10.575Z
+35172315,MG,Coronel Fabriciano,Jardim Primavera,Rua José Alves da Silva,-19.51861,-42.62889,brasilapi,open-meteo,2026-02-23T23:49:10.750Z
+35302440,MG,Caratinga,Zacarias,Rua Pinheiro,-19.78972,-42.13917,brasilapi,open-meteo,2026-02-23T23:49:10.952Z
+35690000,MG,Florestal,,,-19.8878705,-44.4314766,brasilapi,brasilapi,2026-02-23T23:49:10.948Z
+35900238,MG,Itabira,Quatorze de Fevereiro,Rua Dona Modestina,-19.625736,-43.2255354,brasilapi,brasilapi,2026-02-23T23:49:11.147Z
+36015430,MG,Juiz de Fora,Centro,Rua Oswaldo Cruz,-21.7592809,-43.3535107,brasilapi,brasilapi,2026-02-23T23:49:11.144Z
+36037010,MG,Juiz de Fora,São Pedro,Rua Aristóteles Braga,-21.76417,-43.35028,brasilapi,open-meteo,2026-02-23T23:49:11.518Z
+37130017,MG,Alfenas,Centro,Rua Afonso Arinos,-21.4229465,-45.9513352,brasilapi,brasilapi,2026-02-23T23:49:11.328Z
+39445251,MG,Janaúba,Saudade,Rua Dalva da Costa Brito,-15.8025,-43.30889,brasilapi,open-meteo,2026-02-23T23:49:11.722Z
+39650000,MG,Minas Novas,,,-17.2174708,-42.5948332,brasilapi,brasilapi,2026-02-23T23:49:11.713Z
+39800224,MG,Teófilo Otoni,Joaquim Pedrosa,Avenida Sidônio Otoni,-17.8519588,-41.5108464,brasilapi,brasilapi,2026-02-23T23:49:11.919Z
+39860000,MG,Nanuque,,,-17.8393915,-40.3494631,brasilapi,brasilapi,2026-02-23T23:49:11.910Z
+40285505,BA,Salvador,Brotas,Rua Jardim Madalena,-12.97563,-38.49096,brasilapi,open-meteo,2026-02-23T23:49:12.277Z
+40415285,BA,Salvador,Bonfim,Rua Travasso de Fora,-12.9234053,-38.5038653,brasilapi,brasilapi,2026-02-23T23:49:12.114Z
+40435340,BA,Salvador,Massaranduba,Travessa São Francisco,-12.924845,-38.4937463,brasilapi,brasilapi,2026-02-23T23:49:12.306Z
+40471300,BA,Salvador,Lobato,Rua Marciano Porcino,-12.97563,-38.49096,brasilapi,open-meteo,2026-02-23T23:49:12.471Z
+40484490,BA,Salvador,Alto do Cabrito,Rua Santa Helena,-12.97563,-38.49096,brasilapi,open-meteo,2026-02-23T23:49:12.502Z
+40715760,BA,Salvador,Itacaranha,Rua São Félix,-12.97563,-38.49096,brasilapi,open-meteo,2026-02-23T23:49:12.660Z
+41180190,BA,Salvador,Saboeiro,Rua Vila Joaquim,-12.97563,-38.49096,brasilapi,open-meteo,2026-02-23T23:49:12.685Z
+41211555,BA,Salvador,Arenoso,1ª Travessa Rosalvo Dias de Jesus,-12.97563,-38.49096,brasilapi,open-meteo,2026-02-23T23:49:12.868Z
+41275148,BA,Salvador,Campinas de Pirajá,Rua Luan Braga,-12.97563,-38.49096,brasilapi,open-meteo,2026-02-23T23:49:12.872Z
+41336030,BA,Salvador,Cajazeiras VI,Rua Jornalista Marcelo Nonato,-12.97563,-38.49096,brasilapi,open-meteo,2026-02-23T23:49:13.072Z
+42801901,BA,Camaçari,Parque Nascente do Rio Capivara,Rua Marlim Azul,-12.6975,-38.32417,brasilapi,open-meteo,2026-02-23T23:49:13.254Z
+42807103,BA,Camaçari,Gleba C,Caminho do Livramento,-12.6975,-38.32417,brasilapi,open-meteo,2026-02-23T23:49:13.264Z
+42825016,BA,Camaçari,Catu de Abrantes (Abrantes),Rua Sucupió,-12.6975,-38.32417,brasilapi,open-meteo,2026-02-23T23:49:13.452Z
+42840000,,,,,,,,,2026-02-23T23:49:14.679Z
+42850000,BA,Dias D'Ávila,,,-12.6107233,-38.3028518,brasilapi,brasilapi,2026-02-23T23:49:13.639Z
+43805625,BA,Candeias,Malemba,Loteamento Santa Cruz,-13.85,-39.38333,brasilapi,open-meteo,2026-02-23T23:49:14.008Z
+43820255,BA,Candeias,Sarandy,Rua Tomé de Souza,-13.85,-39.38333,brasilapi,open-meteo,2026-02-23T23:49:14.200Z
+43900000,BA,São Francisco do Conde,,,-12.628108,-38.6811326,brasilapi,brasilapi,2026-02-23T23:49:14.390Z
+44007198,BA,Feira de Santana,Pedra do Descanso,Rua Magnólia Carvalho,-12.26667,-38.96667,brasilapi,open-meteo,2026-02-23T23:49:14.760Z
+44066644,BA,Feira de Santana,Conceição,Rua Mário Cézar,-12.26667,-38.96667,brasilapi,open-meteo,2026-02-23T23:49:14.876Z
+44400000,BA,Nazaré,,,-13.0345586,-39.0062515,brasilapi,brasilapi,2026-02-23T23:49:14.958Z
+44470000,BA,Vera Cruz,,,-12.9608153,-38.6099216,brasilapi,brasilapi,2026-02-23T23:49:15.067Z
+44540000,BA,Conceição do Almeida,,,-12.77944,-39.17,brasilapi,open-meteo,2026-02-23T23:49:15.330Z
+44750000,BA,Caldeirão Grande,,,-12.9,-40.01667,brasilapi,open-meteo,2026-02-23T23:49:16.010Z
+44867040,BA,Irecê,São José,Avenida Guararapes,-11.30417,-41.85583,brasilapi,open-meteo,2026-02-23T23:49:15.703Z
+44890000,BA,Canarana,,,-11.68472,-41.76889,brasilapi,open-meteo,2026-02-23T23:49:16.075Z
+44920000,BA,João Dourado,,,-11.34484,-41.66317,brasilapi,open-meteo,2026-02-23T23:49:16.391Z
+45210376,BA,Jequié,Itaigara,Rua Professor Raimundo Fernandes da Costa,-13.85875,-40.08512,brasilapi,open-meteo,2026-02-23T23:49:16.449Z
+45305000,BA,Elísio Medrado,,,-12.9469824,-39.520431,brasilapi,brasilapi,2026-02-23T23:49:16.588Z
+45400000,BA,Valença,,,-13.3214013,-39.1070128,brasilapi,brasilapi,2026-02-23T23:49:16.647Z
+45928000,BA,Nova Viçosa,Posto da Mata,,-17.89194,-39.37194,brasilapi,open-meteo,2026-02-23T23:49:16.983Z
+46445000,BA,Carinhanha,,,-14.298524,-43.772349,brasilapi,brasilapi,2026-02-23T23:49:16.839Z
+47640000,BA,Santa Maria da Vitória,,,-13.3901477,-44.2013167,brasilapi,brasilapi,2026-02-23T23:49:17.044Z
+47819899,BA,Barreiras,Área Rural de Barreiras,Área Rural,-12.15278,-44.99,brasilapi,open-meteo,2026-02-23T23:49:17.366Z
+48018165,BA,Alagoinhas,Terezópolis,Rua Dom Avelar Brandão Vilela,-12.13556,-38.41917,brasilapi,open-meteo,2026-02-23T23:49:17.427Z
+48110000,BA,Catu,,,-12.351274,-38.379108,brasilapi,brasilapi,2026-02-23T23:49:17.564Z
+48120000,BA,Pojuca,,,-12.4260268,-38.3266573,brasilapi,brasilapi,2026-02-23T23:49:17.626Z
+48170000,BA,Água Fria,,,-23.35611,-46.87694,brasilapi,open-meteo,2026-02-23T23:49:17.929Z
+48400000,BA,Ribeira do Pombal,,,-10.8357496,-38.5368506,brasilapi,brasilapi,2026-02-23T23:49:17.811Z
+48700000,BA,Serrinha,,,-11.66199,-39.0034021,brasilapi,brasilapi,2026-02-23T23:49:18.007Z
+48893322,BA,Valente,José Moreira,Rua Maria Mota Araújo,-11.41222,-39.46194,brasilapi,open-meteo,2026-02-23T23:49:18.299Z
+48903670,BA,Juazeiro,Centro,Rua 7 de Setembro,-9.4125336,-40.5040608,brasilapi,brasilapi,2026-02-23T23:49:18.200Z
+49030190,SE,Aracaju,Farolândia,Rua Coronel Manoel Ramos dos Santos,-10.9713414,-37.0719978,brasilapi,brasilapi,2026-02-23T23:49:18.387Z
+49035110,SE,Aracaju,Atalaia,Rua Engenheiro Francisco Manoel da Costa,-10.9784335,-37.0474908,brasilapi,brasilapi,2026-02-23T23:49:18.496Z
+49040690,SE,Aracaju,Inácio Barbosa,Avenida Presidente João Goulart,-10.91111,-37.07167,brasilapi,open-meteo,2026-02-23T23:49:18.749Z
+49048200,SE,Aracaju,Luzia,Rua João Gomes,-10.91111,-37.07167,brasilapi,open-meteo,2026-02-23T23:49:18.864Z
+49080420,SE,Aracaju,América,Rua Paraguai,-10.91111,-37.07167,brasilapi,open-meteo,2026-02-23T23:49:18.935Z
+49150099,SE,Nossa Senhora do Socorro,Centro Histórico,Rua Pedro Moreira,-10.8498228,-37.1249542,brasilapi,brasilapi,2026-02-23T23:49:19.059Z
+49290000,SE,Itabaianinha,,,-11.27389,-37.79,brasilapi,open-meteo,2026-02-23T23:49:19.304Z
+49300000,SE,Tobias Barreto,,,-11.1878721,-38.0030397,brasilapi,brasilapi,2026-02-23T23:49:19.262Z
+49985000,SE,Santana do São Francisco,,,-10.29111,-36.60806,brasilapi,open-meteo,2026-02-23T23:49:19.630Z
+53110520,PE,Olinda,Salgadinho,Rua Joaquim de Sousa Paiva,-8.00889,-34.85528,brasilapi,open-meteo,2026-02-23T23:49:19.674Z
+53419720,PE,Paulista,Jaguarana,Rua Cantora Carmen Miranda,-7.94083,-34.87306,brasilapi,open-meteo,2026-02-23T23:49:19.997Z
+53545070,PE,Abreu e Lima,Caetés III,Rua Quarenta e Oito,-7.91167,-34.90278,brasilapi,open-meteo,2026-02-23T23:49:20.045Z
+53620120,PE,Igarassu,Encanto Igarassu,Rua Fim de Semana,-7.8591749,-34.9059565,brasilapi,brasilapi,2026-02-23T23:49:20.194Z
+53625740,PE,Igarassu,Triunfo,Rua Joaquim Filgueira Galvão,-7.83417,-34.90639,brasilapi,open-meteo,2026-02-23T23:49:20.439Z
+54768060,PE,Camaragibe,Timbí,Rua Afonso Pena,-8.0181843,-34.9895481,brasilapi,brasilapi,2026-02-23T23:49:20.403Z
+54811521,PE,Moreno,Alto da Maternidade,Rua Edmundo de Sá Gouveia,-8.11861,-35.09222,brasilapi,open-meteo,2026-02-23T23:49:20.806Z
+55039120,PE,Caruaru,Andorinha,Avenida Manoel da Conceição Gonçalves,-8.28333,-35.97611,brasilapi,open-meteo,2026-02-23T23:49:20.811Z
+55270000,PE,Venturosa,,,-8.5765199,-36.876569,brasilapi,brasilapi,2026-02-23T23:49:21.005Z
+55370000,PE,São Bento do Una,,,-8.52278,-36.44444,brasilapi,open-meteo,2026-02-23T23:49:21.196Z
+55440000,PE,Belém de Maria,,,-8.6242497,-35.8388934,brasilapi,brasilapi,2026-02-23T23:49:21.224Z
+55601000,,,,,,,,,2026-02-23T23:49:53.200Z
+55604180,PE,Vitória de Santo Antão,São Vicente de Paulo,Rua Juarez Cândido Carneiro,-8.11806,-35.29139,brasilapi,open-meteo,2026-02-23T23:49:21.629Z
+55606621,PE,Vitória de Santo Antão,São Vicente de Paulo,Travessa São Vicente de Paula,-8.11806,-35.29139,brasilapi,open-meteo,2026-02-23T23:49:21.826Z
+55612020,PE,Vitória de Santo Antão,Redenção,Rua B,-8.1219579,-35.2831496,brasilapi,brasilapi,2026-02-23T23:49:22.019Z
+55612090,PE,Vitória de Santo Antão,Redenção,Rua I,-8.11806,-35.29139,brasilapi,open-meteo,2026-02-23T23:49:22.203Z
+55620000,PE,Glória do Goitá,,,-8.00167,-35.29278,brasilapi,open-meteo,2026-02-23T23:49:22.569Z
+55644086,PE,Gravatá,Boa Vista,Rua Jornalista Renato Farias,-8.20111,-35.56472,brasilapi,open-meteo,2026-02-23T23:49:22.970Z
+55750000,PE,Surubim,,,-7.8424353,-35.7539722,brasilapi,brasilapi,2026-02-23T23:49:23.166Z
+56321260,PE,Petrolina,Antônio Cassimiro,Rua Açucena,-9.3605321,-40.5083509,brasilapi,brasilapi,2026-02-23T23:49:23.349Z
+56820000,PE,Carnaíba,,,-7.805964,-37.7947314,brasilapi,brasilapi,2026-02-23T23:49:23.543Z
+56870000,PE,Triunfo,,,-7.8362959,-38.1042617,brasilapi,brasilapi,2026-02-23T23:49:23.732Z
+56918000,PE,Serra Talhada,Luanda,,-7.99194,-38.29833,brasilapi,open-meteo,2026-02-23T23:49:24.117Z
+57035060,AL,Maceió,Ponta Verde,Rua Durval Guimarães,-9.6620031,-35.7079004,brasilapi,brasilapi,2026-02-23T23:49:24.311Z
+57035690,AL,Maceió,Jatiúca,Avenida Hamilton de Barros Soutinho,-9.66583,-35.73528,brasilapi,open-meteo,2026-02-23T23:49:24.689Z
+57039710,AL,Maceió,Ipioca,Rua Djanira Bezerra de Omena,-9.5280179,-35.6059975,brasilapi,brasilapi,2026-02-23T23:49:24.879Z
+57045425,,,,,,,,,2026-02-23T23:49:56.635Z
+57046512,AL,Maceió,Serraria,Quadra B,-9.66583,-35.73528,brasilapi,open-meteo,2026-02-23T23:49:39.033Z
+57052827,AL,Maceió,Gruta de Lourdes,Rua Hugo Corrêa Paes,-9.6210189,-35.7366898,brasilapi,brasilapi,2026-02-23T23:49:39.227Z
+57061210,AL,Maceió,Tabuleiro do Martins,Rua Dona Maria de Lourdes Brandão,-9.5936889,-35.7633216,brasilapi,brasilapi,2026-02-23T23:49:39.414Z
+57062043,AL,Maceió,Petrópolis,Rua São Luiz,-9.5979148,-35.7601674,brasilapi,brasilapi,2026-02-23T23:49:39.609Z
+57071200,AL,Maceió,Clima Bom,Rua Petronila Rodrigues,-9.66583,-35.73528,brasilapi,open-meteo,2026-02-23T23:49:39.808Z
+57080040,AL,Maceió,Canaã,Rua Taquarana,-9.6044732,-35.7371882,brasilapi,brasilapi,2026-02-23T23:49:39.808Z
+57085064,AL,Maceió,Benedito Bentes,Rua C-60,-9.5607065,-35.723972,brasilapi,brasilapi,2026-02-23T23:49:39.992Z
+57160000,AL,Marechal Deodoro,,,-9.71028,-35.895,brasilapi,open-meteo,2026-02-23T23:49:40.700Z
+57200000,AL,Penedo,,,-10.29028,-36.58639,brasilapi,open-meteo,2026-02-23T23:49:40.893Z
+57246470,AL,São Miguel dos Campos,Hélio Jatobá,Quadra E-4,-9.78111,-36.09361,brasilapi,open-meteo,2026-02-23T23:49:41.073Z
+57260000,AL,Limoeiro de Anadia,,,-9.7389667,-36.5015847,brasilapi,brasilapi,2026-02-23T23:49:41.092Z
+57318450,AL,Arapiraca,Bananeiras,,-9.7525,-36.66111,brasilapi,open-meteo,2026-02-23T23:49:41.462Z
+57390000,AL,Olho D'Água Grande,,,-10.056075,-36.8135254,brasilapi,brasilapi,2026-02-23T23:49:41.278Z
+57445000,AL,São José da Tapera,,,-9.5584287,-37.3818893,brasilapi,brasilapi,2026-02-23T23:49:41.468Z
+57935000,AL,Paripueira,,,-9.465,-35.55167,brasilapi,open-meteo,2026-02-23T23:49:41.840Z
+58038323,PB,João Pessoa,Manaíra,Avenida Monteiro da Franca,-7.105501,-34.8347832,brasilapi,brasilapi,2026-02-23T23:49:41.657Z
+58051280,PB,João Pessoa,Bancários,Rua Bancário Aylsio José da Silva,-7.115,-34.86306,brasilapi,open-meteo,2026-02-23T23:49:42.024Z
+58052510,PB,João Pessoa,Jardim Cidade Universitária,Rua Bacharel Wilson Flávio Moreira Coutinho,-7.1580255,-34.8297833,brasilapi,brasilapi,2026-02-23T23:49:42.033Z
+58117000,PB,Lagoa Seca,,,-7.157099,-35.8542023,brasilapi,brasilapi,2026-02-23T23:49:42.220Z
+58119000,PB,São Sebastião de Lagoa de Roça,,,-7.10552,-35.86855,brasilapi,open-meteo,2026-02-23T23:49:42.399Z
+58157000,,,,,,,,,2026-02-23T23:50:14.216Z
+58175000,PB,Cuité,,,-6.48361,-36.15361,brasilapi,open-meteo,2026-02-23T23:49:42.778Z
+58178000,PB,Nova Floresta,,,-6.4554313,-36.2040005,brasilapi,brasilapi,2026-02-23T23:49:42.969Z
+58233000,PB,Araruna,,,-6.5321155,-35.7397595,brasilapi,brasilapi,2026-02-23T23:49:43.171Z
+58235000,PB,Riachão,,,-6.54085,-35.66095,brasilapi,open-meteo,2026-02-23T23:49:43.537Z
+58255000,PB,Belém,,,-6.69167,-35.53333,brasilapi,open-meteo,2026-02-23T23:49:43.916Z
+58288899,,,,,,,,,2026-02-23T23:50:15.883Z
+58401381,PB,Campina Grande,Lauritzen,Rua Coronel Américo Porto,-7.23056,-35.88111,brasilapi,open-meteo,2026-02-23T23:49:54.124Z
+58407503,PB,Campina Grande,José Pinheiro,Rua João Lélis,-7.2288631,-35.8716417,brasilapi,brasilapi,2026-02-23T23:49:54.319Z
+58595000,PB,Caraúbas,,,-7.72073,-36.49401,brasilapi,open-meteo,2026-02-23T23:49:54.699Z
+58610000,PB,São José do Sabugi,,,-6.77556,-36.79889,brasilapi,open-meteo,2026-02-23T23:49:55.077Z
+58703000,PB,Patos,Liberdade,Rua do Prado,-7.02444,-37.28,brasilapi,open-meteo,2026-02-23T23:49:55.456Z
+58735000,PB,Teixeira,,,-7.221036,-37.252477,brasilapi,brasilapi,2026-02-23T23:49:55.652Z
+58763000,PB,Emas,,,-7.10778,-37.71556,brasilapi,open-meteo,2026-02-23T23:49:56.020Z
+58925000,PB,Santa Helena,,,-7.09293,-35.14952,brasilapi,open-meteo,2026-02-23T23:49:56.404Z
+59104210,RN,Natal,Igapó,Rua Alvorada,-5.7718468,-35.2605897,brasilapi,brasilapi,2026-02-23T23:49:56.595Z
+59108120,RN,Natal,Potengi,Avenida Paulistana,-5.795,-35.20944,brasilapi,open-meteo,2026-02-23T23:49:56.987Z
+59133090,RN,Natal,Pajuçara,Avenida Moema Tinoco da Cunha Lima,-5.7371015,-35.2268554,brasilapi,brasilapi,2026-02-23T23:49:56.825Z
+59152600,RN,Parnamirim,Nova Parnamirim,Avenida Maria Lacerda Montenegro,-5.8892189,-35.2080751,brasilapi,brasilapi,2026-02-23T23:49:57.013Z
+59200000,RN,Santa Cruz,,,-6.224752,-36.019297,brasilapi,brasilapi,2026-02-23T23:49:57.213Z
+59275000,RN,São José do Campestre,,,-6.3148531,-35.7128188,brasilapi,brasilapi,2026-02-23T23:49:57.196Z
+59280000,RN,Macaíba,,,-5.85833,-35.35389,brasilapi,open-meteo,2026-02-23T23:49:57.571Z
+59280055,RN,Macaíba,Fabrício Pedroza,Rua Estevam Moura,-5.85833,-35.35389,brasilapi,open-meteo,2026-02-23T23:49:58.119Z
+59281720,RN,Macaíba,Zona de Expansão Urbana Sul,Rua Alameda de Santo Antônio,-5.85833,-35.35389,brasilapi,open-meteo,2026-02-23T23:49:57.768Z
+59288899,RN,Macaíba,Área Rural de Macaíba,Área Rural,-5.85833,-35.35389,brasilapi,open-meteo,2026-02-23T23:49:57.965Z
+59300000,RN,Caicó,,,-6.4594544,-37.0971911,brasilapi,brasilapi,2026-02-23T23:49:58.154Z
+59338000,RN,Tenente Laurentino Cruz,,,-6.14806,-36.71917,brasilapi,open-meteo,2026-02-23T23:49:58.491Z
+59340000,RN,São Vicente,,,-23.96306,-46.39194,brasilapi,open-meteo,2026-02-23T23:49:58.522Z
+59380000,RN,Currais Novos,,,-6.26083,-36.51778,brasilapi,open-meteo,2026-02-23T23:49:58.888Z
+59390000,RN,Lagoa Nova,,,-6.09401,-36.47219,brasilapi,open-meteo,2026-02-23T23:49:58.908Z
+59625631,RN,Mossoró,Pintos,Rua Genésio Caetano de Souza,-5.1875,-37.34417,brasilapi,open-meteo,2026-02-23T23:49:59.264Z
+59628394,RN,Mossoró,Presidente Costa e Silva,Rua Sabino Maciel Júnior,-5.2196642,-37.3186001,brasilapi,brasilapi,2026-02-23T23:49:59.106Z
+59631380,RN,Mossoró,Planalto Treze de Maio,Rua Farias,-5.2185409,-37.3405513,brasilapi,brasilapi,2026-02-23T23:49:59.304Z
+60135285,CE,Fortaleza,Aldeota,Rua Rocha Lima,-3.7358645,-38.5238802,brasilapi,brasilapi,2026-02-23T23:49:59.459Z
+60332490,CE,Fortaleza,Barra do Ceará,Rua do Poente,-3.6990661,-38.5809338,brasilapi,brasilapi,2026-02-23T23:49:59.499Z
+60411136,CE,Fortaleza,Benfica,Avenida dos Expedicionários,-3.7458695,-38.5353431,brasilapi,brasilapi,2026-02-23T23:49:59.658Z
+60540265,CE,Fortaleza,Granja Lisboa,Rua Doutor Fernando Augusto,-3.7857961,-38.6267504,brasilapi,brasilapi,2026-02-23T23:49:59.691Z
+60540604,CE,Fortaleza,Granja Lisboa,Rua Mirtes Cordeiro,-3.7851459,-38.6110692,brasilapi,brasilapi,2026-02-23T23:49:59.853Z
+61661152,CE,Caucaia,Granja Lisboa,Rua Mateus Lemos,-3.73611,-38.65306,brasilapi,open-meteo,2026-02-23T23:50:00.057Z
+61700000,CE,Aquiraz,,,-3.9050805,-38.3896098,brasilapi,brasilapi,2026-02-23T23:50:00.051Z
+62300000,CE,Viçosa do Ceará,,,-3.5667684,-41.091504,brasilapi,brasilapi,2026-02-23T23:50:00.249Z
+62540000,CE,Amontada,,,-3.36167,-39.83167,brasilapi,open-meteo,2026-02-23T23:50:00.429Z
+62670000,CE,São Gonçalo do Amarante,,,-3.60722,-38.96833,brasilapi,open-meteo,2026-02-23T23:50:00.636Z
+62736000,CE,Paramoti,,,-4.09694,-39.23944,brasilapi,open-meteo,2026-02-23T23:50:00.810Z
+63028400,CE,Juazeiro do Norte,Timbaúba,Rua Coronel Francisco Figueira Cruz,-7.21306,-39.31528,brasilapi,open-meteo,2026-02-23T23:50:01.009Z
+63033410,CE,Juazeiro do Norte,José Geraldo da Cruz,Rua Francisco Firmino de Lavor,-7.21306,-39.31528,brasilapi,open-meteo,2026-02-23T23:50:01.213Z
+63041100,CE,Juazeiro do Norte,Triângulo,Rua Maria Aurora da Conceição,-7.2290205,-39.3298862,brasilapi,brasilapi,2026-02-23T23:50:01.203Z
+63049376,CE,Juazeiro do Norte,Campo Alegre,Rua José Sitônio Rosas,-7.21306,-39.31528,brasilapi,open-meteo,2026-02-23T23:50:01.401Z
+63130468,CE,Crato,Nossa Senhora de Fátima,Rua Antônio Marcelino Santana,-7.23417,-39.40944,brasilapi,open-meteo,2026-02-23T23:50:01.692Z
+63660000,CE,Tauá,,,-6.0031372,-40.2947268,brasilapi,brasilapi,2026-02-23T23:50:01.585Z
+63736000,CE,Crateús,Realejo,,-5.17833,-40.6775,brasilapi,open-meteo,2026-02-23T23:50:02.092Z
+63740000,CE,Novo Oriente,,,-5.5350339,-40.7748902,brasilapi,brasilapi,2026-02-23T23:50:01.886Z
+64000380,PI,Teresina,Centro,Rua Tiradentes,-5.0823014,-42.8166747,brasilapi,brasilapi,2026-02-23T23:50:02.072Z
+64025565,PI,Teresina,Parque Piauí,Rua Itapuã,-5.08917,-42.80194,brasilapi,open-meteo,2026-02-23T23:50:02.439Z
+64027190,PI,Teresina,Promorar,Quadra Raimundo Portela,-5.08917,-42.80194,brasilapi,open-meteo,2026-02-23T23:50:02.471Z
+64028230,PI,Teresina,Santo Antônio,Rua Tocantins,-5.08917,-42.80194,brasilapi,open-meteo,2026-02-23T23:50:02.635Z
+64032122,PI,Teresina,Santo Antônio,Rua São Jorge,-5.08917,-42.80194,brasilapi,open-meteo,2026-02-23T23:50:02.679Z
+64039558,PI,Teresina,Esplanada,Residencial Torquato Neto IV,-5.08917,-42.80194,brasilapi,open-meteo,2026-02-23T23:50:02.838Z
+64048350,PI,Teresina,Jóquei,Rua General Lages,-5.0669058,-42.7866095,brasilapi,brasilapi,2026-02-23T23:50:02.872Z
+64066190,PI,Teresina,Cidade Jardim,Rua Luiz Martírios de Moura,-5.08917,-42.80194,brasilapi,open-meteo,2026-02-23T23:50:03.022Z
+64075500,PI,Teresina,Beira Rio,Rua Jacinto Rufino Macedo,-5.1069819,-42.7729844,brasilapi,brasilapi,2026-02-23T23:50:03.066Z
+64078474,PI,Teresina,Itararé,Quadra 342,-5.08917,-42.80194,brasilapi,open-meteo,2026-02-23T23:50:03.209Z
+64079255,PI,Teresina,Novo Horizonte,Rua Três,-5.08917,-42.80194,brasilapi,open-meteo,2026-02-23T23:50:03.260Z
+64085300,PI,Teresina,São Sebastião,Conjunto Todos os Santos,-5.08917,-42.80194,brasilapi,open-meteo,2026-02-23T23:50:03.394Z
+64100000,PI,Barras,,,-4.2446153,-42.2920241,brasilapi,brasilapi,2026-02-23T23:50:03.455Z
+64235000,PI,Cocal,,,-3.4691882,-41.555851,brasilapi,brasilapi,2026-02-23T23:50:03.581Z
+64255000,PI,Pedro II,,,-4.4252673,-41.458407,brasilapi,brasilapi,2026-02-23T23:50:03.644Z
+64260000,PI,Piripiri,,,-4.2732339,-41.7785173,brasilapi,brasilapi,2026-02-23T23:50:03.776Z
+64280000,PI,Campo Maior,,,-4.8339574,-42.1739786,brasilapi,brasilapi,2026-02-23T23:50:03.844Z
+64283000,PI,Boqueirão do Piauí,,,-4.48667,-42.07389,brasilapi,open-meteo,2026-02-23T23:50:04.193Z
+64330000,PI,São Miguel do Tapuio,,,-5.5015262,-41.3214276,brasilapi,brasilapi,2026-02-23T23:50:04.029Z
+64500000,PI,Oeiras,,,-7.0174887,-42.1314478,brasilapi,brasilapi,2026-02-23T23:50:04.217Z
+64565000,PI,Itainópolis,,,-7.4483425,-41.4796645,brasilapi,brasilapi,2026-02-23T23:50:04.388Z
+64585000,PI,Simões,,,-7.5970469,-40.8176003,brasilapi,brasilapi,2026-02-23T23:50:04.403Z
+64608081,PI,Picos,Parque de Exposição,Rua Santo Antonio de Lisboa,-7.07694,-41.46694,brasilapi,open-meteo,2026-02-23T23:50:04.760Z
+64680000,PI,Padre Marcos,,,-7.3534527,-40.9063953,brasilapi,brasilapi,2026-02-23T23:50:04.591Z
+64750000,PI,Paulistana,,,-8.1389174,-41.1380533,brasilapi,brasilapi,2026-02-23T23:50:04.791Z
+64800014,PI,Floriano,Centro,Rua Godofredo Messias,-6.76694,-43.0225,brasilapi,open-meteo,2026-02-23T23:50:05.151Z
+64808750,PI,Floriano,Meladão,Rua Francisco Soares,-6.7961703,-43.0456556,brasilapi,brasilapi,2026-02-23T23:50:04.977Z
+64900000,PI,Bom Jesus,,,-9.07444,-44.35861,brasilapi,open-meteo,2026-02-23T23:50:05.356Z
+64980000,PI,Corrente,,,-10.4401356,-45.1627472,brasilapi,brasilapi,2026-02-23T23:50:05.341Z
+65058637,MA,São Luís,Santa Clara,Rua Bom Jesus,-2.6601069,-44.2599493,brasilapi,brasilapi,2026-02-23T23:50:05.524Z
+65068500,MA,São Luís,Turu,Avenida Mário Andreazza,-2.5008798,-44.234704,brasilapi,brasilapi,2026-02-23T23:50:05.542Z
+65076764,MA,São Luís,São Francisco,1ª Travessa da Croa,-2.5163864,-44.3059497,brasilapi,brasilapi,2026-02-23T23:50:05.713Z
+65081440,MA,São Luís,Vila Embratel,Avenida Orquídeas,-2.5784811,-44.2990071,brasilapi,brasilapi,2026-02-23T23:50:05.740Z
+65082183,MA,São Luís,Alto Esperança,Rua do Areial,-2.52972,-44.30278,brasilapi,open-meteo,2026-02-23T23:50:06.108Z
+65110000,MA,São José de Ribamar,,,-2.5609115,-44.0559509,brasilapi,brasilapi,2026-02-23T23:50:05.959Z
+65113493,MA,São José de Ribamar,Moropóia,Travessa do Poço,-2.55572,-44.05992,viacep,open-meteo,2026-02-23T23:50:37.924Z
+65115240,MA,São José de Ribamar,Riozinho,Via de Acesso ao Village dos Pássaros,-2.55572,-44.05992,brasilapi,open-meteo,2026-02-23T23:50:06.553Z
+65123895,MA,São José de Ribamar,Miritíua,Rua Sampaio Corrêa,-2.55572,-44.05992,brasilapi,open-meteo,2026-02-23T23:50:06.743Z
+65130000,MA,Paço do Lumiar,,,-2.51894,-44.10852,brasilapi,open-meteo,2026-02-23T23:50:07.130Z
+65500000,MA,Chapadinha,,,-3.74167,-43.36028,brasilapi,open-meteo,2026-02-23T23:50:07.505Z
+65609620,MA,Caxias,Salobro,Rua do Parnazio,-4.85889,-43.35611,brasilapi,open-meteo,2026-02-23T23:50:07.876Z
+65620000,MA,Coelho Neto,,,-4.2535154,-43.0149321,brasilapi,brasilapi,2026-02-23T23:50:08.110Z
+65633220,MA,Timon,Parque Alvorada,Rua Adamastor Oliveira,-5.1306533,-42.8349674,brasilapi,brasilapi,2026-02-23T23:50:08.305Z
+65700000,MA,Bacabal,,,-4.2318132,-44.781167,brasilapi,brasilapi,2026-02-23T23:50:08.496Z
+65908009,MA,Imperatriz,Vila Ipiranga,Rua B,-5.52639,-47.49167,brasilapi,open-meteo,2026-02-23T23:50:08.940Z
+65919010,MA,Imperatriz,Santa Rita,Rua Padre Cícero,-5.5018953,-47.4880912,brasilapi,brasilapi,2026-02-23T23:50:09.137Z
+65930000,MA,Açailândia,,,-4.9515026,-47.500732,brasilapi,brasilapi,2026-02-23T23:50:09.327Z
+65943000,MA,Formosa da Serra Negra,,,-6.4437601,-46.1905789,brasilapi,brasilapi,2026-02-23T23:50:09.518Z
+66087810,PA,Belém,Pedreira,Avenida Doutor Freitas,-1.4230192,-48.4572731,brasilapi,brasilapi,2026-02-23T23:50:09.715Z
+66613850,PA,Belém,Souza,Passagem Tito Franco,-1.45583,-48.50444,brasilapi,open-meteo,2026-02-23T23:50:10.092Z
+66635110,PA,Belém,Parque Verde,Rodovia Augusto Montenegro,-1.3688275,-48.4458738,brasilapi,brasilapi,2026-02-23T23:50:10.284Z
+67120460,PA,Ananindeua,Quarenta Horas (Coqueiro),Travessa Visconde do Rio Branco,-1.36556,-48.37222,brasilapi,open-meteo,2026-02-23T23:50:10.673Z
+68148000,PA,Brasil Novo,,,-3.3055853,-52.539198,brasilapi,brasilapi,2026-02-23T23:50:10.865Z
+68626727,PA,Paragominas,Tropical,Avenida Professor Manoel Pereira da Silva,-2.99565,-47.35488,brasilapi,open-meteo,2026-02-23T23:50:11.238Z
+68627300,PA,Paragominas,Jardim Atlântico,Rua Trindade,-2.99565,-47.35488,brasilapi,open-meteo,2026-02-23T23:50:11.425Z
+68628531,PA,Paragominas,Promissão,Rua Elias Nogueira,-2.979735,-47.345027,brasilapi,brasilapi,2026-02-23T23:50:11.613Z
+68870000,PA,Soure,,,-0.71667,-48.52333,brasilapi,open-meteo,2026-02-23T23:50:11.982Z
+68928337,AP,Santana,Fonte Nova,Rua Antônio Abilio Rodrigues,-0.03816,-51.17476,brasilapi,open-meteo,2026-02-23T23:50:12.381Z
+68980000,AP,Oiapoque,,,3.84306,-51.835,brasilapi,open-meteo,2026-02-23T23:50:12.764Z
+69317102,RR,Boa Vista,Santa Luzia,Rua José Cassimiro da Silva,2.81972,-60.67333,brasilapi,open-meteo,2026-02-23T23:50:13.139Z
+69317382,RR,Boa Vista,Equatorial,Rua Nordeste,2.8155648,-60.778534,brasilapi,brasilapi,2026-02-23T23:50:13.332Z
+69735000,AM,Presidente Figueiredo,,,-2.0486359,-60.0236658,brasilapi,brasilapi,2026-02-23T23:50:13.534Z
+69909730,AC,Rio Branco,Vila Acre,Rodovia AC-40,-10.0536542,-67.7773428,brasilapi,brasilapi,2026-02-23T23:50:13.729Z
+69921162,AC,Rio Branco,Conjunto Adalberto Sena,Rua João Nascimento,-9.97472,-67.81,brasilapi,open-meteo,2026-02-23T23:50:14.106Z
+70278040,DF,Brasília,Asa Sul,Quadra SQS 412 Bloco D,-15.77972,-47.92972,brasilapi,open-meteo,2026-02-23T23:50:14.488Z
+71020122,DF,Brasília,Guará I,Quadra QI 3 Conjunto L,-15.77972,-47.92972,brasilapi,open-meteo,2026-02-23T23:50:15.127Z
+72210232,DF,Brasília,Ceilândia Norte (Ceilândia),Quadra QNM 22 Conjunto L,-15.77972,-47.92972,brasilapi,open-meteo,2026-02-23T23:50:14.671Z
+72220255,DF,Brasília,Ceilândia Sul (Ceilândia),Quadra QNN 24 Conjunto O,-15.77972,-47.92972,brasilapi,open-meteo,2026-02-23T23:50:14.858Z
+72231617,DF,Brasília,Ceilândia Sul (Ceilândia),Quadra QNP 16 Conjunto Q,-15.77972,-47.92972,brasilapi,open-meteo,2026-02-23T23:50:15.045Z
+72583500,DF,Brasília,Setor Meireles (Santa Maria),Avenida Monumental,-15.77972,-47.92972,brasilapi,open-meteo,2026-02-23T23:50:15.233Z
+72878201,GO,Valparaíso de Goiás,Cidade Jardins,Quadra QC 01 Conjunto A,-16.06583,-47.97861,brasilapi,open-meteo,2026-02-23T23:50:15.509Z
+74030060,GO,Goiânia,Setor Central,Rua 24,-16.6766761,-49.2512199,brasilapi,brasilapi,2026-02-23T23:50:15.421Z
+76861000,RO,Itapuã do Oeste,,,-9.189646,-63.1910097,brasilapi,brasilapi,2026-02-23T23:50:15.642Z
+77300000,TO,Dianópolis,,,-11.624008,-46.819787,brasilapi,brasilapi,2026-02-23T23:50:15.705Z
+77360000,TO,Paranã,,,-6.3,-38.46667,brasilapi,open-meteo,2026-02-23T23:50:16.053Z
+77895000,TO,Nazaré,,,-6.3733313,-47.6632702,brasilapi,brasilapi,2026-02-23T23:50:15.906Z
+77970000,TO,Praia Norte,,,-5.392812,-47.811144,brasilapi,brasilapi,2026-02-23T23:50:16.106Z
+78070000,MT,Cuiabá,Jardim Petrópolis,Avenida Fernando Correa da Costa,-15.59611,-56.09667,brasilapi,open-meteo,2026-02-23T23:50:16.281Z
+78099047,MT,Cuiabá,Pedra 90,Rua D,-15.6196764,-55.9524143,brasilapi,brasilapi,2026-02-23T23:50:16.242Z
+78304130,MT,Tangará da Serra,Parque Tangará,Rua Valdemar José da Cruz,-14.61944,-57.48583,brasilapi,open-meteo,2026-02-23T23:50:16.471Z
+78320000,MT,Juína,,,-11.4230908,-58.7570212,brasilapi,brasilapi,2026-02-23T23:50:16.465Z
+78590000,MT,Paranaíta,,,-9.6655602,-56.4758122,brasilapi,brasilapi,2026-02-23T23:50:16.486Z
+78714226,MT,Rondonópolis,Jardim Gramado II,Rua Maracaju,-16.4391704,-54.6347276,brasilapi,brasilapi,2026-02-23T23:50:16.651Z
+78890000,,,,,,,,,2026-02-23T23:50:48.487Z
+79100370,MS,Campo Grande,Santo Antônio,Rua Doutor Napoleão Laureano,-20.4531996,-54.654966,brasilapi,brasilapi,2026-02-23T23:50:16.682Z
+79112050,MS,Campo Grande,Vila Santo Amaro,Rua Gomes Freire,-20.4474835,-54.6491796,brasilapi,brasilapi,2026-02-23T23:50:16.833Z
+79311011,MS,Corumbá,Cristo Redentor,Alameda José de Barros Maciel,-19.0255332,-57.6447552,brasilapi,brasilapi,2026-02-23T23:50:16.868Z
+79902502,MS,Ponta Porã,Coophafronteira,Avenida Belmiro de Albuquerque,-22.5066221,-55.7230868,brasilapi,brasilapi,2026-02-23T23:50:17.022Z
+80215202,PR,Curitiba,Prado Velho,Rua Francisco Nunes,-25.4594347,-49.2536376,brasilapi,brasilapi,2026-02-23T23:50:17.056Z
+81520010,PR,Curitiba,Jardim das Américas,Rua Joaquim Augusto de Andrade,-25.42778,-49.27306,brasilapi,open-meteo,2026-02-23T23:50:17.394Z
+83602210,PR,Campo Largo,Jardim São Vicente,Rua Alcebíades Affonso Guimarães,-25.45955,-49.53014,brasilapi,open-meteo,2026-02-23T23:50:17.429Z
+85178890,PR,Pinhão,Área Rural (Faxinal do Céu),Área Rural,-25.69556,-51.65972,brasilapi,open-meteo,2026-02-23T23:50:17.790Z
+85180970,PR,Pinhão,Faxinal do Céu,Rua Rio Paranapanema,-25.69556,-51.65972,brasilapi,open-meteo,2026-02-23T23:50:17.810Z
+85740000,PR,Pérola d'Oeste,,,-25.82502,-53.74051,brasilapi,open-meteo,2026-02-23T23:50:18.160Z
+85743000,PR,Pérola d'Oeste,Conciolândia,,-25.82502,-53.74051,brasilapi,open-meteo,2026-02-23T23:50:18.199Z
+85892045,PR,Santa Helena,Centro,Rua Argentina,-24.8684039,-54.3393028,brasilapi,brasilapi,2026-02-23T23:50:18.352Z
+86062000,PR,Londrina,Campo Belo,Rua Cristiano Machado,-23.3027711,-51.1810473,brasilapi,brasilapi,2026-02-23T23:50:18.403Z
+86070500,PR,Londrina,Jardim Shangri-la A,Rua Euclides da Cunha,-23.2997273,-51.1788989,brasilapi,brasilapi,2026-02-23T23:50:18.542Z
+86220000,PR,Assaí,,,-23.3736041,-50.8454929,brasilapi,brasilapi,2026-02-23T23:50:18.604Z
+86362503,PR,Bandeirantes,Setor 1,Rua Gregório Magalhães Trindade,-23.11,-50.3675,brasilapi,open-meteo,2026-02-23T23:50:18.922Z
+86370000,PR,Santa Amélia,,,-23.26583,-50.42417,brasilapi,open-meteo,2026-02-23T23:50:18.984Z
+86707260,PR,Arapongas,Jardim Lorena,Rua Codornix,-23.4219956,-51.4294308,brasilapi,brasilapi,2026-02-23T23:50:19.118Z
+86828000,PR,Mauá da Serra,,,-23.9045517,-51.2261166,brasilapi,brasilapi,2026-02-23T23:50:19.185Z
+86865000,PR,Lidianópolis,,,-24.1073464,-51.6525676,brasilapi,brasilapi,2026-02-23T23:50:19.305Z
+87010355,PR,Maringá,Zona 02,Avenida São Paulo,-23.4389487,-51.9244585,brasilapi,brasilapi,2026-02-23T23:50:19.391Z
+87020010,PR,Maringá,Zona 07,Avenida Prudente de Morais,-23.4156858,-51.9413528,brasilapi,brasilapi,2026-02-23T23:50:19.491Z
+87020440,PR,Maringá,Vila Esperança,Rua Alencar de Oliveira Paiva,-23.4017913,-51.9474469,brasilapi,brasilapi,2026-02-23T23:50:19.588Z
+87020600,PR,Maringá,Vila Esperança,Rua Júlio Favoretto,-23.4013075,-51.9389752,brasilapi,brasilapi,2026-02-23T23:50:19.678Z
+87302200,PR,Campo Mourão,Centro,Rua Prefeito Roberto Brzezinski,-24.04309,-52.37929,brasilapi,open-meteo,2026-02-23T23:50:19.977Z
+89012170,SC,Blumenau,Victor Konder,Rua Victor Konder,-26.9113011,-49.0754098,brasilapi,brasilapi,2026-02-23T23:50:19.867Z
+89012340,SC,Blumenau,Boa Vista,Rua Henrique Krohberger,-26.900259,-49.0655093,brasilapi,brasilapi,2026-02-23T23:50:20.070Z
+89057100,SC,Blumenau,Fortaleza,Rua Agrolândia,-26.91944,-49.06611,brasilapi,open-meteo,2026-02-23T23:50:20.357Z
+89172000,SC,Pouso Redondo,,,-27.2567443,-49.9331593,brasilapi,brasilapi,2026-02-23T23:50:20.255Z
+89207600,SC,Joinville,Guanabara,Rua Ursa Maior,-26.3204429,-48.8277529,brasilapi,brasilapi,2026-02-23T23:50:20.444Z
+89254198,SC,Jaraguá do Sul,Três Rios do Sul,Rua Três Marias,-26.4569537,-49.1192455,brasilapi,brasilapi,2026-02-23T23:50:20.551Z
+89504593,SC,Caçador,Reunidas,Rua Presciliana Aires de Arruda Maia,-26.77528,-51.015,brasilapi,open-meteo,2026-02-23T23:50:20.816Z
+89600000,SC,Joaçaba,,,-27.1737204,-51.5065214,brasilapi,brasilapi,2026-02-23T23:50:20.738Z
+89825000,SC,Xaxim,,,-26.9605363,-52.5335505,brasilapi,brasilapi,2026-02-23T23:50:20.922Z
+94000001,,,,,,,,,2026-02-23T23:50:52.782Z
+95043630,RS,Caxias do Sul,São José,Rua João Scarpini,-29.16806,-51.17944,brasilapi,open-meteo,2026-02-23T23:50:21.295Z
+95520000,RS,Osório,,,-29.8890733,-50.2740498,brasilapi,brasilapi,2026-02-23T23:50:21.495Z
+96780224,RS,Camaquã,Jardim do Forte,Rua Teodolino Gomes de Andrade,-30.85111,-51.81222,brasilapi,open-meteo,2026-02-23T23:50:21.888Z
+96822740,RS,Santa Cruz do Sul,Linha Santa Cruz,Estrada Linha Áustria,-29.6621432,-52.3832713,brasilapi,brasilapi,2026-02-23T23:50:22.079Z
+96843522,RS,Santa Cruz do Sul,Santuário,Rua Santa Marcelina,-29.7175,-52.42583,brasilapi,open-meteo,2026-02-23T23:50:22.467Z
+96930000,RS,Candelária,,,-29.6662728,-52.799719,brasilapi,brasilapi,2026-02-23T23:50:22.654Z
+97940000,RS,Salvador das Missões,,,-28.12639,-54.83528,brasilapi,open-meteo,2026-02-23T23:50:23.020Z
+98390000,RS,Erval Seco,,,-27.5511418,-53.506851,brasilapi,brasilapi,2026-02-23T23:50:23.216Z
+98750000,RS,Ajuricaba,,,-28.239654,-53.7693013,brasilapi,brasilapi,2026-02-23T23:50:23.411Z
+98794164,RS,Santa Rosa,Planalto,Rua Professor Liberato Salzano,14.31222,121.11139,brasilapi,open-meteo,2026-02-23T23:50:23.811Z
+98865000,RS,São Miguel das Missões,,,-28.5451471,-54.5469209,brasilapi,brasilapi,2026-02-23T23:50:24.002Z
+98910000,RS,Três de Maio,,,-27.7799415,-54.2356626,brasilapi,brasilapi,2026-02-23T23:50:24.183Z
+99965000,RS,Água Santa,,,19.18833,-96.91694,brasilapi,open-meteo,2026-02-23T23:50:24.554Z
