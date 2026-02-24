@@ -2199,7 +2199,7 @@
       const requestId = ++state.requestSeq;
 
       setLoadingState(true);
-      setBootLoadingGate(true, "Carregando dados do banco...");
+      setBootLoadingGate(true, "Carregando dados mais recentes...");
       if (showLoadingToast) showToast("Carregando dados...", "info");
       console.debug("[UI] [data] refresh:start", { requestId, reason, filters: { ...state.filters } });
 
