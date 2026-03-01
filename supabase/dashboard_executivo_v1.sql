@@ -22,6 +22,9 @@ create index if not exists participantes_escalada_uf_publico_circle_idx
 create index if not exists participantes_escalada_subscriptedat_circle_idx
   on public."Participantes Escalada" ("SubscriptedAt", "Circle ID");
 
+create index if not exists participantes_escalada_circle_subscriptedat_desc_idx
+  on public."Participantes Escalada" ("Circle ID", "SubscriptedAt" desc);
+
 create index if not exists participantes_escalada_cep_norm_idx
   on public."Participantes Escalada" ((regexp_replace(coalesce(cep, ''), '\D', '', 'g')));
 
@@ -36,6 +39,9 @@ create index if not exists acoes_usuarios_usuario_criado_tipo_idx
 
 create index if not exists acoes_usuarios_tipo_criado_usuario_idx
   on public.acoes_usuarios (tipo, criado_em, usuario_id);
+
+create index if not exists acoes_usuarios_lower_tipo_criado_usuario_idx
+  on public.acoes_usuarios ((lower(coalesce(tipo, ''))), criado_em, usuario_id);
 
 -- base geografica por CEP (lat/lng); carga externa
 create table if not exists public.geo_ceps (
@@ -55,7 +61,7 @@ create index if not exists geo_ceps_cep_norm_lpad_idx
 
 
 -- =========================================================
--- FUNCAO (mesmo nome): otimizada + by_cep (inscricoes/atendimentos)
+-- FUNCAO (mesmo nome): otimizada + by_cidade (inscricoes/atendimentos/acoes) e by_cep resumido
 -- =========================================================
 create or replace function public.dashboard_executivo_v1(
   p_date_from date default null,
@@ -82,13 +88,22 @@ declare
     'aula',
     'quiz',
     'download',
+    'ebook',
+    'artigo',
+    'e-book',
     'evento',
     'aula (aparte)',
     'quiz (aparte)',
     'download (aparte)',
+    'ebook (aparte)',
+    'artigo (aparte)',
+    'e-book (aparte)',
     'aula (hackathon)',
     'quiz (hackathon)',
-    'download (hackathon)'
+    'download (hackathon)',
+    'ebook (hackathon)',
+    'artigo (hackathon)',
+    'e-book (hackathon)'
   ];
 begin
   -- range total index-friendly (evita full scan com min/max + cast)
@@ -181,7 +196,7 @@ begin
       and
       coalesce(p."UF", '') <> '[]'
   ),
-  participants_join as (
+  participants_join as materialized (
     select distinct on (usuario_id)
       usuario_id,
       coalesce(uf, 'N/A') as uf,
@@ -193,7 +208,7 @@ begin
     where usuario_id is not null
     order by usuario_id, sub_dt desc nulls last
   ),
-  participants_period as (
+  participants_period as materialized (
     select *
     from participants_raw
     where sub_dt between p_date_from and p_date_to
@@ -213,14 +228,14 @@ begin
     where
       a.criado_em >= p_date_from
       and a.criado_em < (p_date_to + 1)
-      and a.tipo = any(v_allowed_types)
+      and lower(coalesce(a.tipo, '')) = any(v_allowed_types)
   ),
-  actions as (
+  actions as materialized (
     select
       a.usuario_id,
       a.dt,
       a.tipo,
-      btrim(regexp_replace(a.tipo, '\s*\([^)]*\)\s*$', '', 'g')) as tipo_pai,
+      btrim(regexp_replace(lower(coalesce(a.tipo, '')), '\s*\([^)]*\)\s*$', '', 'g')) as tipo_pai,
       coalesce(a.nome_item, 'N/A') as nome_item,
       p.uf,
       p.cidade,
@@ -376,95 +391,114 @@ begin
     ) x
     group by uf, cidade
   ),
+  cidade_acoes_tipo as (
+    select
+      coalesce(uf, 'N/A') as uf,
+      coalesce(cidade, 'N/A') as cidade,
+      tipo_pai as acao,
+      count(*)::int as qtd
+    from actions
+    group by coalesce(uf, 'N/A'), coalesce(cidade, 'N/A'), tipo_pai
+  ),
+  cidade_acoes as (
+    select
+      uf,
+      cidade,
+      jsonb_agg(
+        jsonb_build_object('acao', acao, 'qtd', qtd)
+        order by qtd desc, acao
+      ) as acoes
+    from cidade_acoes_tipo
+    group by uf, cidade
+  ),
   by_cidade as (
     select
       i.uf,
       i.cidade,
       i.inscritos,
       coalesce(a.atendimentos, 0)::int as atendimentos,
-      coalesce(v.ativos, 0)::int as ativos
+      coalesce(v.ativos, 0)::int as ativos,
+      coalesce(ca.acoes, '[]'::jsonb) as acoes
     from by_cidade_inscritos i
     left join by_cidade_atend a on a.uf = i.uf and a.cidade = i.cidade
     left join by_cidade_ativos v on v.uf = i.uf and v.cidade = i.cidade
+    left join cidade_acoes ca on ca.uf = i.uf and ca.cidade = i.cidade
     order by atendimentos desc, inscritos desc
     limit v_top_limit
   ),
-
-  -- CEP: somente para quem se inscreveu em 2025
-  participants_cep_2025 as (
+  coverage_ufs as (
     select
-      usuario_id,
-      max(nullif(uf, 'N/A')) as uf,
-      max(nullif(cidade, 'N/A')) as cidade,
-      min(sub_dt) as sub_dt,
-      cep_norm
-    from participants_raw
+      count(distinct upper(btrim(uf)))::int as presentes
+    from participants_period
     where
-      cep_norm is not null
-      and length(cep_norm) = 8
-      and sub_dt >= date '2025-01-01'
-      and sub_dt <  date '2026-01-01'
-    group by usuario_id, cep_norm
+      usuario_id is not null
+      and nullif(btrim(coalesce(uf, '')), '') is not null
+      and upper(btrim(coalesce(uf, ''))) <> 'N/A'
   ),
-  cep_users_2025 as (
-    select distinct usuario_id
-    from participants_cep_2025
+  coverage_cidades_uf as (
+    select
+      count(distinct lower(btrim(cidade)))::int as presentes
+    from participants_period
+    where
+      p_uf is not null
+      and usuario_id is not null
+      and uf = p_uf
+      and nullif(btrim(coalesce(cidade, '')), '') is not null
+      and lower(btrim(coalesce(cidade, ''))) <> 'n/a'
   ),
-  participants_cep_period_2025 as (
-    select *
-    from participants_cep_2025
-    where sub_dt between p_date_from and p_date_to
-  ),
-  cep_inscritos as (
+
+  -- CEP no periodo selecionado (inscricoes + atendimentos por CEP, sem dependencias anuais)
+  by_cep_inscritos as (
     select
       cep_norm,
       max(nullif(uf, 'N/A')) as uf,
       max(nullif(cidade, 'N/A')) as cidade,
       count(distinct usuario_id)::int as inscritos
-    from participants_cep_period_2025
+    from participants_period
+    where
+      usuario_id is not null
+      and cep_norm is not null
+      and length(cep_norm) = 8
     group by cep_norm
   ),
-  atendimentos_por_usuario as (
+  by_cep_atend as (
     select
-      a.usuario_id as usuario_id,
+      cep_norm,
+      max(nullif(uf, 'N/A')) as uf,
+      max(nullif(cidade, 'N/A')) as cidade,
       count(*)::int as atendimentos,
       min(dt) as primeiro_atendimento_em,
       max(dt) as ultimo_atendimento_em
-    from actions a
-    join cep_users_2025 u
-      on u.usuario_id = a.usuario_id
-    group by a.usuario_id
+    from actions
+    where
+      cep_norm is not null
+      and length(cep_norm) = 8
+    group by cep_norm
   ),
-  cep_atendimentos as (
-    select
-      p.cep_norm,
-      coalesce(sum(a.atendimentos), 0)::int as atendimentos,
-      min(a.primeiro_atendimento_em) as primeiro_atendimento_em,
-      max(a.ultimo_atendimento_em) as ultimo_atendimento_em
-    from participants_cep_2025 p
-    left join atendimentos_por_usuario a
-      on a.usuario_id = p.usuario_id
-    group by p.cep_norm
+  by_cep_keys as (
+    select cep_norm from by_cep_inscritos
+    union
+    select cep_norm from by_cep_atend
   ),
   by_cep as (
     select
-      i.cep_norm as cep,
-      coalesce(nullif(i.uf, 'N/A'), nullif(g.uf, 'N/A'), nullif(p_uf, ''), 'N/A') as uf,
-      coalesce(nullif(i.cidade, 'N/A'), nullif(g.cidade, 'N/A'), 'CEP ' || i.cep_norm) as cidade,
+      k.cep_norm as cep,
+      coalesce(nullif(i.uf, 'N/A'), nullif(a.uf, 'N/A'), nullif(g.uf, 'N/A'), nullif(p_uf, ''), 'N/A') as uf,
+      coalesce(nullif(i.cidade, 'N/A'), nullif(a.cidade, 'N/A'), nullif(g.cidade, 'N/A'), 'CEP ' || k.cep_norm) as cidade,
       g.lat,
       g.lng,
-      i.inscritos,
+      coalesce(i.inscritos, 0)::int as inscritos,
       coalesce(a.atendimentos, 0)::int as atendimentos,
       to_char(a.primeiro_atendimento_em, 'YYYY-MM-DD') as primeiro_atendimento_em,
       to_char(a.ultimo_atendimento_em, 'YYYY-MM-DD') as ultimo_atendimento_em
-    from cep_inscritos i
-    left join cep_atendimentos a on a.cep_norm = i.cep_norm
+    from by_cep_keys k
+    left join by_cep_inscritos i on i.cep_norm = k.cep_norm
+    left join by_cep_atend a on a.cep_norm = k.cep_norm
     left join public.geo_ceps g
-      on lpad(regexp_replace(coalesce(g.cep, ''), '\D', '', 'g'), 8, '0') = lpad(i.cep_norm, 8, '0')
-    order by atendimentos desc, inscritos desc
+      on lpad(regexp_replace(coalesce(g.cep, ''), '\D', '', 'g'), 8, '0') = lpad(k.cep_norm, 8, '0')
+    order by coalesce(a.atendimentos, 0) desc, coalesce(i.inscritos, 0) desc
     limit v_cep_limit
   ),
-
   top_tipos as (
     select tipo_pai as tipo, count(*)::int as qtd
     from actions
@@ -475,6 +509,7 @@ begin
   top_itens as (
     select nome_item, count(*)::int as qtd
     from actions
+    where tipo_pai <> 'evento'
     group by nome_item
     order by qtd desc
     limit v_top_limit
@@ -527,7 +562,14 @@ begin
     'by_cidade', (
       select coalesce(
         jsonb_agg(
-          jsonb_build_object('uf', uf, 'cidade', cidade, 'inscritos', inscritos, 'atendimentos', atendimentos, 'ativos', ativos)
+          jsonb_build_object(
+            'uf', uf,
+            'cidade', cidade,
+            'inscritos', inscritos,
+            'atendimentos', atendimentos,
+            'ativos', ativos,
+            'acoes', acoes
+          )
           order by atendimentos desc, inscritos desc
         ),
         '[]'::jsonb
@@ -537,20 +579,21 @@ begin
       select coalesce(
         jsonb_agg(
           jsonb_build_object(
-            'cep', cep,
-            'uf', uf,
-            'cidade', cidade,
-            'lat', lat,
-            'lng', lng,
-            'inscritos', inscritos,
-            'atendimentos', atendimentos,
-            'primeiro_atendimento_em', primeiro_atendimento_em,
-            'ultimo_atendimento_em', ultimo_atendimento_em
+            'cep', b.cep,
+            'uf', b.uf,
+            'cidade', b.cidade,
+            'lat', b.lat,
+            'lng', b.lng,
+            'inscritos', b.inscritos,
+            'atendimentos', b.atendimentos,
+            'primeiro_atendimento_em', b.primeiro_atendimento_em,
+            'ultimo_atendimento_em', b.ultimo_atendimento_em
           )
-          order by atendimentos desc, inscritos desc
+          order by b.atendimentos desc, b.inscritos desc
         ),
         '[]'::jsonb
-      ) from by_cep
+      )
+      from by_cep b
     ),
     'top_tipos', (
       select coalesce(
@@ -575,8 +618,17 @@ begin
         'uf', p_uf,
         'publico', p_publico
       ),
+      'coverage', jsonb_build_object(
+        'ufs_com_inscritos', coalesce((select presentes from coverage_ufs), 0),
+        'ufs_total', 27,
+        'cidades_uf_com_inscritos',
+          case
+            when p_uf is null then null
+            else coalesce((select presentes from coverage_cidades_uf), 0)
+          end
+      ),
       'top_limit', v_top_limit,
-      'cep_scope', 'inscritos_2025',
+      'cep_scope', 'periodo_filtrado',
       'cep_limit', v_cep_limit
     )
   )

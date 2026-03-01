@@ -13,6 +13,7 @@
   />
   <script src="./env.js"></script>
   <script defer src="./data/geo_ceps_dictionary.js"></script>
+  <script defer src="./data/modulos_complementares_lookup.js"></script>
   <script>
     // Shim defensivo para scripts legados que ainda tentam usar require() no browser.
     // Evita `ReferenceError: require is not defined` sem bloquear o carregamento da UI.
@@ -1260,6 +1261,421 @@
         .toUpperCase();
     }
 
+    function normalizeLooseLabel(value) {
+      return normalizeTextKey(value)
+        .replace(/[^A-Z0-9]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    const COMPETENCY_MODES = Object.freeze({
+      BNCC: "bncc",
+      ENTRECOMP: "entrecomp",
+    });
+    const CONTENT_TYPE_KEYS = new Set(["AULA", "QUIZ", "DOWNLOAD", "EBOOK", "ARTIGO"]);
+    const MODULOS_COMPLEMENTARES_LOOKUP = window.__MODULOS_COMPLEMENTARES_LOOKUP__ || {};
+    const UNMAPPED_LABEL = "Não mapeado";
+
+    const MACROTEMA_CATALOG = Object.freeze({
+      autoconhecimento: {
+        title: "Jornada do Eu",
+        aliases: [
+          "Autoconhecimento",
+          "Autoconhecimento e Projeto de Vida",
+          "Jornada do Eu",
+        ],
+      },
+      "cultura-digital": {
+        title: "Caixa de Ferramentas Digitais",
+        aliases: [
+          "Caixa de Ferramentas Digitais",
+          "Competências Empreendedoras e Cultura digital",
+          "Competências empreendedoras e Cultura digital",
+          "Competências Empreendedoras",
+          "Cultura Digital",
+        ],
+      },
+      ferramentas: {
+        title: "Oficina de Soluções",
+        aliases: [
+          "Ferramentas analógicas e digitais",
+          "Ferramentas e Aplicações",
+          "Oficina de Soluções",
+        ],
+      },
+      colaboracao: {
+        title: "Conexões que Constroem",
+        aliases: [
+          "Colaboração e Gestão de projetos",
+          "Conexões que Constroem",
+          "Colaboração e Gestão",
+        ],
+      },
+      cidadania: {
+        title: "Nossa Pegada no Mundo",
+        aliases: [
+          "Cidadania e sustentabilidade",
+          "Cidadania e Sustentabilidade",
+          "Nossa Pegada no Mundo",
+        ],
+      },
+      empreendedorismo: {
+        title: "Impulso para o Futuro",
+        aliases: [
+          "Empreendedorismo e Mundo do Trabalho",
+          "Empreendedorismo e Carreira",
+          "Impulso para o Futuro",
+        ],
+      },
+    });
+
+    const MODULE_CATALOG = Object.freeze([
+      { id: "CI-0", title: "Como transformar ideias em ação?", macrotemaId: "empreendedorismo", bncc: "8", entrecomp: "Rec 2.1", aliases: ["Ciclo da Inovação"] },
+      { id: "CI-1", title: "Fontes de Inspiração", macrotemaId: "empreendedorismo", bncc: "10", entrecomp: "I&O 1.1", aliases: ["Etapa de Inspiração"] },
+      { id: "CI-2", title: "Tempestade de ideias", macrotemaId: "empreendedorismo", bncc: "2", entrecomp: "I&O 1.2 + 1.3", aliases: ["Etapa de Ideação"] },
+      { id: "CI-3", title: "Mão na massa: a primeira versão", macrotemaId: "empreendedorismo", bncc: "6", entrecomp: "Ação 3.3", aliases: ["Etapa de Prototipação"] },
+      { id: "CI-4", title: "Minha solução no Mundo", macrotemaId: "empreendedorismo", bncc: "9", entrecomp: "Ação 3.4", aliases: ["Etapa de Compartilhamento"] },
+      { id: "DP1", title: "Quem sou eu?", macrotemaId: "autoconhecimento", bncc: "8", entrecomp: "1.1 + 3.1", aliases: ["Quem é você?"] },
+      { id: "DP2", title: "Como parar de viver no automático?", macrotemaId: "autoconhecimento", bncc: "8", entrecomp: "2.1", aliases: ["Um passo por vez"] },
+      { id: "DP7", title: "Explorando caminhos para o futuro", macrotemaId: "autoconhecimento", bncc: "8", entrecomp: "5.1 + 5.2", aliases: ["O que quero cultivar para o futuro?"] },
+      { id: "DP3", title: "Ninguém escalada sozinho", macrotemaId: "autoconhecimento", bncc: "9", entrecomp: "Rec 2.5", aliases: ["Relações que me constroem"] },
+      { id: "GF1", title: "Por que meu dinheiro nunca sobra?", macrotemaId: "cultura-digital", bncc: "6", entrecomp: "4.1 + 4.2", aliases: ["Detector de Vazamento"] },
+      { id: "GF2", title: "Olha o Pix aê!", macrotemaId: "cultura-digital", bncc: "6", entrecomp: "4.1 + 4.2", aliases: ["PIX Invisível", "Pix invisível"] },
+      { id: "DP4", title: "Hackeando o meu Feed", macrotemaId: "cultura-digital", bncc: "5", entrecomp: "1.2 + 1.4", aliases: ["Curadoria Digital & Escolhas Conscientes", "Curadoria digital"] },
+      { id: "DP5", title: "Olhar Empreendedor para o Mundo", macrotemaId: "cultura-digital", bncc: "6", entrecomp: "I&O 1.1", aliases: ["Consciência Empreendedora"] },
+      { id: "DP8", title: "Conexões que importam", macrotemaId: "ferramentas", bncc: "EF09CI15", entrecomp: "I&O 1.2 + 1.3", aliases: ["Colaboração Digital"] },
+      { id: "PR2", title: "Na Raiz do Problema", macrotemaId: "ferramentas", bncc: "7", entrecomp: "1.4 + 3.2", aliases: ["Identificação de Causas & Problemas", "Identificação de causas & problemas"] },
+      { id: "PR4", title: "Testar, errar & melhorar", macrotemaId: "ferramentas", bncc: "2", entrecomp: "I&O 1.2 + 1.3", aliases: ["Protótipos & Testes", "Protótipos e testes"] },
+      { id: "DP6", title: "Como colocar ideas em movimento?", macrotemaId: "colaboracao", bncc: "2", entrecomp: "I&O 1.2 + 1.3", aliases: ["Boas ideias mudam o mundo"] },
+      { id: "PR5", title: "Como gerar engajamento nas soluções?", macrotemaId: "colaboracao", bncc: "9", entrecomp: "I&O 1.2 + 1.3", aliases: ["Compartilhamento & Mobilização", "Compartilhamento e mobilização"] },
+      { id: "PR1", title: "Mapeando realidades e construindo a mudança", macrotemaId: "colaboracao", bncc: "10", entrecomp: "I&O 1.2/1.3", aliases: ["Sensibilização & Escuta do Território", "Sensibilização e escuta do território"] },
+      { id: "PR3", title: "Do planejamento à ação", macrotemaId: "colaboracao", bncc: "8", entrecomp: "3.1 + 3.2", aliases: ["Planejamento Simples de Ações", "Planejamento simples de ações"] },
+      { id: "ODS1", title: "Escolhas Sustentáveis na Prática", macrotemaId: "cidadania", bncc: "10", entrecomp: "1.5, 2.4, 3.1, 3.5", aliases: ["Nossa Pegada no Mundo", "Cidadania e Sustentabilidade", "Sustentabilidade prática"] },
+    ]);
+
+    const MACROTEMA_ALIAS_TO_ID = (() => {
+      const aliases = new Map();
+      for (const [macrotemaId, def] of Object.entries(MACROTEMA_CATALOG)) {
+        aliases.set(normalizeLooseLabel(macrotemaId), macrotemaId);
+        aliases.set(normalizeLooseLabel(def.title), macrotemaId);
+        for (const alias of def.aliases || []) {
+          aliases.set(normalizeLooseLabel(alias), macrotemaId);
+        }
+      }
+      return aliases;
+    })();
+
+    const MODULE_COMPLEMENTARY_BY_TITLE = (() => {
+      const byTitle = new Map();
+      for (const [titleRaw, metaRaw] of Object.entries(MODULOS_COMPLEMENTARES_LOOKUP || {})) {
+        const title = String(titleRaw || "").trim();
+        const titleKey = normalizeLooseLabel(title);
+        if (!title || !titleKey) continue;
+        const aliases = Array.isArray(metaRaw?.aliases) ? metaRaw.aliases : [];
+        byTitle.set(titleKey, {
+          title,
+          trail: String(metaRaw?.trail || "").trim(),
+          aliases: aliases.map((v) => String(v || "").trim()).filter(Boolean),
+        });
+      }
+      return byTitle;
+    })();
+
+    const MODULE_CATALOG_ENRICHED = (() => {
+      const merged = [];
+      const seenTitleKeys = new Set();
+      let extraIdx = 1;
+
+      for (const base of MODULE_CATALOG) {
+        const baseTitleKey = normalizeLooseLabel(base.title);
+        const ext = MODULE_COMPLEMENTARY_BY_TITLE.get(baseTitleKey);
+        const aliases = [...new Set([
+          ...(base.aliases || []),
+          ...(ext?.aliases || []),
+        ])];
+        merged.push({
+          ...base,
+          trail: String(ext?.trail || base.trail || "").trim(),
+          aliases,
+        });
+        seenTitleKeys.add(baseTitleKey);
+      }
+
+      // módulos presentes no modulos.html, mas fora do catálogo principal
+      for (const [titleKey, ext] of MODULE_COMPLEMENTARY_BY_TITLE.entries()) {
+        if (seenTitleKeys.has(titleKey)) continue;
+        merged.push({
+          id: `EXT-${extraIdx++}`,
+          title: ext.title,
+          macrotemaId: "",
+          bncc: "",
+          entrecomp: "",
+          trail: ext.trail,
+          aliases: [...new Set([ext.title, ...(ext.aliases || [])])],
+        });
+      }
+
+      return Object.freeze(merged);
+    })();
+
+    const MODULE_TITLE_TO_META = (() => {
+      const byTitle = new Map();
+      const register = (title, meta) => {
+        const key = normalizeLooseLabel(title);
+        if (!key || byTitle.has(key)) return;
+        byTitle.set(key, meta);
+      };
+
+      for (const mod of MODULE_CATALOG_ENRICHED) {
+        register(mod.title, mod);
+        register(mod.id, mod);
+        register(mod.trail, mod);
+        for (const alias of mod.aliases || []) register(alias, mod);
+      }
+      return byTitle;
+    })();
+
+    function resolveMacrotemaId(rawValue) {
+      const key = normalizeLooseLabel(rawValue);
+      if (!key) return "";
+      return MACROTEMA_ALIAS_TO_ID.get(key) || "";
+    }
+
+    function resolveMacrotemaLabel(rawValue, strict = false) {
+      const macrotemaId = resolveMacrotemaId(rawValue);
+      if (macrotemaId && MACROTEMA_CATALOG[macrotemaId]) {
+        return MACROTEMA_CATALOG[macrotemaId].title;
+      }
+      if (strict) return "";
+      const fallback = String(rawValue || "").trim();
+      return fallback ? toSentenceCase(fallback) : "";
+    }
+
+    function resolveModuleByTitle(rawTitle) {
+      const key = normalizeLooseLabel(rawTitle);
+      if (!key) return null;
+      const exact = MODULE_TITLE_TO_META.get(key);
+      if (exact) return exact;
+      for (const [aliasKey, meta] of MODULE_TITLE_TO_META.entries()) {
+        if (key.includes(aliasKey) || aliasKey.includes(key)) return meta;
+      }
+      return null;
+    }
+
+    function resolveModuleFromEvent(event) {
+      const candidates = [
+        event?.modulo,
+        event?.module,
+        event?.module_title,
+        event?.nome_item,
+        event?.item,
+        event?.material_type,
+      ];
+      for (const candidate of candidates) {
+        const match = resolveModuleByTitle(candidate);
+        if (match) return match;
+      }
+      return null;
+    }
+
+    function splitCompetencyValues(rawValue) {
+      const source = String(rawValue || "").trim();
+      if (!source) return [];
+      const values = [];
+      const chunks = source.split(/\s*,\s*/).map((x) => x.trim()).filter(Boolean);
+
+      for (const chunk of chunks) {
+        const parts = chunk.split(/\s*(?:\+|\/| e )\s*/i).map((x) => x.trim()).filter(Boolean);
+        if (!parts.length) continue;
+
+        let inheritedPrefix = "";
+        const first = parts[0];
+        const firstMatch = first.match(/^([\p{L}&.\- ]+)\s+([0-9].*)$/u);
+        if (firstMatch) {
+          inheritedPrefix = firstMatch[1].trim();
+          values.push(`${inheritedPrefix} ${firstMatch[2].trim()}`.replace(/\s+/g, " "));
+        } else {
+          values.push(first.replace(/\s+/g, " "));
+        }
+
+        for (let i = 1; i < parts.length; i++) {
+          const piece = parts[i];
+          if (!piece) continue;
+          const withPrefix = (/^[0-9]/.test(piece) && inheritedPrefix)
+            ? `${inheritedPrefix} ${piece}`
+            : piece;
+          values.push(withPrefix.replace(/\s+/g, " "));
+        }
+      }
+
+      return Array.from(new Set(values.map((v) => v.trim()).filter(Boolean)));
+    }
+
+    function formatCompetencyLabel(rawLabel) {
+      const label = String(rawLabel || "").trim();
+      if (!label) return "";
+      if (/^C-\s*/i.test(label)) return label.replace(/^C-\s*/i, "C-");
+      if (/^\d+(?:[.,]\d+)?$/.test(label)) return `C-${label.replace(",", ".")}`;
+      return label;
+    }
+
+    function normalizeContentTypeKey(rawValue) {
+      const normalized = normalizeTextKey(rawValue)
+        .replace(/\s*\([^)]*\)\s*$/g, "")
+        .trim();
+      if (normalized === "E BOOK" || normalized === "E-BOOK") return "EBOOK";
+      return normalized;
+    }
+
+    function isContentExplorationEvent(event) {
+      const typeKey = normalizeContentTypeKey(event?.type);
+      if (!typeKey) {
+        return Boolean(
+          String(event?.material_type || "").trim() ||
+          String(event?.nome_item || "").trim() ||
+          String(event?.modulo || event?.module || "").trim()
+        );
+      }
+      if (typeKey === "INSCRICAO" || typeKey === "EVENTO") return false;
+      if (typeKey === "ATENDIMENTO" || typeKey === "ACAO") return true;
+      return CONTENT_TYPE_KEYS.has(typeKey);
+    }
+
+    function toSortedPairs(countMap, limit = Number.POSITIVE_INFINITY) {
+      return Array.from(countMap.entries())
+        .filter(([, v]) => Number(v || 0) > 0)
+        .sort((a, b) => {
+          const diff = Number(b[1] || 0) - Number(a[1] || 0);
+          if (diff !== 0) return diff;
+          return String(a[0]).localeCompare(String(b[0]), "pt-BR");
+        })
+        .slice(0, limit);
+    }
+
+    function toPercentagePairs(pairs, limit = 10) {
+      const source = Array.isArray(pairs) ? pairs : [];
+      const total = source.reduce((sum, [, v]) => sum + Number(v || 0), 0);
+      if (!Number.isFinite(total) || total <= 0) return [];
+      return source
+        .map(([k, v]) => [k, (Number(v || 0) / total) * 100])
+        .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+        .slice(0, limit);
+    }
+
+    function addWeightedCount(countMap, label, weight = 1) {
+      const key = String(label || "").trim();
+      const value = Number(weight || 0);
+      if (!key || !Number.isFinite(value) || value <= 0) return;
+      countMap.set(key, Number(countMap.get(key) || 0) + value);
+    }
+
+    function addMacrotemaCount(countMap, rawValue, weight = 1, strict = false, unmappedLabel = UNMAPPED_LABEL) {
+      const label = resolveMacrotemaLabel(rawValue, strict);
+      if (label) {
+        addWeightedCount(countMap, label, weight);
+        return true;
+      }
+      addWeightedCount(countMap, unmappedLabel, weight);
+      return false;
+    }
+
+    function addKnownMacrotemaCount(countMap, rawValue, weight = 1) {
+      const macrotemaId = resolveMacrotemaId(rawValue);
+      if (!macrotemaId || !MACROTEMA_CATALOG[macrotemaId]) return false;
+      addWeightedCount(countMap, MACROTEMA_CATALOG[macrotemaId].title, weight);
+      return true;
+    }
+
+    function addCompetencyDistribution(countMap, rawValue, weight = 1) {
+      const totalWeight = Number(weight || 0);
+      if (!Number.isFinite(totalWeight) || totalWeight <= 0) return false;
+      const competencies = splitCompetencyValues(rawValue);
+      if (!competencies.length) {
+        return false;
+      }
+      const portion = totalWeight / competencies.length;
+      for (const competency of competencies) {
+        addWeightedCount(countMap, formatCompetencyLabel(competency), portion);
+      }
+      return true;
+    }
+
+    function collectMacrotemaPairsFromEvents(events, limit = Number.POSITIVE_INFINITY) {
+      const counts = new Map();
+      for (const e of events || []) {
+        if (!isContentExplorationEvent(e)) continue;
+        const mod = resolveModuleFromEvent(e);
+        if (mod?.macrotemaId) {
+          addKnownMacrotemaCount(counts, mod.macrotemaId, 1);
+          continue;
+        }
+        addKnownMacrotemaCount(counts, e?.macrotema, 1);
+      }
+      return toSortedPairs(counts, limit);
+    }
+
+    function collectMacrotemaPairsFromItemPairs(itemPairs, fallbackPairs = [], limit = Number.POSITIVE_INFINITY) {
+      const counts = new Map();
+      for (const [itemLabel, countRaw] of (itemPairs || [])) {
+        const weight = Number(countRaw || 0);
+        if (!Number.isFinite(weight) || weight <= 0) continue;
+        const mod = resolveModuleByTitle(itemLabel);
+        if (mod?.macrotemaId) {
+          addKnownMacrotemaCount(counts, mod.macrotemaId, weight);
+          continue;
+        }
+        addKnownMacrotemaCount(counts, itemLabel, weight);
+      }
+      if (counts.size) return toSortedPairs(counts, limit);
+
+      const fallback = new Map();
+      for (const [label, countRaw] of (fallbackPairs || [])) {
+        const weight = Number(countRaw || 0);
+        if (!Number.isFinite(weight) || weight <= 0) continue;
+        addKnownMacrotemaCount(fallback, label, weight);
+      }
+      return toSortedPairs(fallback, limit);
+    }
+
+    function getEventCompetencyRaw(event, mode) {
+      if (mode === COMPETENCY_MODES.ENTRECOMP) {
+        return event?.entrecomp ?? event?.competencia_entrecomp ?? event?.competencias_entrecomp ?? "";
+      }
+      return event?.bncc ?? event?.competencia_bncc ?? event?.competencias_bncc ?? "";
+    }
+
+    function collectCompetencyPairsFromEvents(events, mode = COMPETENCY_MODES.BNCC, limit = Number.POSITIVE_INFINITY) {
+      const counts = new Map();
+      for (const e of events || []) {
+        if (!isContentExplorationEvent(e)) continue;
+        const mod = resolveModuleFromEvent(e);
+        if (!mod) continue;
+        const fallbackRaw = mode === COMPETENCY_MODES.ENTRECOMP ? mod.entrecomp : mod.bncc;
+        const raw = getEventCompetencyRaw(e, mode) || fallbackRaw;
+        if (!raw) continue;
+        addCompetencyDistribution(counts, raw, 1);
+      }
+      return toSortedPairs(counts, limit);
+    }
+
+    function collectCompetencyPairsFromItemPairs(itemPairs, mode = COMPETENCY_MODES.BNCC, limit = Number.POSITIVE_INFINITY) {
+      const counts = new Map();
+      for (const [itemLabel, countRaw] of (itemPairs || [])) {
+        const weight = Number(countRaw || 0);
+        if (!Number.isFinite(weight) || weight <= 0) continue;
+        const mod = resolveModuleByTitle(itemLabel);
+        if (!mod) continue;
+        const raw = mode === COMPETENCY_MODES.ENTRECOMP ? mod.entrecomp : mod.bncc;
+        if (!raw) continue;
+        addCompetencyDistribution(counts, raw, weight);
+      }
+      return toSortedPairs(counts, limit);
+    }
+
+    function competencyModeLabel(mode) {
+      return mode === COMPETENCY_MODES.ENTRECOMP ? "EntreComp" : "BNCC";
+    }
+
     function isValidUfValue(value) {
       const raw = String(value ?? "").trim();
       if (!raw) return false;
@@ -1319,54 +1735,118 @@
       return "";
     }
 
+    function mergeUfOptions(...lists) {
+      const byCode = new Map();
+      const extras = new Set();
+      for (const list of lists) {
+        for (const raw of (Array.isArray(list) ? list : [])) {
+          const uf = String(raw || "").trim();
+          if (!isValidUfValue(uf)) continue;
+          const code = resolveUfCode(uf);
+          if (code) {
+            if (!byCode.has(code)) byCode.set(code, uf);
+          } else {
+            extras.add(uf);
+          }
+        }
+      }
+      const merged = [...byCode.values(), ...extras.values()];
+      return uniq(merged).sort((a, b) => String(a).localeCompare(String(b), "pt-BR"));
+    }
+
     function resolveUfGeo(value) {
       const code = resolveUfCode(value);
       if (!code || !UF_CENTROIDS[code]) return null;
       return { uf: code, ...UF_CENTROIDS[code] };
     }
 
-    function computeUfCoverageFromRows(byCityRows, ufFilter = "Todos") {
-      if (!Array.isArray(byCityRows) || !byCityRows.length) {
-        return { pct: 0, present: 0, total: 0, text: "--" };
-      }
+    function rowInscritosCount(row) {
+      const v = Number(row?.inscritos);
+      if (Number.isFinite(v)) return v;
+      return normalizeTextKey(row?.type) === "INSCRICAO" ? 1 : 0;
+    }
 
+    function computeUfCoverageFromRows(byCityRows, ufFilter = "Todos", options = {}) {
       const selectedCode = resolveUfCode(ufFilter);
-      const byUf = new Map();
-      for (const row of byCityRows) {
-        const code = resolveUfCode(row?.uf);
-        const city = String(row?.cidade || "").trim();
-        if (!code || !city || city === "N/A") continue;
-        if (!byUf.has(code)) byUf.set(code, new Set());
-        byUf.get(code).add(city.toLowerCase());
+      const byUfRows = Array.isArray(options?.byUfRows) ? options.byUfRows : [];
+      const metaCoverage = (options?.metaCoverage && typeof options.metaCoverage === "object") ? options.metaCoverage : null;
+
+      if (!selectedCode) {
+        const totalUfs = Object.keys(UF_CENTROIDS).length || 27;
+        const ufSet = new Set();
+        for (const row of byUfRows) {
+          const code = resolveUfCode(row?.uf);
+          if (!code) continue;
+          if (rowInscritosCount(row) <= 0) continue;
+          ufSet.add(code);
+        }
+        let presentUfs = ufSet.size;
+        if (!presentUfs && Number.isFinite(Number(metaCoverage?.ufs_com_inscritos))) {
+          presentUfs = Number(metaCoverage.ufs_com_inscritos);
+        }
+        const pct = totalUfs > 0 ? presentUfs / totalUfs : 0;
+        return {
+          mode: "uf",
+          pct,
+          present: presentUfs,
+          total: totalUfs,
+          text: `${fmtPct(pct)} (${fmtInt(presentUfs)}/${fmtInt(totalUfs)})`
+        };
       }
 
-      if (selectedCode) {
-        const present = byUf.get(selectedCode)?.size || 0;
-        const total = Number(UF_CITY_TOTALS[selectedCode] || 0);
-        if (!total) return { pct: 0, present, total: 0, text: "--" };
-        const pct = present / total;
-        return { pct, present, total, text: `${fmtPct(pct)} (${fmtInt(present)}/${fmtInt(total)})` };
+      const totalCities = Number(UF_CITY_TOTALS[selectedCode] || 0);
+      const cities = new Set();
+      for (const row of byCityRows || []) {
+        if (resolveUfCode(row?.uf) !== selectedCode) continue;
+        if (rowInscritosCount(row) <= 0) continue;
+        const city = resolveCityLabelFromRow(row);
+        if (!city) continue;
+        cities.add(normalizeTextKey(city));
       }
-
-      let presentSum = 0;
-      let totalSum = 0;
-      for (const [code, set] of byUf.entries()) {
-        const total = Number(UF_CITY_TOTALS[code] || 0);
-        if (!total) continue;
-        presentSum += set.size;
-        totalSum += total;
+      let presentCities = cities.size;
+      if (!presentCities && Number.isFinite(Number(metaCoverage?.cidades_uf_com_inscritos))) {
+        presentCities = Number(metaCoverage.cidades_uf_com_inscritos);
       }
-      if (!totalSum) return { pct: 0, present: 0, total: 0, text: "--" };
-      const pct = presentSum / totalSum;
-      return { pct, present: presentSum, total: totalSum, text: `${fmtPct(pct)} (${fmtInt(presentSum)}/${fmtInt(totalSum)})` };
+      if (!totalCities) {
+        return { mode: "city", pct: 0, present: presentCities, total: 0, text: "--" };
+      }
+      const pct = presentCities / totalCities;
+      return {
+        mode: "city",
+        pct,
+        present: presentCities,
+        total: totalCities,
+        text: `${fmtPct(pct)} (${fmtInt(presentCities)}/${fmtInt(totalCities)})`
+      };
     }
 
     function computeUfCoverageFromEvents(events, ufFilter = "Todos") {
-      const rows = [];
-      for (const e of events || []) {
-        rows.push({ uf: e?.uf, cidade: e?.city });
+      const selectedCode = resolveUfCode(ufFilter);
+      const totalUfs = Object.keys(UF_CENTROIDS).length || 27;
+
+      if (!selectedCode) {
+        const ufs = new Set();
+        for (const e of events || []) {
+          if (normalizeTextKey(e?.type) !== "INSCRICAO") continue;
+          const code = resolveUfCode(e?.uf);
+          if (code) ufs.add(code);
+        }
+        const pct = totalUfs > 0 ? ufs.size / totalUfs : 0;
+        return { mode: "uf", pct, present: ufs.size, total: totalUfs, text: `${fmtPct(pct)} (${fmtInt(ufs.size)}/${fmtInt(totalUfs)})` };
       }
-      return computeUfCoverageFromRows(rows, ufFilter);
+
+      const cities = new Set();
+      for (const e of events || []) {
+        if (normalizeTextKey(e?.type) !== "INSCRICAO") continue;
+        if (resolveUfCode(e?.uf) !== selectedCode) continue;
+        const city = resolveCityLabelFromRow({ uf: e?.uf, cidade: e?.city, city: e?.city });
+        if (!city) continue;
+        cities.add(normalizeTextKey(city));
+      }
+      const totalCities = Number(UF_CITY_TOTALS[selectedCode] || 0);
+      if (!totalCities) return { mode: "city", pct: 0, present: cities.size, total: 0, text: "--" };
+      const pct = cities.size / totalCities;
+      return { mode: "city", pct, present: cities.size, total: totalCities, text: `${fmtPct(pct)} (${fmtInt(cities.size)}/${fmtInt(totalCities)})` };
     }
 
     function resolveCityLabelFromRow(row) {
@@ -1409,12 +1889,31 @@
         .slice(0, limit);
     }
 
+    function aggregateCityMetricPairs(rows, selectedUfCode = "", metricKey = "atendimentos", limit = 10) {
+      const grouped = new Map();
+      for (const row of rows || []) {
+        const ufCode = resolveUfCode(row?.uf);
+        if (selectedUfCode && ufCode !== selectedUfCode) continue;
+        const city = resolveCityLabelFromRow(row);
+        if (!city) continue;
+        const metric = Number(row?.[metricKey] || 0);
+        if (!Number.isFinite(metric) || metric <= 0) continue;
+        const label = ufCode ? `${city} (${ufCode})` : city;
+        grouped.set(label, Number(grouped.get(label) || 0) + metric);
+      }
+      return Array.from(grouped.entries())
+        .sort((a, b) => {
+          const diff = Number(b[1] || 0) - Number(a[1] || 0);
+          if (diff !== 0) return diff;
+          return String(a[0]).localeCompare(String(b[0]), "pt-BR");
+        })
+        .slice(0, limit);
+    }
+
     function mapCityFocusKeyFromRow(row) {
       const ufCode = resolveUfCode(row?.uf) || "";
       const city = resolveCityLabelFromRow(row);
       if (city) return `${ufCode}|city:${normalizeTextKey(city)}`;
-      const cepNorm = normalizeCep(row?.cep);
-      if (cepNorm) return `${ufCode}|cep:${cepNorm}`;
       if (ufCode) return `${ufCode}|uf`;
       return "";
     }
@@ -1762,21 +2261,18 @@
         "Alagoas": [{c:"Maceió",lat:-9.65,lng:-35.71}],
         "Sergipe": [{c:"Aracaju",lat:-10.91,lng:-37.07}],
       };
-      const macro = [
-        "Autoconhecimento e Projeto de Vida",
-        "Competências Empreendedoras",
-        "Ferramentas e Aplicações",
-        "Colaboração e Gestão",
-        "Empreendedorismo e Carreira",
-        "Cidadania e Sustentabilidade",
-        "Pensamento Crítico",
-        "Inteligência Artificial",
-        "Habilidades Socioemocionais",
-        "Cultura Digital",
-      ];
       const material = ["E-book","Vídeo","Material Interativo"];
       const publico = ["Estudante","Professor","Parceiro"];
       const channels = CHANNELS;
+      const modulePool = MODULE_CATALOG_ENRICHED
+        .filter((mod) => String(mod?.macrotemaId || "").trim())
+        .map((mod) => ({
+        title: mod.title,
+        macrotema: MACROTEMA_CATALOG[mod.macrotemaId]?.title || mod.macrotemaId,
+        bncc: mod.bncc,
+        entrecomp: mod.entrecomp,
+        trail: mod.trail || "",
+      }));
 
       const start = new Date("2025-04-01T00:00:00Z");
       const end = new Date("2025-12-31T00:00:00Z");
@@ -1815,6 +2311,7 @@
         const typeRoll = Math.random();
         const type = typeRoll < 0.22 ? "inscricao" : "atendimento";
 
+        const modulePick = modulePool[Math.floor(Math.random() * modulePool.length)];
         events.push({
           date,
           uf,
@@ -1824,7 +2321,12 @@
           type,
           publico: u.publico,
           material_type: material[Math.floor(Math.random()*material.length)],
-          macrotema: macro[Math.floor(Math.random()*macro.length)],
+          macrotema: modulePick.macrotema,
+          nome_item: modulePick.title,
+          modulo: modulePick.title,
+          bncc: modulePick.bncc,
+          entrecomp: modulePick.entrecomp,
+          trail: modulePick.trail,
           channel: channels[Math.floor(Math.random()*channels.length)],
           duration_min: 10 + Math.floor(Math.random()*50),
           user_id: u.id,
@@ -2104,6 +2606,7 @@
       session: null,
       mapCityFocus: null,
       ufOnboardingUnlocked: false,
+      competencyMode: COMPETENCY_MODES.BNCC,
       filters: {
         dateFrom: "",
         dateTo: "",
@@ -2111,6 +2614,75 @@
         publico: "Todos",
       }
     };
+
+    function syncCompetencyModeControls() {
+      const mode = state.competencyMode === COMPETENCY_MODES.ENTRECOMP
+        ? COMPETENCY_MODES.ENTRECOMP
+        : COMPETENCY_MODES.BNCC;
+      const bnccButtons = ["btnCompModeBncc", "btnCompModeBnccContent"];
+      const entrecompButtons = ["btnCompModeEntrecomp", "btnCompModeEntrecompContent"];
+      for (const id of bnccButtons) {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.toggle("is-active", mode === COMPETENCY_MODES.BNCC);
+      }
+      for (const id of entrecompButtons) {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.toggle("is-active", mode === COMPETENCY_MODES.ENTRECOMP);
+      }
+    }
+
+    function setCompetencyMode(nextMode) {
+      const normalized = nextMode === COMPETENCY_MODES.ENTRECOMP
+        ? COMPETENCY_MODES.ENTRECOMP
+        : COMPETENCY_MODES.BNCC;
+      if (state.competencyMode === normalized) {
+        syncCompetencyModeControls();
+        return;
+      }
+      state.competencyMode = normalized;
+      syncCompetencyModeControls();
+      renderCompetencyWrappers();
+    }
+
+    function getCurrentCompetencyPairs() {
+      if (isAggregatedPayload(state.raw)) {
+        const topItensRows = Array.isArray(state.raw?.top_itens) ? state.raw.top_itens : [];
+        const topItens = topItensRows.map((r) => [String(r.nome_item || "N/A"), Number(r.qtd || 0)]);
+        const rawPairs = collectCompetencyPairsFromItemPairs(topItens, state.competencyMode);
+        return toPercentagePairs(rawPairs, 10);
+      }
+      const rawPairs = collectCompetencyPairsFromEvents(state.filtered, state.competencyMode);
+      return toPercentagePairs(rawPairs, 10);
+    }
+
+    function renderCompetencyWrappers() {
+      const competencyPairs = getCurrentCompetencyPairs();
+      const topCompetency = competencyPairs[0];
+      const topLabel = document.getElementById("competencyTopLabel");
+      if (topLabel) {
+        topLabel.textContent = topCompetency
+          ? `${topCompetency[0]} (${fmtPct(Number(topCompetency[1] || 0) / 100)})`
+          : "-";
+      }
+
+      if (state.page === "overview") {
+        renderDoughnut(
+          "chartMaterial",
+          competencyPairs,
+          `Competências (${competencyModeLabel(state.competencyMode)})`,
+          { percentMode: true }
+        );
+      }
+
+      if (state.page === "content") {
+        renderDoughnut(
+          "chartMatBar",
+          competencyPairs,
+          `Competências (${competencyModeLabel(state.competencyMode)})`,
+          { percentMode: true }
+        );
+      }
+    }
 
     function showToast(message, tone = "info") {
       const toast = document.getElementById("toast");
@@ -2169,8 +2741,11 @@
         "btnPreset90",
         "btnPresetAll",
         "btnClearUf",
-        "btnBootLoadingRetry",
-        "tblSearch"
+        "btnCompModeBncc",
+        "btnCompModeEntrecomp",
+        "btnCompModeBnccContent",
+        "btnCompModeEntrecompContent",
+        "btnBootLoadingRetry"
       ];
       for (const id of ids) {
         const el = document.getElementById(id);
@@ -2381,7 +2956,7 @@
       }
 
       const flags = [];
-      if (conc.top5 > 0.70) flags.push("Concentracao alta: Top 5 UFs somam " + fmtPct(conc.top5) + " dos atendimentos.");
+      if (conc.top5 > 0.70) flags.push("Concentracao alta: 5 UFs lideres somam " + fmtPct(conc.top5) + " dos atendimentos.");
       if (k.conversaoAtendimento < 0.20) flags.push("Conversao inscrito->atendido baixa: " + fmtPct(k.conversaoAtendimento) + " (oportunidade de reforcar jornada).");
       if (growth !== null) flags.push("Variacao recente de inscricoes (30d vs 30d anteriores): " + (growth>=0?"+":"") + fmtPct(growth));
 
@@ -2467,12 +3042,12 @@
       };
     }
 
-    function buildSummary(events) {
+    function buildSummary(events, competencyMode = COMPETENCY_MODES.BNCC) {
       const k = aggKpis(events);
       const byUf = topByKey(events, "uf", (e)=>e.type==="atendimento" && isValidUfValue(e.uf), 3);
       const topUf = byUf[0];
-      const macroTop = topByKey(events, "macrotema", (e)=>!isEventoType(e.type), 1)[0];
-      const matTop = topByKey(events, "material_type", null, 1)[0];
+      const macroTop = collectMacrotemaPairsFromEvents(events, 1)[0];
+      const competencyTop = collectCompetencyPairsFromEvents(events, competencyMode, 1)[0];
       const channelTop = topByKey(events, "channel", null, 1)[0];
 
       const days = uniq(events.map(e=>e.date)).length || 1;
@@ -2482,7 +3057,7 @@
       return [
         `Volume do periodo: ${fmtInt(k.atendimentos)} atendimentos e ${fmtInt(k.inscricoes)} inscricoes, com ${fmtInt(k.inscritos)} inscritos.`,
         `UF lider: ${topUf ? `${topUf[0]} (${fmtInt(topUf[1])})` : "—"}; media de ${fmtInt(Math.round(atendPerDay))} atendimentos/dia.`,
-        `Preferencia: ${macroTop ? macroTop[0] : "—"} e ${matTop ? matTop[0] : "—"}. Canal dominante: ${channelTop ? channelTop[0] : "—"}. Conversao inscrito->atendido em ${fmtPct(conv)}.`
+        `Preferencia: ${macroTop ? macroTop[0] : "—"} e ${competencyModeLabel(competencyMode)} ${competencyTop ? competencyTop[0] : "—"}. Canal dominante: ${channelTop ? channelTop[0] : "—"}. Conversao inscrito->atendido em ${fmtPct(conv)}.`
       ];
     }
 
@@ -2585,7 +3160,7 @@
       });
     }
 
-    function renderBarChart(canvasId, pairs, title) {
+    function renderBarChart(canvasId, pairs, title, options = {}) {
       destroyChart(canvasId);
       if (!window.Chart) {
         console.warn("[UI] [chart] Chart.js not available; skipping", { canvasId });
@@ -2596,6 +3171,11 @@
 
       const labels = pairs.map(([k]) => k);
       const values = pairs.map(([,v]) => v);
+      const useTopBarLabels = Boolean(options?.topBarLabels);
+      const topBarLabelRotationDeg = Number(options?.topBarLabelRotationDeg ?? -40);
+      const topBarLabelOffset = Number(options?.topBarLabelOffset ?? 10);
+      const topBarLabelFontSize = Number(options?.topBarLabelFontSize ?? 10);
+      const topBarLabelColor = String(options?.topBarLabelColor || "#334155");
 
       charts[canvasId] = new Chart(ctx, {
         type: "bar",
@@ -2606,19 +3186,53 @@
           borderRadius: 8,
           maxBarThickness: 26
         }] },
+        plugins: useTopBarLabels ? [{
+          id: `top-bar-labels-${canvasId}`,
+          afterDatasetsDraw(chart) {
+            const meta = chart.getDatasetMeta(0);
+            if (!meta?.data?.length) return;
+            const c = chart.ctx;
+            const rotation = (topBarLabelRotationDeg * Math.PI) / 180;
+            c.save();
+            c.fillStyle = topBarLabelColor;
+            c.font = `600 ${topBarLabelFontSize}px ${Chart.defaults.font.family}`;
+            c.textAlign = "center";
+            c.textBaseline = "bottom";
+            meta.data.forEach((bar, index) => {
+              const rawLabel = chart?.data?.labels?.[index];
+              if (rawLabel == null) return;
+              const x = Number(bar?.x);
+              const yBase = Number(bar?.y);
+              if (!Number.isFinite(x) || !Number.isFinite(yBase)) return;
+              const y = Math.max(6, yBase - topBarLabelOffset);
+              c.save();
+              c.translate(x, y);
+              c.rotate(rotation);
+              c.fillText(String(rawLabel), 0, 0);
+              c.restore();
+            });
+            c.restore();
+          }
+        }] : [],
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: useTopBarLabels ? { padding: { top: 68 } } : undefined,
           plugins: { legend: { display: false } },
           scales: {
-            x: { ticks: { autoSkip: false, maxRotation: 0, minRotation: 0 }, grid: { display: false } },
+            x: {
+              ticks: useTopBarLabels
+                ? { display: false }
+                : { autoSkip: false, maxRotation: 0, minRotation: 0 },
+              grid: { display: false }
+            },
             y: { grid: { color: "rgba(11, 31, 51, 0.08)" } }
           }
         }
       });
     }
 
-    function renderDoughnut(canvasId, pairs, title) {
+    function renderDoughnut(canvasId, pairs, title, options = {}) {
       destroyChart(canvasId);
       if (!window.Chart) {
         console.warn("[UI] [chart] Chart.js not available; skipping", { canvasId });
@@ -2626,6 +3240,12 @@
       }
       const ctx = document.getElementById(canvasId);
       if (!ctx) return;
+      const percentMode = Boolean(options?.percentMode);
+      const formatValue = (valueRaw) => {
+        const value = Number(valueRaw || 0);
+        if (percentMode) return `${fmtTrunc1(value)}%`;
+        return fmtInt(value);
+      };
 
       charts[canvasId] = new Chart(ctx, {
         type: "doughnut",
@@ -2641,7 +3261,18 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: "right", labels: { boxWidth: 10, usePointStyle: true } } },
+          plugins: {
+            legend: { position: "right", labels: { boxWidth: 10, usePointStyle: true } },
+            tooltip: {
+              callbacks: {
+                label: (ctxTip) => {
+                  const label = String(ctxTip?.label || "");
+                  const value = ctxTip?.raw;
+                  return `${label}: ${formatValue(value)}`;
+                }
+              }
+            }
+          },
           cutout: "65%"
         }
       });
@@ -2998,7 +3629,12 @@
     }
 
     function heatTooltipHtml(cell) {
-      const title = mapCityFocusLabelFromRow({ city: cell?.city, uf: cell?.uf, cep: cell?.cep }) || "Local";
+      const noUfSelected = !resolveUfCode(state?.filters?.uf);
+      const isUfAggregate = String(cell?.focusKey || "").endsWith("|uf");
+      const ufCode = resolveUfCode(cell?.uf);
+      const title = (noUfSelected || isUfAggregate)
+        ? `UF ${ufCode || ufSigla(cell?.uf) || String(cell?.uf || "").trim() || "N/A"}`
+        : (mapCityFocusLabelFromRow({ city: cell?.city, uf: cell?.uf }) || "Local");
       const inscritos = Number(cell?.inscritos || 0);
       const atendimentos = Number(cell?.atendimentos || 0);
       return `
@@ -3308,7 +3944,7 @@
 
     function buildGeoPointsFromByCep(byCepRows) {
       if (!Array.isArray(byCepRows)) return [];
-      const points = [];
+      const grouped = new Map();
       for (const row of byCepRows) {
         const cep = normalizeCep(row?.cep);
         if (!cep) continue;
@@ -3335,19 +3971,42 @@
         const weight = Math.max(inscritos, 0);
         if (!Number.isFinite(weight) || weight <= 0) continue;
 
-        points.push({
-          uf: ufCode,
-          city,
-          cep,
-          lat,
-          lng,
-          weight,
-          atendimentos,
-          inscritos,
-          ativos,
-        });
+        const key = `${ufCode}|${normalizeTextKey(city)}`;
+        const prev = grouped.get(key);
+        if (prev) {
+          prev.weight += weight;
+          prev.inscritos += inscritos;
+          prev.atendimentos += atendimentos;
+          prev.ativos += ativos;
+          const cw = Math.max(1, weight);
+          prev.latWeightSum += lat * cw;
+          prev.lngWeightSum += lng * cw;
+          prev.coordWeight += cw;
+        } else {
+          const cw = Math.max(1, weight);
+          grouped.set(key, {
+            uf: ufCode,
+            city,
+            weight,
+            atendimentos,
+            inscritos,
+            ativos,
+            latWeightSum: lat * cw,
+            lngWeightSum: lng * cw,
+            coordWeight: cw,
+          });
+        }
       }
-      return points;
+      return Array.from(grouped.values()).map((row) => ({
+        uf: row.uf,
+        city: row.city,
+        lat: row.coordWeight > 0 ? row.latWeightSum / row.coordWeight : NaN,
+        lng: row.coordWeight > 0 ? row.lngWeightSum / row.coordWeight : NaN,
+        weight: row.weight,
+        atendimentos: row.atendimentos,
+        inscritos: row.inscritos,
+        ativos: row.ativos,
+      })).filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lng));
     }
 
     function hasGeoPointForUf(points, ufValue) {
@@ -3388,17 +4047,14 @@
 
       const city = resolveCityLabelFromRow(row);
       if (!city) return null;
-      const cep = normalizeCep(row?.cep);
-      const focusKey = mapCityFocusKeyFromRow({ uf, city, cep });
-      return { lat, lng, uf, weight, city, cep, inscritos: Number(inscritos || 0), atendimentos: Number(atendimentos || 0), ativos, focusKey };
+      const focusKey = mapCityFocusKeyFromRow({ uf, city });
+      return { lat, lng, uf, weight, city, inscritos: Number(inscritos || 0), atendimentos: Number(atendimentos || 0), ativos, focusKey };
     }
 
     function buildLeafletHeatCells(events, selectedUfCode, focusedCityKey = "", options = {}) {
       if (!Array.isArray(events) || !events.length) return [];
-      const precision = selectedUfCode ? 2 : 1;
       const buckets = new Map();
       const focusKey = String(focusedCityKey || "").trim();
-      const isFocusedAtCityLevel = focusKey.includes("|city:");
       const pointInSelectedUf = typeof options.pointInSelectedUf === "function" ? options.pointInSelectedUf : null;
 
       for (const row of events.slice(0, 120000)) {
@@ -3407,11 +4063,9 @@
         if (selectedUfCode && point.uf && point.uf !== selectedUfCode) continue;
         if (selectedUfCode && pointInSelectedUf && !pointInSelectedUf(point.lat, point.lng)) continue;
         if (focusKey && !matchesMapCityFocus(point.focusKey, focusKey)) continue;
-        const lat = Number(point.lat.toFixed(precision));
-        const lng = Number(point.lng.toFixed(precision));
-        const key = isFocusedAtCityLevel
-          ? (point.focusKey || `${point.uf || ""}|city:${normalizeTextKey(point.city || "")}`)
-          : `${point.focusKey || "ALL"}|${lat}|${lng}`;
+        const lat = Number(point.lat);
+        const lng = Number(point.lng);
+        const key = point.focusKey || `${point.uf || ""}|city:${normalizeTextKey(point.city || "")}`;
         const prev = buckets.get(key);
         if (prev) {
           prev.weight += point.weight;
@@ -3423,7 +4077,6 @@
           prev.weightSum += Math.max(1, Number(point.weight || 0));
           if (!prev.city && point.city) prev.city = point.city;
           if (!prev.uf && point.uf) prev.uf = point.uf;
-          if (!isFocusedAtCityLevel && !prev.cep && point.cep) prev.cep = point.cep;
         } else {
           const w = Math.max(1, Number(point.weight || 0));
           buckets.set(key, {
@@ -3432,7 +4085,6 @@
             weight: point.weight,
             city: point.city || "",
             uf: point.uf || "",
-            cep: isFocusedAtCityLevel ? "" : (point.cep || ""),
             inscritos: Number(point.inscritos || 0),
             atendimentos: Number(point.atendimentos || 0),
             ativos: Number(point.ativos || 0),
@@ -3501,13 +4153,13 @@
             lng: Number(geo.lng),
             intensity: clamp(inscritos / maxW, 0.35, 1),
             weight: inscritos,
-            city: geo.city,
+            city: "",
             uf: code,
             cep: "",
             inscritos,
             atendimentos,
             ativos: 0,
-            focusKey: mapCityFocusKeyFromRow({ uf: code, city: geo.city }),
+            focusKey: mapCityFocusKeyFromRow({ uf: code }),
           };
         })
         .filter(Boolean);
@@ -3517,6 +4169,28 @@
       if (!ctx?.emptyState) return;
       ctx.emptyState.style.display = show ? "block" : "none";
       ctx.emptyState.classList.toggle("hidden", !show);
+    }
+
+    function syncTerritoryCitiesFromHeatData(heatData, selectedUfCode) {
+      if (state.page !== "territory") return;
+      const citiesEl = document.getElementById("terrCities");
+      const coverageEl = document.getElementById("terrUfCoverage");
+      if (!citiesEl) return;
+      if (!selectedUfCode) {
+        citiesEl.textContent = "—";
+        return;
+      }
+      const cityCount = countDistinctCities(heatData);
+      citiesEl.textContent = `${fmtInt(cityCount)} cidades`;
+      if (coverageEl) {
+        const totalCities = Number(UF_CITY_TOTALS[selectedUfCode] || 0);
+        if (!totalCities) {
+          coverageEl.textContent = "--";
+        } else {
+          const pct = cityCount / totalCities;
+          coverageEl.textContent = `${fmtPct(pct)} (${fmtInt(cityCount)}/${fmtInt(totalCities)})`;
+        }
+      }
     }
 
     function renderMapPoints(containerId, events) {
@@ -3589,6 +4263,9 @@
       }
       toggleMapEmptyState(ctx, heatData.length === 0);
       updateHeatLegend(ctx, heatData);
+      if (containerId === "mapTerritory") {
+        syncTerritoryCitiesFromHeatData(heatData, selectedUfCode);
+      }
 
       try {
         let fallbackDrawn = 0;
@@ -3671,7 +4348,7 @@
       render();
     }
 
-    const PAGES = new Set(["overview", "territory", "engagement", "content", "export"]);
+    const PAGES = new Set(["overview", "territory", "engagement", "content"]);
 
     function currentHashPage() {
       const h = (location.hash || "").replace("#", "").trim();
@@ -3697,6 +4374,66 @@
       if (btn30) btn30.classList.toggle("is-active", is30);
       if (btn90) btn90.classList.toggle("is-active", is90);
       if (btnAll) btnAll.classList.toggle("is-active", isAll);
+    }
+
+    function renderTerritoryHighlightHeader(setText, selectedUfCode) {
+      if (selectedUfCode) {
+        setText("terrHighlightTitle", "Cidades em destaque");
+        setText("terrHighlightSubtitle", "Concentração urbana e oportunidades regionais.");
+        return;
+      }
+      setText("terrHighlightTitle", "UFs em destaque");
+      setText("terrHighlightSubtitle", "Distribuição entre unidades federativas no recorte atual.");
+    }
+
+    function renderTerritoryCoverageLabel(setText, selectedUfCode) {
+      setText(
+        "terrCoverageLabel",
+        selectedUfCode
+          ? "Cobertura por cidade (inscritos)"
+          : "Cobertura por UF (inscritos)"
+      );
+    }
+
+    function renderTerritoryUfButtons(setHtml, ufPairs = []) {
+      const html = (ufPairs || []).length
+        ? ufPairs.map(([ufLabel, count], idx) => {
+            const ufCode = resolveUfCode(ufLabel);
+            const ufFilterValue = String(ufLabel || "").trim();
+            const label = ufCode || ufFilterValue || "UF";
+            return `
+              <button
+                type="button"
+                class="city-focus-btn"
+                data-terr-uf-filter="${escapeHtml(ufFilterValue)}"
+                title="Clique para filtrar esta UF"
+              >
+                <span class="city-focus-label">${idx + 1}. ${escapeHtml(label)}</span>
+                <span class="city-focus-value">${fmtInt(count)}</span>
+              </button>
+            `;
+          }).join("")
+        : `<div class="text-sm text-slate-500">Sem dados por UF no recorte atual.</div>`;
+      setHtml("topCitiesList", html);
+    }
+
+    function renderTerritoryCityButtons(setHtml, rows = []) {
+      const html = (rows || []).length
+        ? rows.map((p, idx) => `
+          <button
+            type="button"
+            class="city-focus-btn ${state.mapCityFocus?.key === mapCityFocusKeyFromRow(p) ? "active" : ""}"
+            data-map-city-focus-key="${escapeHtml(mapCityFocusKeyFromRow(p))}"
+            data-map-city-focus-label="${escapeHtml(mapCityFocusLabelFromRow(p))}"
+            data-map-city-focus-uf="${escapeHtml(resolveUfCode(p.uf) || "")}"
+            title="Clique para destacar esta cidade no mapa"
+          >
+            <span class="city-focus-label">${idx + 1}. ${escapeHtml(mapCityFocusLabelFromRow(p))}</span>
+            <span class="city-focus-value">${fmtInt(p.weight)}</span>
+          </button>
+        `).join("")
+        : `<div class="text-sm text-slate-500">Sem dados de cidades para o recorte atual.</div>`;
+      setHtml("topCitiesList", html);
     }
 
     function renderAggregated(setText, setHtml) {
@@ -3726,11 +4463,15 @@
         .map((r)=>[String(r.tipo || "N/A"), Number(r.qtd || 0)])
         .filter(([label]) => !isEventoType(label));
       const topItens = topItensRows.map((r)=>[String(r.nome_item || "N/A"), Number(r.qtd || 0)]);
+      const macroPairsRaw = collectMacrotemaPairsFromItemPairs(topItens, topTipos);
+      const competencyPairsRaw = collectCompetencyPairsFromItemPairs(topItens, state.competencyMode);
+      const macroPairs = toPercentagePairs(macroPairsRaw, 10);
+      const competencyPairs = toPercentagePairs(competencyPairsRaw, 10);
       const geoPointsByCep = buildGeoPointsFromByCep(byCepRows);
       const geoPointsByCity = buildGeoPointsFromByCidade(byCityRows);
       const geoPointsByUf = buildGeoPointsFromByUf(byUfRows);
       const selectedUfCode = resolveUfCode(state.filters.uf);
-      const topCitiesLimit = selectedUfCode ? 6 : 10;
+      const topCitiesLimit = 10;
       let geoPoints = [];
       if (!selectedUfCode) {
         // Sem UF selecionada: mapa deve operar somente com agregado por UF.
@@ -3748,7 +4489,7 @@
         byCityRows.map((r) => ({
           cidade: r?.cidade,
           uf: r?.uf,
-          weight: Number(r?.atendimentos || r?.inscritos || r?.ativos || 0),
+          weight: Number(r?.inscritos || r?.atendimentos || r?.ativos || 0),
         })),
         topCitiesLimit
       );
@@ -3757,7 +4498,7 @@
           cep: r?.cep,
           cidade: r?.cidade,
           uf: r?.uf,
-          weight: Number(r?.atendimentos || r?.inscritos || 0),
+          weight: Number(r?.inscritos || r?.atendimentos || 0),
         })),
         topCitiesLimit
       );
@@ -3772,18 +4513,23 @@
         const lb = mapCityFocusLabelFromRow(b);
         return String(la).localeCompare(String(lb), "pt-BR");
       });
-      const cityCountByCity = countDistinctCities(byCityRows);
-      const cityCountByCep = countDistinctCities(byCepRows);
-      const geoCityLabel = cityCountByCity
-        ? `${cityCountByCity} cidades`
-        : (cityCountByCep ? `${cityCountByCep} cidades` : `${geoPoints.length} capitais`);
-      const ufCoverage = computeUfCoverageFromRows(byCityRows, state.filters.uf);
+      const ufCoverage = computeUfCoverageFromRows(byCityRows, state.filters.uf, {
+        byUfRows,
+        metaCoverage: raw?.meta?.coverage,
+      });
 
-      const inscritos = Number(k.inscritos || 0);
-      const atendimentos = Number(k.atendimentos || 0);
-      const atendidos = Number(k.atendidos || 0);
-      const membrosAtivos = Number(k.membros_ativos || 0);
-      const convRatio = Number(k.conversao_pct || 0) / 100;
+      const selectedUfMetrics = selectedUfCode
+        ? byUfRows.find((r) => resolveUfCode(r?.uf) === selectedUfCode) || null
+        : null;
+      const inscritos = selectedUfMetrics ? Number(selectedUfMetrics.inscritos || 0) : Number(k.inscritos || 0);
+      const atendimentos = selectedUfMetrics ? Number(selectedUfMetrics.atendimentos || 0) : Number(k.atendimentos || 0);
+      const membrosAtivos = selectedUfMetrics ? Number(selectedUfMetrics.ativos || 0) : Number(k.membros_ativos || 0);
+      const convRatioBackend = clamp(Number(k.conversao_pct || 0) / 100, 0, 1);
+      const convRatio = selectedUfMetrics ? convRatioBackend : convRatioBackend;
+      const atendidosBase = Number(k.atendidos || 0);
+      const atendidos = selectedUfMetrics
+        ? Math.round(inscritos * convRatio)
+        : atendidosBase;
 
       setText("kpiAtend", fmtInt(atendimentos));
       setText("kpiAtivos", fmtInt(inscritos));
@@ -3802,16 +4548,19 @@
       const atStats = seriesStats(sAt.labels, sAt.values);
       const topUf = byUfAt[0];
       const topShare = shareConcentration(byUfAt);
-      const topTipo = topTipos[0];
-      const topItem = topItens[0];
+      const topMacro = macroPairs[0];
+      const topCompetency = competencyPairs[0];
 
       setText("inscrPeak", `${fmtInt(insStats.maxVal)} em ${fmtDateBr(insStats.maxLabel)}`);
       setText("inscrAvg", `${fmtTrunc1(insStats.avg)} / dia`);
       setText("atendAvg", `${fmtTrunc1(atStats.avg)} / dia`);
       setText("atendTopUf", topUf ? `${topUf[0]} (${fmtInt(topUf[1])})` : "-");
-      setText("atendTopShare", `Top 5: ${fmtPct(topShare.top5)}`);
-      setText("macroTopLabel", topTipo ? `${toSentenceCase(topTipo[0])} (${fmtInt(topTipo[1])})` : "-");
-      setText("materialTopLabel", topItem ? `${topItem[0]} (${fmtInt(topItem[1])})` : "-");
+      setText("atendTopShare", `5 UFs: ${fmtPct(topShare.top5)}`);
+      setText("macroTopLabel", topMacro ? `${topMacro[0]} (${fmtPct(Number(topMacro[1] || 0) / 100)})` : "-");
+      setText(
+        "competencyTopLabel",
+        topCompetency ? `${topCompetency[0]} (${fmtPct(Number(topCompetency[1] || 0) / 100)})` : "-"
+      );
 
       const summary = [
         `Volume do periodo: ${fmtInt(atendimentos)} atendimentos e ${fmtInt(inscritos)} inscritos.`,
@@ -3821,30 +4570,17 @@
       setHtml("summaryList", summary.map((line)=>`<li>${line}</li>`).join(""));
 
       const flags = [];
-      if (topShare.top5 >= 0.75) flags.push("Alta concentracao territorial nos Top 5 UFs.");
+      if (topShare.top5 >= 0.75) flags.push("Alta concentracao territorial nas 5 UFs lideres.");
       if (convRatio < 0.2) flags.push("Conversao abaixo de 20% no recorte atual.");
       if (!flags.length) flags.push("Sem alertas criticos no recorte atual.");
       setHtml("insightsList", flags.map((line)=>`<li>${line}</li>`).join(""));
 
-      setHtml(
-        "topCitiesList",
-        topGeoCitiesOrdered.length
-          ? topGeoCitiesOrdered.map((p, idx) => `
-            <button
-              type="button"
-              class="city-focus-btn ${state.mapCityFocus?.key === mapCityFocusKeyFromRow(p) ? "active" : ""}"
-              data-map-city-focus-key="${escapeHtml(mapCityFocusKeyFromRow(p))}"
-              data-map-city-focus-label="${escapeHtml(mapCityFocusLabelFromRow(p))}"
-              data-map-city-focus-uf="${escapeHtml(resolveUfCode(p.uf) || "")}"
-              data-map-city-focus-cep="${escapeHtml(normalizeCep(p.cep) || "")}"
-              title="Clique para destacar esta cidade no mapa"
-            >
-              <span class="city-focus-label">${idx + 1}. ${escapeHtml(mapCityFocusLabelFromRow(p))}</span>
-              <span class="city-focus-value">${fmtInt(p.weight)}</span>
-            </button>
-          `).join("")
-          : `<div class="text-sm text-slate-500">Sem dados geograficos para o recorte atual.</div>`
-      );
+      renderTerritoryHighlightHeader(setText, selectedUfCode);
+      if (selectedUfCode) {
+        renderTerritoryCityButtons(setHtml, topGeoCitiesOrdered);
+      } else {
+        renderTerritoryUfButtons(setHtml, byUfAt.slice(0, 10));
+      }
       setText("funnelInscr", fmtInt(inscritos));
       setText("funnelAtend", fmtInt(atendimentos));
       setText("funnelAtendPct", fmtPct(convRatio));
@@ -3863,18 +4599,33 @@
         renderLineChart("chartInscrLine", sIns.labels, sIns.values, "Inscritos");
         renderMapPoints("map", geoPoints);
         renderUfPills(byUfAt);
-        renderDoughnut("chartMacro", topTipos, "Tipos");
-        renderDoughnut("chartMaterial", topItens, "Itens");
+        renderDoughnut("chartMacro", macroPairs, "Macrotema", { percentMode: true });
+        renderDoughnut("chartMaterial", competencyPairs, `Competências (${competencyModeLabel(state.competencyMode)})`, { percentMode: true });
       }
 
       if (state.page === "territory") {
-        renderBarChart("chartUfAtend2", byUfAt.slice(0, 12), "Atendimentos por UF");
+        const byCityAtPrimary = selectedUfCode
+          ? aggregateCityMetricPairs(byCityRows, selectedUfCode, "atendimentos", 10)
+          : [];
+        const byCityAt = selectedUfCode
+          ? (byCityAtPrimary.length ? byCityAtPrimary : aggregateCityMetricPairs(byCepRows, selectedUfCode, "atendimentos", 10))
+          : [];
+        const territoryPairs = selectedUfCode ? byCityAt : byUfAt.slice(0, 10);
+        const territoryChartTitle = selectedUfCode
+          ? "Atendimentos por cidade (10 maiores)"
+          : "Atendimentos por UF (10 maiores)";
+        renderBarChart("chartUfAtend2", territoryPairs, territoryChartTitle, {
+          topBarLabels: Boolean(selectedUfCode)
+        });
+        setText("terrRankTitle", territoryChartTitle);
         renderMapPoints("mapTerritory", geoPoints);
         setText("terrUfs", `${byUfRows.length} UFs`);
-        setText("terrCities", geoCityLabel);
+        setText("terrCities", "—");
         setText("terrUsers", fmtInt(inscritos));
         setText("terrAtendDay", fmtInt(Math.round(atStats.avg)));
+        renderTerritoryCoverageLabel(setText, selectedUfCode);
         setText("terrUfCoverage", ufCoverage.text);
+        if (selectedUfCode) renderMapPoints("mapTerritory", geoPoints);
       }
 
       if (state.page === "engagement") {
@@ -3884,16 +4635,10 @@
       }
 
       if (state.page === "content") {
-        renderDoughnut("chartMacroBar", topTipos, "Top tipos");
-        renderDoughnut("chartMatBar", topItens, "Top itens");
+        renderDoughnut("chartMacroBar", macroPairs, "Macrotemas", { percentMode: true });
+        renderDoughnut("chartMatBar", competencyPairs, `Competências (${competencyModeLabel(state.competencyMode)})`, { percentMode: true });
       }
 
-      if (state.page === "export") {
-        const info = document.getElementById("tblInfo");
-        const tbody = document.getElementById("tblBody");
-        if (info) info.textContent = "RPC agregada: export detalhado de eventos nao disponivel neste modo.";
-        if (tbody) tbody.innerHTML = "";
-      }
     }
 
     function render() {
@@ -3919,6 +4664,7 @@
       document.querySelectorAll("[data-page]").forEach(sec => {
         sec.classList.toggle("hidden", sec.getAttribute("data-page") !== state.page);
       });
+      syncCompetencyModeControls();
 
       const capEl = document.getElementById("dataCapLabel");
       if (capEl) {
@@ -3964,18 +4710,25 @@
       const atStats = seriesStats(sAt.labels, sAt.values);
       const topUf = ins.byUfAt[0];
       const topShare = shareConcentration(ins.byUfAt);
-      const macroTop = ins.macroTop[0];
-      const matTop = ins.matTop[0];
+      const macroPairsRaw = collectMacrotemaPairsFromEvents(state.filtered);
+      const competencyPairsRaw = collectCompetencyPairsFromEvents(state.filtered, state.competencyMode);
+      const macroPairs = toPercentagePairs(macroPairsRaw, 10);
+      const competencyPairs = toPercentagePairs(competencyPairsRaw, 10);
+      const macroTop = macroPairs[0];
+      const topCompetency = competencyPairs[0];
 
       setText("inscrPeak", `${fmtInt(insStats.maxVal)} em ${fmtDateBr(insStats.maxLabel)}`);
       setText("inscrAvg", `${fmtTrunc1(insStats.avg)} / dia`);
       setText("atendAvg", `${fmtTrunc1(atStats.avg)} / dia`);
       setText("atendTopUf", topUf ? `${topUf[0]} (${fmtInt(topUf[1])})` : "-");
-      setText("atendTopShare", `Top 5: ${fmtPct(topShare.top5)}`);
-      setText("macroTopLabel", macroTop ? `${macroTop[0]} (${fmtInt(macroTop[1])})` : "-");
-      setText("materialTopLabel", matTop ? `${matTop[0]} (${fmtInt(matTop[1])})` : "-");
+      setText("atendTopShare", `5 UFs: ${fmtPct(topShare.top5)}`);
+      setText("macroTopLabel", macroTop ? `${macroTop[0]} (${fmtPct(Number(macroTop[1] || 0) / 100)})` : "-");
+      setText(
+        "competencyTopLabel",
+        topCompetency ? `${topCompetency[0]} (${fmtPct(Number(topCompetency[1] || 0) / 100)})` : "-"
+      );
 
-      const summary = buildSummary(state.filtered);
+      const summary = buildSummary(state.filtered, state.competencyMode);
       const summaryHtml = summary.map((line) => `<li>${line}</li>`).join("");
       setHtml("summaryList", summaryHtml);
       const insightHtml = ins.flags.length
@@ -3984,29 +4737,26 @@
       setHtml("insightsList", insightHtml);
 
       const selectedUfCode = resolveUfCode(state.filters.uf);
-      const topCitiesLimit = selectedUfCode ? 6 : 10;
-      const topCities = topByKey(state.filtered, "city", null, topCitiesLimit)
-        .filter(([c])=>c)
-        .sort((a, b) => {
-          const diff = Number(b[1] || 0) - Number(a[1] || 0);
-          if (diff !== 0) return diff;
-          return String(a[0]).localeCompare(String(b[0]), "pt-BR");
-        });
-      const topCitiesHtml = topCities.length ? topCities.map(([city, count], idx) => `
-        <button
-          type="button"
-          class="city-focus-btn ${state.mapCityFocus?.key === mapCityFocusKeyFromRow({ city }) ? "active" : ""}"
-          data-map-city-focus-key="${escapeHtml(mapCityFocusKeyFromRow({ city }))}"
-          data-map-city-focus-label="${escapeHtml(mapCityFocusLabelFromRow({ city }))}"
-          data-map-city-focus-uf=""
-          data-map-city-focus-cep=""
-          title="Clique para destacar esta cidade no mapa"
-        >
-          <span class="city-focus-label">${idx + 1}. ${escapeHtml(String(city))}</span>
-          <span class="city-focus-value">${fmtInt(count)}</span>
-        </button>
-      `).join("") : `<div class="text-sm text-slate-500">Sem dados para o recorte atual.</div>`;
-      setHtml("topCitiesList", topCitiesHtml);
+      const topCitiesLimit = 10;
+      const mapCityRows = selectedUfCode
+        ? buildLeafletHeatCells(state.filtered, selectedUfCode, "")
+        : [];
+      const topGeoCities = selectedUfCode
+        ? [...mapCityRows]
+            .sort((a, b) => {
+              const wa = Number(a?.weight || 0);
+              const wb = Number(b?.weight || 0);
+              if (wb !== wa) return wb - wa;
+              return String(mapCityFocusLabelFromRow(a)).localeCompare(String(mapCityFocusLabelFromRow(b)), "pt-BR");
+            })
+            .slice(0, topCitiesLimit)
+        : [];
+      renderTerritoryHighlightHeader(setText, selectedUfCode);
+      if (selectedUfCode) {
+        renderTerritoryCityButtons(setHtml, topGeoCities);
+      } else {
+        renderTerritoryUfButtons(setHtml, ins.byUfAt.slice(0, 10));
+      }
 
       setText("funnelInscr", fmtInt(ins.kpis.inscritos));
       setText("funnelAtend", fmtInt(ins.kpis.atendimentos));
@@ -4028,19 +4778,38 @@
         renderMapPoints("map", state.filtered);
         const topUfGlobal = topByKey(state.filtered, "uf", (e)=>e.type==="atendimento" && isValidUfValue(e.uf), 27);
         renderUfPills(topUfGlobal);
-        renderDoughnut("chartMacro", ins.macroTop, "Macrotema");
-        renderDoughnut("chartMaterial", ins.matTop, "Tipo de material");
+        renderDoughnut("chartMacro", macroPairs, "Macrotema", { percentMode: true });
+        renderDoughnut("chartMaterial", competencyPairs, `Competências (${competencyModeLabel(state.competencyMode)})`, { percentMode: true });
       }
 
       if (state.page === "territory") {
-        renderBarChart("chartUfAtend2", ins.byUfAt.slice(0, 12), "Atendimentos por UF");
+        const cityAtPairs = selectedUfCode
+          ? topByKey(
+              state.filtered,
+              "city",
+              (e) => e.type === "atendimento" && isValidCityValue(e.city),
+              10
+            )
+              .filter(([label, count]) => String(label || "").trim() && Number(count || 0) > 0)
+              .map(([city, count]) => [`${String(city)} (${selectedUfCode})`, Number(count || 0)])
+          : [];
+        const territoryPairs = selectedUfCode ? cityAtPairs : ins.byUfAt.slice(0, 10);
+        const territoryChartTitle = selectedUfCode
+          ? "Atendimentos por cidade (10 maiores)"
+          : "Atendimentos por UF (10 maiores)";
+        renderBarChart("chartUfAtend2", territoryPairs, territoryChartTitle, {
+          topBarLabels: Boolean(selectedUfCode)
+        });
+        setText("terrRankTitle", territoryChartTitle);
         renderMapPoints("mapTerritory", state.filtered);
         setText("terrUfs", `${coverage.ufs} UFs`);
-        setText("terrCities", `${coverage.cities} cidades`);
+        setText("terrCities", "—");
         setText("terrUsers", fmtInt(coverage.users));
         setText("terrAtendDay", fmtInt(Math.round(coverage.atendPerDay)));
         const ufCoverage = computeUfCoverageFromEvents(state.filtered, state.filters.uf);
+        renderTerritoryCoverageLabel(setText, selectedUfCode);
         setText("terrUfCoverage", ufCoverage.text);
+        if (selectedUfCode) renderMapPoints("mapTerritory", state.filtered);
       }
 
       if (state.page === "engagement") {
@@ -4052,60 +4821,13 @@
       }
 
       if (state.page === "content") {
-        const topMacro = topByKey(state.filtered, "macrotema", (e)=>!isEventoType(e.type), 10);
-        const topMat = topByKey(state.filtered, "material_type", null, 10);
-        renderDoughnut("chartMacroBar", topMacro, "Macrotemas (Top)");
-        renderDoughnut("chartMatBar", topMat, "Materiais (Top)");
-      }
-
-      if (state.page === "export") {
-        renderTable();
+        const topMacro = macroPairs;
+        renderDoughnut("chartMacroBar", topMacro, "Macrotemas", { percentMode: true });
+        renderDoughnut("chartMatBar", competencyPairs, `Competências (${competencyModeLabel(state.competencyMode)})`, { percentMode: true });
       }
 
       syncPresetButtons();
       renderIconsNow();
-    }
-
-    function renderTable() {
-      const tbody = document.getElementById("tblBody");
-      const info = document.getElementById("tblInfo");
-      const q = (document.getElementById("tblSearch").value || "").toLowerCase().trim();
-
-      const rows = state.filtered
-        .filter(e => {
-          if (!q) return true;
-          return (
-            String(e.uf||"").toLowerCase().includes(q) ||
-            String(e.city||"").toLowerCase().includes(q) ||
-            String(e.type||"").toLowerCase().includes(q) ||
-            String(e.publico||"").toLowerCase().includes(q) ||
-            String(e.channel||"").toLowerCase().includes(q) ||
-            String(e.material_type||"").toLowerCase().includes(q) ||
-            String(e.macrotema||"").toLowerCase().includes(q) ||
-            String(e.date||"").toLowerCase().includes(q) ||
-            fmtDateBr(e.date).toLowerCase().includes(q)
-          );
-        })
-        .slice(0, 5000); // protecao
-
-      info.textContent = `Mostrando ${fmtInt(rows.length)} registros (limite 5.000 nesta visualizacao).`;
-
-      tbody.innerHTML = "";
-      for (const e of rows.slice(0, 60)) {
-        const tr = document.createElement("tr");
-        tr.className = "table-row";
-        tr.innerHTML = `
-          <td class="py-2 pr-3 text-sm">${fmtDateBr(e.date)}</td>
-          <td class="py-2 pr-3 text-sm">${formatUfDisplay(e.uf)}</td>
-          <td class="py-2 pr-3 text-sm">${e.city || "-"}</td>
-          <td class="py-2 pr-3 text-sm">${e.type}</td>
-          <td class="py-2 pr-3 text-sm">${e.publico}</td>
-          <td class="py-2 pr-3 text-sm">${e.channel || "-"}</td>
-          <td class="py-2 pr-3 text-sm">${e.material_type}</td>
-          <td class="py-2 pr-3 text-sm">${e.macrotema}</td>
-        `;
-        tbody.appendChild(tr);
-      }
     }
 
     function getPdfReportData() {
@@ -4367,7 +5089,7 @@
       const stamp = new Date().toISOString().slice(0, 19).replaceAll(":", "-");
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
-      const pagesForExport = ["overview", "territory", "engagement", "content", "export"];
+      const pagesForExport = ["overview", "territory", "engagement", "content"];
       const prevPage = state.page;
       const prevHash = location.hash;
       let shouldAddPage = false;
@@ -4426,13 +5148,23 @@
       const metaPublicos = state.raw?.meta?.available_publicos;
       const byUf = state.raw?.by_uf;
       const byPublico = state.raw?.by_publico;
-      const ufs = Array.isArray(metaUfs) && metaUfs.length
-        ? uniq(metaUfs.filter(isValidUfValue))
+      const snapshotUfs = state.ufPillsValueByCode instanceof Map
+        ? Array.from(state.ufPillsValueByCode.values()).filter(isValidUfValue)
+        : [];
+      const primaryUfs = Array.isArray(metaUfs) && metaUfs.length
+        ? metaUfs.filter(isValidUfValue)
         : (
             Array.isArray(byUf) && byUf.length
-              ? uniq(byUf.map((x)=>x.uf).filter(isValidUfValue))
-              : uniq(events.map((e)=>e.uf).filter(isValidUfValue))
+              ? byUf.map((x)=>x.uf).filter(isValidUfValue)
+              : events.map((e)=>e.uf).filter(isValidUfValue)
           );
+      const allUfOptions = Object.keys(UF_CENTROIDS)
+        .map((code) => {
+          const fromSnapshot = state.ufPillsValueByCode instanceof Map ? state.ufPillsValueByCode.get(code) : "";
+          return String(fromSnapshot || UF_CODE_TO_NAME[code] || code).trim();
+        })
+        .filter(isValidUfValue);
+      const ufs = mergeUfOptions(primaryUfs, snapshotUfs, allUfOptions);
       const pubs = Array.isArray(metaPublicos) && metaPublicos.length
         ? uniq(metaPublicos.filter(Boolean))
         : (
@@ -4479,15 +5211,16 @@
     }
 
     function getUfWelcomeOptions() {
+      const base = Object.keys(UF_CENTROIDS)
+        .map((code) => {
+          const fromSnapshot = state.ufPillsValueByCode instanceof Map ? state.ufPillsValueByCode.get(code) : "";
+          return String(fromSnapshot || UF_CODE_TO_NAME[code] || code).trim();
+        })
+        .filter(isValidUfValue);
       const metaUfs = state.raw?.meta?.available_ufs;
-      if (Array.isArray(metaUfs) && metaUfs.length) {
-        return uniq(metaUfs.filter(isValidUfValue)).sort((a, b) => String(a).localeCompare(String(b), "pt-BR"));
-      }
       const byUf = state.raw?.by_uf;
-      if (Array.isArray(byUf) && byUf.length) {
-        return uniq(byUf.map((r) => r?.uf).filter(isValidUfValue)).sort((a, b) => String(a).localeCompare(String(b), "pt-BR"));
-      }
-      return uniq(Object.keys(UF_CENTROIDS)).sort((a, b) => String(a).localeCompare(String(b), "pt-BR"));
+      const byUfOptions = Array.isArray(byUf) ? byUf.map((r) => r?.uf) : [];
+      return mergeUfOptions(metaUfs, byUfOptions, base);
     }
 
     function populateUfWelcomeList() {
@@ -4577,7 +5310,6 @@
           key,
           label: String(payload?.label || "").trim(),
           uf: resolveUfCode(payload?.uf) || "",
-          cep: normalizeCep(payload?.cep),
         };
       }
       render();
@@ -4588,6 +5320,15 @@
       if (!list || list.dataset.boundClick === "1") return;
       list.dataset.boundClick = "1";
       list.addEventListener("click", (ev) => {
+        const ufBtn = ev.target?.closest?.("[data-terr-uf-filter]");
+        if (ufBtn) {
+          ev.preventDefault();
+          const uf = String(ufBtn.getAttribute("data-terr-uf-filter") || "").trim();
+          if (!uf) return;
+          applyFilters({ uf }, { immediate: true, reason: "territory-uf-highlight" });
+          return;
+        }
+
         const btn = ev.target?.closest?.("[data-map-city-focus-key]");
         if (!btn) return;
         ev.preventDefault();
@@ -4595,7 +5336,6 @@
           key: btn.getAttribute("data-map-city-focus-key"),
           label: btn.getAttribute("data-map-city-focus-label"),
           uf: btn.getAttribute("data-map-city-focus-uf"),
-          cep: btn.getAttribute("data-map-city-focus-cep"),
         });
       });
     }
@@ -4609,6 +5349,18 @@
         });
       });
       bindTopCitiesListInteractions();
+
+      const bindCompetencyToggle = (id, mode) => {
+        const btn = document.getElementById(id);
+        if (!btn || btn.dataset.boundClick === "1") return;
+        btn.dataset.boundClick = "1";
+        btn.addEventListener("click", () => setCompetencyMode(mode));
+      };
+      bindCompetencyToggle("btnCompModeBncc", COMPETENCY_MODES.BNCC);
+      bindCompetencyToggle("btnCompModeEntrecomp", COMPETENCY_MODES.ENTRECOMP);
+      bindCompetencyToggle("btnCompModeBnccContent", COMPETENCY_MODES.BNCC);
+      bindCompetencyToggle("btnCompModeEntrecompContent", COMPETENCY_MODES.ENTRECOMP);
+      syncCompetencyModeControls();
 
       // filtros
       const bind = (id, fn) => {
@@ -4764,13 +5516,6 @@
         showToast("CSV exportado com sucesso.", "success");
       });
 
-      const tblSearch = document.getElementById("tblSearch");
-      if (tblSearch) {
-        tblSearch.addEventListener("input", ()=>{
-          if (state.page === "export") renderTable();
-        });
-      }
-
       window.addEventListener("hashchange", ()=>{
         state.page = currentHashPage();
         render();
@@ -4918,12 +5663,6 @@
               <span>Conte&uacute;dos</span>
             </span>
           </a>
-          <a href="#export" data-nav="export">
-            <span class="flex items-center gap-2">
-              <i data-lucide="table" class="w-4 h-4"></i>
-              <span>Exporta&ccedil;&atilde;o</span>
-            </span>
-          </a>
         </nav>
       </div>
 
@@ -5006,7 +5745,7 @@
         <section data-page="overview" class="grid grid-cols-12 gap-4 wrap-accent-blue wrap-soft p-4">
           <div class="col-span-12 card p-5 reveal">
             <div>
-              <h2 class="section-title">Atendimentos por UF (Top)</h2>
+              <h2 class="section-title">Atendimentos por UF</h2>
               <div class="text-sm text-slate-600">Priorize recursos onde a demanda &bull; maior.</div>
             </div>
             <div id="ufPills" class="mt-4 uf-pills"></div>
@@ -5050,22 +5789,19 @@
                 <button data-nav="content" class="chip soft">Conte&uacute;dos</button>
               </div>
               <div class="text-sm text-slate-600">Pauta estrat&eacute;gica e trilhas priorit&aacute;rias.</div>
-              <div class="flex flex-wrap gap-2 mt-2 text-xs text-slate-600">
-                <span class="badge">Top <strong id="macroTopLabel">&mdash;</strong></span>
-              </div>
               <div class="mt-4 h-56">
                 <canvas id="chartMacro"></canvas>
               </div>
           </div>
           <div class="col-span-12 lg:col-span-6 card p-5 reveal delay-3">
-              <div class="flex items-center justify-between">
-                <h2 class="section-title">Interesses por tipo de material</h2>
-                <button data-nav="content" class="chip soft">Conte&uacute;dos</button>
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 class="section-title">Interesses por Compet&ecirc;ncias</h2>
+                <div class="flex items-center gap-2 flex-wrap sm:justify-end">
+                  <button id="btnCompModeBncc" type="button" class="btn btn-sm btn-ghost is-active">BNCC</button>
+                  <button id="btnCompModeEntrecomp" type="button" class="btn btn-sm btn-ghost">EntreComp</button>
+                </div>
               </div>
-              <div class="text-sm text-slate-600">Formato preferido pelos participantes.</div>
-              <div class="flex flex-wrap gap-2 mt-2 text-xs text-slate-600">
-                <span class="badge">Top <strong id="materialTopLabel">&mdash;</strong></span>
-              </div>
+              <div class="text-sm text-slate-600">Distribui&ccedil;&atilde;o das compet&ecirc;ncias priorit&aacute;rias do recorte.</div>
               <div class="mt-4 h-56">
                 <canvas id="chartMaterial"></canvas>
               </div>
@@ -5082,7 +5818,7 @@
                     <span id="atendTopUf" class="value">&mdash;</span>
                   </div>
                   <div class="metric">
-                    <span class="label">Concentra&ccedil;&atilde;o (Top 5)</span>
+                    <span class="label">Concentra&ccedil;&atilde;o (5 UFs)</span>
                     <span id="atendTopShare" class="value">&mdash;</span>
                   </div>
                 </div>
@@ -5103,8 +5839,8 @@
 
         <section data-page="territory" class="hidden grid grid-cols-12 gap-4 wrap-accent-green wrap-soft p-4">
           <div class="col-span-12 card p-5">
-            <h2 class="section-title">Top cidades</h2>
-            <div class="text-sm text-slate-600">Concentra&ccedil;&atilde;o urbana e oportunidades regionais.</div>
+            <h2 id="terrHighlightTitle" class="section-title">Cidades em destaque</h2>
+            <div id="terrHighlightSubtitle" class="text-sm text-slate-600">Concentra&ccedil;&atilde;o urbana e oportunidades regionais.</div>
             <div id="topCitiesList" class="mt-4 uf-pills top-cities-pills"></div>
           </div>
 
@@ -5129,7 +5865,7 @@
                 <span id="terrAtendDay" class="value">&mdash;</span>
               </div>
               <div class="metric">
-                <span class="label">Cobertura por UF</span>
+                <span id="terrCoverageLabel" class="label">Cobertura por UF (inscritos)</span>
                 <span id="terrUfCoverage" class="value">&mdash;</span>
               </div>
             </div>
@@ -5142,7 +5878,7 @@
           </div>
 
           <div class="col-span-12 card p-5">
-            <h2 class="section-title">Atendimentos por UF (Top 12)</h2>
+            <h2 id="terrRankTitle" class="section-title">Atendimentos por UF (10 maiores)</h2>
             <div class="mt-4 h-64"><canvas id="chartUfAtend2"></canvas></div>
           </div>
         </section>
@@ -5189,81 +5925,23 @@
 
         <section data-page="content" class="hidden grid grid-cols-12 gap-4 wrap-soft p-4">
           <div class="col-span-12 card p-5">
-            <h2 class="section-title">Macrotemas (Top)</h2>
+            <h2 class="section-title">Macrotemas</h2>
             <div class="text-sm text-slate-600">Base para planejamento de portf&oacute;lio.</div>
             <div class="mt-4 h-72"><canvas id="chartMacroBar"></canvas></div>
           </div>
 
           <div class="col-span-12 card p-5">
-            <h2 class="section-title">Tipos de material (Top)</h2>
-            <div class="text-sm text-slate-600">Guia de formato preferido.</div>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <h2 class="section-title">Interesses por Compet&ecirc;ncias</h2>
+              <div class="flex items-center gap-2 flex-wrap sm:justify-end">
+                <button id="btnCompModeBnccContent" type="button" class="btn btn-sm btn-ghost is-active">BNCC</button>
+                <button id="btnCompModeEntrecompContent" type="button" class="btn btn-sm btn-ghost">EntreComp</button>
+              </div>
+            </div>
+            <div class="text-sm text-slate-600">Distribui&ccedil;&atilde;o das compet&ecirc;ncias priorit&aacute;rias do recorte.</div>
             <div class="mt-4 h-72"><canvas id="chartMatBar"></canvas></div>
           </div>
 
-          <div class="col-span-12 card p-5">
-            <h2 class="section-title">Combina&ccedil;&otilde;es mais acionadas</h2>
-            <div class="text-sm text-slate-600">Cruzamento macrotema &bull; material.</div>
-            <ul id="topMixList" class="mt-4 grid gap-2 text-sm text-slate-700"></ul>
-          </div>
-
-        </section>
-
-        <section data-page="export" class="hidden card p-5 wrap-soft">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <h2 class="section-title">Tabela + busca</h2>
-              <div id="tblInfo" class="text-sm text-slate-600">&mdash;</div>
-            </div>
-            <div class="flex items-center gap-2">
-              <i data-lucide="search" class="w-4 h-4"></i>
-              <input id="tblSearch" placeholder="Buscar (UF, cidade, tipo, p&uacute;blico...)"
-                class="input w-72 max-w-full" />
-            </div>
-          </div>
-
-          <div class="mt-4 overflow-auto rounded-2xl border border-slate-200">
-            <table class="min-w-[1020px] w-full">
-              <thead class="bg-slate-100/80 text-left">
-                <tr>
-                  <th class="py-2 px-3">Data</th>
-                  <th class="py-2 px-3">UF</th>
-                  <th class="py-2 px-3">Cidade</th>
-                  <th class="py-2 px-3">Tipo</th>
-                  <th class="py-2 px-3">P&uacute;blico</th>
-                  <th class="py-2 px-3">Canal</th>
-                  <th class="py-2 px-3">Material</th>
-                  <th class="py-2 px-3">Macrotema</th>
-                </tr>
-              </thead>
-              <tbody id="tblBody" class="bg-white/90"></tbody>
-            </table>
-          </div>
-
-          <div class="mt-4 grid md:grid-cols-2 gap-4">
-            <div class="card soft p-4">
-              <h3 class="section-title">Dicion&aacute;rio de dados</h3>
-              <ul class="mt-2 text-sm text-slate-600 list-disc pl-5 grid gap-1">
-                <li><strong>date</strong> &bull; data do registro.</li>
-                <li><strong>type</strong> &bull; inscri&ccedil;&atilde;o ou atendimento.</li>
-                <li><strong>publico</strong> &bull; perfil do participante.</li>
-                <li><strong>channel</strong> &bull; origem do atendimento.</li>
-                <li><strong>duration_min</strong> &bull; tempo estimado do atendimento (minutos).</li>
-                <li><strong>macrotema</strong> &bull; tema principal do conte&uacute;do.</li>
-              </ul>
-            </div>
-            <div class="card soft p-4">
-              <h3 class="section-title">Uso recomendado</h3>
-              <div class="mt-2 text-sm text-slate-600 grid gap-2">
-                <div>Utilize filtros para gerar recortes regionais e compartilhar com coordena&ccedil;&otilde;es locais.</div>
-                <div>O CSV exportado respeita filtros e mant&eacute;m colunas adicionais para auditoria.</div>
-                <div>Resultados desta tela s&atilde;o limitados a 5.000 linhas para performance.</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="text-xs text-slate-500 mt-2">
-            * Para export completo, use o bot&atilde;o &ldquo;Exportar CSV&rdquo; no topo (respeita filtros).
-          </div>
         </section>
 
         <footer class="text-xs text-slate-500 mt-2">

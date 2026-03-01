@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escalada | Matriz de Conteúdos Integrada</title>
+    
+    <!-- Tailwind CSS & Google Fonts & Lucide Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Estilos Globais */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* --- TEMA ESCURO (PADRÃO) --- */
+        body.dark-theme {
+            background-color: #030712; /* bg-gray-950 */
+            color: #d1d5db; /* text-gray-300 */
+        }
+
+        .dark-theme .vinheta::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at center, rgba(3, 7, 18, 0) 0%, #030712 85%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .dark-theme .info-card {
+            background-color: rgba(17, 24, 39, 0.6);
+            border: 1px solid #374151;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dark-theme .macro-card {
+             cursor: pointer;
+             transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .dark-theme .macro-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            border-color: #4ade80;
+        }
+
+        .dark-theme .interactive-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dark-theme .interactive-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(52, 211, 153, 0.3);
+            border-color: #34d399; /* emerald-400 */
+        }
+        
+        .dark-theme .section-title { font-size: 2.5rem; font-weight: 900; color: #f9fafb; line-height: 1.2; letter-spacing: -0.05em; }
+        .dark-theme .section-subtitle { font-size: 1.25rem; color: #9ca3af; margin-top: 1rem; max-width: 800px; margin-left: auto; margin-right: auto; }
+        
+        .dark-theme .timeline { position: relative; }
+        .dark-theme .timeline::before { content: ''; position: absolute; left: 1.25rem; top: 1rem; bottom: 1rem; width: 3px; background-color: #374151; border-radius: 2px; }
+        .dark-theme .timeline-item { position: relative; padding-left: 4rem; padding-bottom: 3rem; }
+        .dark-theme .timeline-item:last-child { padding-bottom: 0; }
+        .dark-theme .timeline-dot { position: absolute; left: 0; top: 0.125rem; width: 2.75rem; height: 2.75rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px; background-color: #1f2937; border: 3px solid #4ade80; }
+        
+        .dark-theme .modal { position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(8px); }
+        .dark-theme .modal-content { background-color: #111827; margin: auto; padding: 2.5rem; border: 1px solid #374151; border-radius: 1.5rem; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; animation: zoomIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); position: relative; }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .dark-theme .modal-close { position: absolute; top: 1rem; right: 1.5rem; color: #9ca3af; font-size: 30px; transition: 0.3s; cursor: pointer; line-height: 1; }
+        .dark-theme .modal-close:hover { color: #f9fafb; }
+
+        /* --- TEMA CLARO (PARA MATRIZ COMPILADA) --- */
+        body.light-theme {
+            background-color: #f8fafc; /* bg-slate-50 */
+            color: #334155; /* text-slate-700 */
+        }
+        .light-theme .header-title { color: #1e293b; }
+        .light-theme .header-subtitle { color: #64748b; }
+        .light-theme .table-header {
+            background-color: #f1f5f9; /* bg-slate-100 */
+            font-weight: 600;
+            color: #1e293b; /* text-slate-800 */
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .light-theme .table-container {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        /* --- ESTILOS DE IMPRESSÃO --- */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .no-print { display: none; }
+            .section-break { page-break-after: always; }
+            .table-container { box-shadow: none; border: 1px solid #cbd5e1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="vinheta"></div>
+
+    <!-- Container Principal que engloba as duas visualizações -->
+    <div class="max-w-7xl mx-auto p-4 sm:p-8">
+        
+        <!-- VISUALIZAÇÃO INTERATIVA (INICIAL) -->
+        <div id="matriz-completa-view">
+            <!-- Conteúdo será renderizado aqui pelo JS -->
+        </div>
+
+        <!-- VISUALIZAÇÃO COMPILADA (ESCONDIDA INICIALMENTE) -->
+        <div id="matriz-compilada-view" class="hidden">
+            <!-- Conteúdo será renderizado aqui pelo JS -->
+        </div>
+
+        <!-- Modal para o Selo TNL -->
+        <div id="selo-modal" class="modal">
+            <div class="modal-content">
+                <span id="selo-modal-close-btn" class="modal-close">&times;</span>
+                <div id="selo-modal-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- BANCO DE DADOS DE CONTEÚDO UNIFICADO ---
+        const dadosDosModulos = {
+            "CI-0": { titulo: "Como transformar ideias em ação?", macrotema: "empreendedorismo", microtema: "Mentalidade maker", eixo: "EU E O MUNDO", bncc: "8", entrecomp: "Rec 2.1", objetivo: "Apresentar o Ciclo da Inovação para estimular a criatividade e o empreendedorismo.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> Rec 2.1</li><li><b>BNCC:</b> 8</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Trilha Digital, Autoavaliação, Quiz.</p>` },
+            "CI-1": { titulo: "Fontes de Inspiração", macrotema: "empreendedorismo", microtema: "Empatia e pesquisa", eixo: "EU E O MUNDO", bncc: "10", entrecomp: "I&O 1.1", objetivo: "Estimular a curiosidade investigativa para explorar problemas reais e suas causas.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> I&O 1.1</li><li><b>BNCC:</b> 10</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Trilha Digital, Template 5W1H, Quiz, Plano de Ação.</p>` },
+            "CI-2": { titulo: "Tempestade de ideias", macrotema: "empreendedorismo", microtema: "Levantar ideias livres", eixo: "EU E O MUNDO", bncc: "2", entrecomp: "I&O 1.2 + 1.3", objetivo: "Gerar, organizar e selecionar ideias de forma estruturada e criativa.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> I&O 1.2 + 1.3</li><li><b>BNCC:</b> 2</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Trilha Digital, Autoavaliação, Dinâmica de Brainwriting e C-Box.</p>` },
+            "CI-3": { titulo: "Mão na massa: a primeira versão", macrotema: "empreendedorismo", microtema: "Prototipagem maker", eixo: "EU E O MUNDO", bncc: "6", entrecomp: "Ação 3.3", objetivo: "Explorar a prototipação para transformar ideias em soluções tangíveis e testáveis.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> Ação 3.3</li><li><b>BNCC:</b> 6</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Trilha Digital, Desafio rápido, Texto e Template, Atividade de aplicação.</p>` },
+            "CI-4": { titulo: "Minha solução no Mundo", macrotema: "empreendedorismo", microtema: "Comunicação e engajamento", eixo: "EU E O MUNDO", bncc: "9", entrecomp: "Ação 3.4", objetivo: "Estimular o compartilhamento de ideias e protótipos para promover a troca de aprendizados.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> Ação 3.4</li><li><b>BNCC:</b> 9</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Trilha Digital, Atividade de Ativação, Quiz de Reflexão.</p>` },
+            "DP1": { titulo: "Quem sou eu?", macrotema: "autoconhecimento", microtema: "Identidade & Projeto de Vida", eixo: "EU", bncc: "8", entrecomp: "1.1 + 3.1", objetivo: "Mapear a identidade pessoal (origens, paixões, talentos) para fomentar o autoconhecimento.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> 1.1 + 3.1</li><li><b>BNCC:</b> 8</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, E-book, Artigo, Atividade, Quiz.</p>` },
+            "DP2": { titulo: "Como parar de viver no automático?", macrotema: "autoconhecimento", microtema: "Micro-hábitos & Bem-estar", eixo: "EU", bncc: "8", entrecomp: "2.1", objetivo: "Despertar a consciência sobre hábitos automáticos e incentivar a adoção de um micro-hábito.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> 2.1</li><li><b>BNCC:</b> 8</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, Checklist PDF, Artigo, Quiz.</p>` },
+            "DP7": { titulo: "Explorando caminhos para o futuro", macrotema: "autoconhecimento", microtema: "Planejamento de vida", eixo: "EU", bncc: "8", entrecomp: "5.1 + 5.2", objetivo: "Converter sonhos em metas SMART de 30 dias e criar consistência com um Habit Tracker.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> 5.1 + 5.2</li><li><b>BNCC:</b> 8</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, E-book Kit Planeje Já (PDF), Artigo.</p>` },
+            "DP3": { titulo: "Ninguém escalada sozinho", macrotema: "autoconhecimento", microtema: "Autocohecimento", eixo: "EU E O OUTRO", bncc: "9", entrecomp: "Rec 2.5", objetivo: "Mapear e fortalecer vínculos pessoais, reconhecendo a influência das relações na identidade.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> Rec 2.5</li><li><b>BNCC:</b> 9</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, Artigo, Atividade Mapa de Relações, Quiz.</p>` },
+            "GF1": { titulo: "Por que meu dinheiro nunca sobra?", macrotema: "cultura-digital", microtema: "Educação financeira", eixo: "EU", bncc: "6", entrecomp: "4.1 + 4.2", objetivo: "Conscientizar sobre micro-gastos diários (\"vazamentos\") e adotar trocas inteligentes.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> 4.1 + 4.2</li><li><b>BNCC:</b> 6</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, Manual PDF, Artigo.</p>` },
+            "GF2": { titulo: "Olha o Pix aê!", macrotema: "cultura-digital", microtema: "Educação financeira", eixo: "EU", bncc: "6", entrecomp: "4.1 + 4.2", objetivo: "Introduzir o hábito de reservar automaticamente 10% da renda usando agendamento.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> 4.1 + 4.2</li><li><b>BNCC:</b> 6</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, Planilha PIX Tracker, Artigo, Quiz.</p>` },
+            "DP4": { titulo: "Hackeando o meu Feed", macrotema: "cultura-digital", microtema: "Cultura digital", eixo: "EU", bncc: "5", entrecomp: "1.2 + 1.4", objetivo: "Desenvolver a habilidade de analisar criticamente o feed e selecionar fontes confiáveis.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> 1.2 + 1.4</li><li><b>BNCC:</b> 5</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, E-book, Artigo, Atividade Matriz 2x2, Quiz.</p>` },
+            "DP5": { titulo: "Olhar Empreendedor para o Mundo", macrotema: "cultura-digital", microtema: "Escuta ativa do território", eixo: "EU", bncc: "6", entrecomp: "I&O 1.1", objetivo: "Estimular a escuta ativa do território para identificar oportunidades de ação comunitária.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> I&O 1.1</li><li><b>BNCC:</b> 6</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, Artigo, Quiz 'Detecta ou Descarta?'.</p>` },
+            "DP8": { titulo: "Conexões que importam", macrotema: "ferramentas", microtema: "Tecnologias colaborativas", eixo: "EU E O OUTRO", bncc: "EF09CI15", entrecomp: "I&O 1.2 + 1.3", objetivo: "Apresentar ferramentas digitais acessíveis como meios de expressão, organização e impacto.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> I&O 1.2 + 1.3</li><li><b>BNCC:</b> EF09CI15</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, E-book Kit Modo Criador, Artigo.</p>` },
+            "PR2": { titulo: "Na Raiz do Problema", macrotema: "ferramentas", microtema: "Análise de causa-raiz", eixo: "EU E O OUTRO", bncc: "7", entrecomp: "1.4 + 3.2", objetivo: "Aplicar a técnica dos Cinco Porquês para encontrar a causa-raiz de problemas comunitários.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> 1.4 + 3.2</li><li><b>BNCC:</b> 7</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, E-book, Artigo, Atividade Canvas 5 Porquês, Quiz.</p>` },
+            "PR4": { titulo: "Testar, errar & melhorar", macrotema: "ferramentas", microtema: "Prototipagem maker", eixo: "EU E O OUTRO", bncc: "2", entrecomp: "I&O 1.2 + 1.3", objetivo: "Construir e testar protótipos rápidos para validar ideias com feedback real.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> I&O 1.2 + 1.3</li><li><b>BNCC:</b> 2</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, Artigo, Worksheet Matriz de Feedback.</p>` },
+            "DP6": { titulo: "Como colocar ideas em movimento?", macrotema: "colaboracao", microtema: "Ideação e inovação simples", eixo: "EU E O MUNDO", bncc: "2", entrecomp: "I&O 1.2 + 1.3", objetivo: "Aplicar o ciclo básico da inovação simples (Escuta → Pergunta → Experimentação).", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> I&O 1.2 + 1.3</li><li><b>BNCC:</b> 2</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, Infográfico Mapa da Inovação, Artigo.</p>` },
+            "PR5": { titulo: "Como gerar engajamento nas soluções?", macrotema: "colaboracao", microtema: "Comunicação e engajamento", eixo: "EU E O MUNDO", bncc: "9", entrecomp: "I&O 1.2 + 1.3", objetivo: "Planejar e executar uma mini-ação coletiva para mobilizar a comunidade e gerar impacto.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> I&O 1.2 + 1.3</li><li><b>BNCC:</b> 9</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, Infográfico Guia Mobiliza 3x3, Artigo.</p>` },
+            "PR1": { titulo: "Mapeando realidades e construindo a mudança", macrotema: "colaboracao", microtema: "Diagnóstico territorial", eixo: "EU E O OUTRO", bncc: "10", entrecomp: "I&O 1.2/1.3", objetivo: "Compreender as dores e riquezas locais por meio de uma escuta ativa e empática.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> I&O 1.2/1.3</li><li><b>BNCC:</b> 10</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, Artigo, Infográfico Guia Rádio Comunidade.</p>` },
+            "PR3": { titulo: "Do planejamento à ação", macrotema: "colaboracao", microtema: "Gestão de projetos (Mini Canvas)", eixo: "EU E O MUNDO", bncc: "8", entrecomp: "3.1 + 3.2", objetivo: "Transformar ideias em planos concretos usando o Canvas Impulso-5 para dar o primeiro passo.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> 3.1 + 3.2</li><li><b>BNCC:</b> 8</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Vídeo, E-book, Artigo, Atividade Canvas Impulso-5, Quiz.</p>` },
+            "ODS1": { titulo: "Escolhas Sustentáveis na Prática", macrotema: "cidadania", microtema: "Consumo consciente", eixo: "EU E O MUNDO", bncc: "10", entrecomp: "1.5, 2.4, 3.1, 3.5", objetivo: "Mobilizar ações sustentáveis no cotidiano, alinhado a ODS 12 e BNCC.", ficha: `<h4 class="text-xl font-bold text-white mb-4">Competências Desenvolvidas</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li><b>EntreComp:</b> 1.5, 2.4, 3.1, 3.5</li><li><b>BNCC:</b> 10</li></ul><h4 class="text-xl font-bold text-white mt-6 mb-4">Recursos Didáticos</h4><p class="text-gray-400">Trilha Digital, E-book.</p>` },
+        };
+
+        const dadosDosMacrotemas = {
+            autoconhecimento: { titulo: "Jornada do Eu", cor: "purple", icone: "user-round-search", link: "https://escalada.me/convite-jornadadoeu" },
+            "cultura-digital": { titulo: "Caixa de Ferramentas Digitais", cor: "cyan", icone: "cpu", link: "https://escalada.me/convite-caixadeferramentas" },
+            ferramentas: { titulo: "Oficina de Soluções", cor: "yellow", icone: "wrench", link: "https://escalada.me/convite-oficinasolucoes" },
+            colaboracao: { titulo: "Conexões que Constroem", cor: "orange", icone: "users", link: "https://escalada.me/convite-conexoesqueconstroem" },
+            cidadania: { titulo: "Nossa Pegada no Mundo", cor: "green", icone: "leaf", link: "https://escalada.me/nossapegadanomundo" },
+            empreendedorismo: { titulo: "Impulso para o Futuro", cor: "blue", icone: "briefcase", link: "https://escalada.me/impulsoparaofuturo" },
+        };
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const body = document.body;
+            const mainViewContainer = document.getElementById('matriz-completa-view');
+            const compiladaViewContainer = document.getElementById('matriz-compilada-view');
+            
+            const seloModal = document.getElementById('selo-modal');
+            const seloModalBody = document.getElementById('selo-modal-body');
+            const seloModalCloseBtn = document.getElementById('selo-modal-close-btn');
+
+            const showView = (viewName) => {
+                if (viewName === 'compilada') {
+                    mainViewContainer.classList.add('hidden');
+                    compiladaViewContainer.classList.remove('hidden');
+                    body.classList.remove('dark-theme');
+                    body.classList.add('light-theme');
+                } else {
+                    compiladaViewContainer.classList.add('hidden');
+                    mainViewContainer.classList.remove('hidden');
+                    body.classList.remove('light-theme');
+                    body.classList.add('dark-theme');
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const normalizarLinkMacrotema = (linkBruto, macrotemaId) => {
+                const fallbackLink = `${window.location.href.split('#')[0]}#macrotema=${encodeURIComponent(macrotemaId)}`;
+                if (!linkBruto || typeof linkBruto !== 'string') return fallbackLink;
+                try {
+                    return new URL(linkBruto, window.location.href).href;
+                } catch {
+                    return fallbackLink;
+                }
+            };
+
+            const montarLinkQrCode = (link) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(link)}`;
+            const logoEscaladaThumbnail = 'https://drive.google.com/thumbnail?id=1vFV11h24cSJ2sQp-rMc9-SNurR0ddcu1&sz=w1200';
+            const copiarTextoParaAreaTransferencia = async (texto) => {
+                if (!texto) return false;
+                if (navigator.clipboard && window.isSecureContext) {
+                    try {
+                        await navigator.clipboard.writeText(texto);
+                        return true;
+                    } catch {}
+                }
+
+                try {
+                    const area = document.createElement('textarea');
+                    area.value = texto;
+                    area.setAttribute('readonly', '');
+                    area.style.position = 'fixed';
+                    area.style.opacity = '0';
+                    area.style.pointerEvents = 'none';
+                    document.body.appendChild(area);
+                    area.select();
+                    area.setSelectionRange(0, area.value.length);
+                    const copiou = document.execCommand('copy');
+                    document.body.removeChild(area);
+                    return copiou;
+                } catch {
+                    return false;
+                }
+            };
+
+            const baixarImagemPorUrl = async (url, nomeArquivo) => {
+                try {
+                    const resposta = await fetch(url, { mode: 'cors' });
+                    if (!resposta.ok) throw new Error('Falha ao baixar imagem');
+                    const blob = await resposta.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = nomeArquivo;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    URL.revokeObjectURL(blobUrl);
+                    return true;
+                } catch {
+                    window.open(url, '_blank', 'noopener');
+                    return false;
+                }
+            };
+
+            const renderMainView = () => {
+                mainViewContainer.innerHTML = `
+                    <div class="max-w-6xl mx-auto">
+                        <header id="main-header" class="text-center pt-12 pb-16">
+                            <img src="${logoEscaladaThumbnail}" alt="Logo Escalada" class="mx-auto h-20 w-auto mb-6" onerror="this.onerror=null;this.src='https://placehold.co/200x80/030712/FFFFFF?text=Escalada';">
+                            <h1 class="text-5xl md:text-6xl font-black text-white tracking-tighter">Matriz de Conteúdos</h1>
+                            <p class="text-xl text-gray-400 font-medium mt-2 tracking-tight">Escolha um macrotema e explore os módulos associados.</p>
+                        </header>
+                        <div id="mosaico-wrapper">
+                            ${getMainContentHTML()}
+                        </div>
+                        <div id="detalhes-view" class="hidden"></div>
+                    </div>
+                `;
+                // remove sections that precede "Nossos Conteúdos" if they exist
+                document.querySelectorAll('#selo-tnl, #ecossistema-conteudo').forEach(el => el.remove());
+                attachMainViewListeners();
+                lucide.createIcons();
+            };
+
+            const getMainContentHTML = () => {
+                let fullHtml = `
+                    <main id="mosaico-view" class="space-y-24">
+                    </section>
+                    <main id="mosaico-view" class="space-y-24">
+                        <section>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div class="info-card macro-card" data-macrotema="autoconhecimento"><div class="flex-grow"><i data-lucide="user-round-search" class="w-12 h-12 mb-4 text-purple-400"></i><h3 class="text-2xl font-bold text-white">Jornada do Eu</h3></div><div class="text-gray-400 mt-4 text-sm space-y-2 border-t border-gray-700 pt-4"><p><strong>Microtemas:</strong> Identidade, Hábitos, Planejamento de Vida.</p><p><strong>Competências:</strong> BNCC (8, 9), EntreComp (Autoconsciência, Iniciativa).</p><p><strong>Objetivo:</strong> Mapear a identidade pessoal e construir um futuro com propósito.</p></div></div>
+                            <div class="info-card macro-card" data-macrotema="cultura-digital"><div class="flex-grow"><i data-lucide="cpu" class="w-12 h-12 mb-4 text-cyan-400"></i><h3 class="text-2xl font-bold text-white">Caixa de Ferramentas Digitais</h3></div><div class="text-gray-400 mt-4 text-sm space-y-2 border-t border-gray-700 pt-4"><p><strong>Microtemas:</strong> Educação Financeira, Cultura Digital, Escuta Ativa.</p><p><strong>Competências:</strong> BNCC (5, 6), EntreComp (Gestão de Recursos, Análise de Valor).</p><p><strong>Objetivo:</strong> Dominar o digital para potencializar ideias e finanças.</p></div></div>
+                            <div class="info-card macro-card" data-macrotema="ferramentas"><div class="flex-grow"><i data-lucide="wrench" class="w-12 h-12 mb-4 text-yellow-400"></i><h3 class="text-2xl font-bold text-white">Oficina de Soluções</h3></div><div class="text-gray-400 mt-4 text-sm space-y-2 border-t border-gray-700 pt-4"><p><strong>Microtemas:</strong> Tecnologias Colaborativas, Análise de Causa-Raiz, Prototipagem.</p><p><strong>Competências:</strong> BNCC (7, 9), EntreComp (Planejar, Criar).</p><p><strong>Objetivo:</strong> Aprender a usar as ferramentas certas para resolver problemas complexos.</p></div></div>
+                            <div class="info-card macro-card" data-macrotema="colaboracao"><div class="flex-grow"><i data-lucide="users" class="w-12 h-12 mb-4 text-orange-400"></i><h3 class="text-2xl font-bold text-white">Conexões que Constroem</h3></div><div class="text-gray-400 mt-4 text-sm space-y-2 border-t border-gray-700 pt-4"><p><strong>Microtemas:</strong> Ideação, Engajamento, Diagnóstico, Planejamento.</p><p><strong>Competências:</strong> BNCC (2, 9, 10), EntreComp (Criar Valor, Mobilizar Recursos).</p><p><strong>Objetivo:</strong> Transformar ideias em realidade através do trabalho em equipe.</p></div></div>
+                            <div class="info-card macro-card" data-macrotema="cidadania"><div class="flex-grow"><i data-lucide="leaf" class="w-12 h-12 mb-4 text-green-400"></i><h3 class="text-2xl font-bold text-white">Nossa Pegada no Mundo</h3></div><div class="text-gray-400 mt-4 text-sm space-y-2 border-t border-gray-700 pt-4"><p><strong>Microtemas:</strong> Consumo Consciente, Ação Local.</p><p><strong>Competências:</strong> BNCC (6, 10), EntreComp (Pensamento Ético, Iniciativa).</p><p><strong>Objetivo:</strong> Engajar-se em ações que impactam positivamente o mundo.</p></div></div>
+                            <div class="info-card macro-card" data-macrotema="empreendedorismo"><div class="flex-grow"><i data-lucide="briefcase" class="w-12 h-12 mb-4 text-blue-400"></i><h3 class="text-2xl font-bold text-white">Impulso para o Futuro</h3></div><div class="text-gray-400 mt-4 text-sm space-y-2 border-t border-gray-700 pt-4"><p><strong>Microtemas:</strong> Mentalidade Maker, Empatia, Ideação, Prototipagem.</p><p><strong>Competências:</strong> BNCC (2, 8, 10), EntreComp (Criatividade, Oportunidades).</p><p><strong>Objetivo:</strong> Desenvolver a mentalidade e as ferramentas para criar e inovar.</p></div></div>
+                        </div>
+                    </section>
+                </main>
+                <footer class="text-center mt-24 pt-10 border-t border-gray-800">
+                    <h3 class="text-2xl font-bold text-white">Quer uma visão completa?</h3>
+                    <p class="text-gray-400 mt-2 mb-6">Acesse nossa matriz de conteúdo compilada em uma página otimizada para visualização e impressão.</p>
+                    <button id="show-compilada-btn" class="inline-flex items-center gap-2 bg-green-600 text-white font-bold py-3 px-6 rounded-full hover:bg-green-700 transition-all shadow-lg hover:shadow-xl shadow-green-500/20">
+                        <i data-lucide="table-2" class="w-5 h-5"></i>
+                        Ver Matriz Compilada
+                    </button>
+                </footer>
+                `;
+                return fullHtml;
+            };
+
+            const renderDetalhesView = (macrotemaId) => {
+                const mainHeader = document.getElementById('main-header');
+                const mosaicoWrapper = document.getElementById('mosaico-wrapper');
+                const detalhesView = document.getElementById('detalhes-view');
+                const modulosDoMacrotema = Object.entries(dadosDosModulos).filter(([_, modulo]) => modulo.macrotema === macrotemaId);
+                const dadosMacrotema = dadosDosMacrotemas[macrotemaId];
+                const linkMacrotema = normalizarLinkMacrotema(dadosMacrotema.link, macrotemaId);
+                const qrCodeMacrotema = montarLinkQrCode(linkMacrotema);
+                const eixoIcones = { "EU": "user", "EU E O OUTRO": "users", "EU E O MUNDO": "globe" };
+
+                let timelineHTML = '';
+                modulosDoMacrotema.forEach(([codigo, modulo]) => {
+                    const eixoIcone = eixoIcones[modulo.eixo] || 'help-circle';
+                    timelineHTML += `
+                        <div class="timeline-item">
+                            <div class="timeline-dot">
+                                <i data-lucide="${dadosMacrotema.icone}" class="w-6 h-6 text-${dadosMacrotema.cor}-400"></i>
+                            </div>
+                            <div class="info-card !p-6 !border-gray-800 hover:!border-gray-600">
+                                <div class="flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold uppercase tracking-wider mb-2">
+                                    <span class="flex items-center gap-1.5 text-${dadosMacrotema.cor}-400">
+                                        <i data-lucide="layers" class="w-3.5 h-3.5"></i> ${modulo.microtema}
+                                    </span>
+                                    <span class="flex items-center gap-1.5 text-gray-400">
+                                        <i data-lucide="${eixoIcone}" class="w-3.5 h-3.5"></i> ${modulo.eixo}
+                                    </span>
+                                </div>
+                                <h4 class="text-xl font-bold text-white mt-1">${codigo}: ${modulo.titulo}</h4>
+                                <p class="text-gray-400 mt-2">${modulo.objetivo}</p>
+                                <div class="mt-4 pt-4 border-t border-gray-700">
+                                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Competências Desenvolvidas</p>
+                                    <ul class="space-y-1.5 text-sm text-gray-300">
+                                        <li><span class="font-semibold text-gray-200">EntreComp:</span> ${modulo.entrecomp || 'N/A'}</li>
+                                        <li><span class="font-semibold text-gray-200">BNCC:</span> ${modulo.bncc || 'N/A'}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                detalhesView.innerHTML = `
+                    <section>
+                        <button id="back-to-mosaico" class="mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i> Voltar para o Mosaico
+                        </button>
+                        <div class="text-center mb-12">
+                            <h2 class="section-title"><span class="text-${dadosMacrotema.cor}-400">${dadosMacrotema.titulo}</span></h2>
+                            <p class="section-subtitle">Explore os módulos e atividades desta trilha de conhecimento.</p>
+                        </div>
+                        <div class="max-w-3xl mx-auto mb-10">
+                            <div class="info-card !p-5 !border-gray-800">
+                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Link da página</p>
+                                        <a href="${linkMacrotema}" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-green-300 hover:text-green-200 break-all">
+                                            ${linkMacrotema}
+                                        </a>
+                                        <div class="mt-4 flex flex-wrap gap-2">
+                                            <button id="copy-link-btn" type="button" class="inline-flex items-center justify-center bg-gray-800 text-gray-200 font-semibold text-xs px-3 py-2 rounded-lg border border-gray-600 hover:bg-gray-700 transition disabled:opacity-60 disabled:cursor-not-allowed">
+                                                Copiar link
+                                            </button>
+                                            <button id="download-qr-btn" type="button" class="inline-flex items-center justify-center bg-green-700 text-white font-semibold text-xs px-3 py-2 rounded-lg border border-green-500 hover:bg-green-600 transition disabled:opacity-60 disabled:cursor-not-allowed">
+                                                Baixar QR code
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="shrink-0">
+                                        <img src="${qrCodeMacrotema}" alt="QR Code para ${dadosMacrotema.titulo}" class="w-28 h-28 rounded-xl bg-white p-1 border border-gray-700">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="relative timeline max-w-3xl mx-auto">${timelineHTML}</div>
+                    </section>
+                `;
+
+                mainHeader?.classList.add('hidden');
+                mosaicoWrapper.classList.add('hidden');
+                detalhesView.classList.remove('hidden');
+                detalhesView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                lucide.createIcons();
+
+                const copyLinkBtn = document.getElementById('copy-link-btn');
+                const downloadQrBtn = document.getElementById('download-qr-btn');
+
+                copyLinkBtn?.addEventListener('click', async () => {
+                    const textoOriginal = copyLinkBtn.textContent;
+                    copyLinkBtn.disabled = true;
+                    copyLinkBtn.textContent = 'Copiando...';
+                    const copiou = await copiarTextoParaAreaTransferencia(linkMacrotema);
+                    copyLinkBtn.textContent = copiou ? 'Copiado!' : 'Falha ao copiar';
+                    setTimeout(() => {
+                        copyLinkBtn.textContent = textoOriginal;
+                        copyLinkBtn.disabled = false;
+                    }, 1400);
+                });
+
+                downloadQrBtn?.addEventListener('click', async () => {
+                    const textoOriginal = downloadQrBtn.textContent;
+                    downloadQrBtn.disabled = true;
+                    downloadQrBtn.textContent = 'Baixando...';
+                    const nomeArquivo = `qr-${(dadosMacrotema.titulo || macrotemaId).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || macrotemaId}.png`;
+                    const baixou = await baixarImagemPorUrl(qrCodeMacrotema, nomeArquivo);
+                    downloadQrBtn.textContent = baixou ? 'Baixado!' : 'QR aberto';
+                    setTimeout(() => {
+                        downloadQrBtn.textContent = textoOriginal;
+                        downloadQrBtn.disabled = false;
+                    }, 1400);
+                });
+
+                document.getElementById('back-to-mosaico').addEventListener('click', () => {
+                    detalhesView.classList.add('hidden');
+                    mainHeader?.classList.remove('hidden');
+                    mosaicoWrapper.classList.remove('hidden');
+                    mosaicoWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            };
+            
+            const renderCompiladaView = () => {
+                let contentHTML = `<header class="relative text-center mb-12 no-print"><button id="back-to-main-from-compilada-btn" title="Voltar ao infográfico interativo" class="absolute top-0 left-0 bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 transition-all rounded-full p-2"><i data-lucide="arrow-left" class="w-6 h-6"></i></button><img src="${logoEscaladaThumbnail}" alt="Logo Escalada" class="mx-auto h-16 w-auto mb-4" onerror="this.onerror=null;this.src='https://placehold.co/160x64/f8fafc/334155?text=Escalada';"><h1 class="text-4xl font-extrabold header-title tracking-tight">Matriz de Conteúdos Compilada</h1><p class="header-subtitle mt-2">Visão geral de todos os módulos para consulta e impressão.</p></header><main id="matriz-container" class="space-y-12">`;
+
+                Object.entries(dadosDosMacrotemas).forEach(([macroId, macroData]) => {
+                    const modulosDoMacrotema = Object.entries(dadosDosModulos).filter(([_, mod]) => mod.macrotema === macroId);
+                    if (modulosDoMacrotema.length === 0) return;
+                    
+                    let tableRows = '';
+                    modulosDoMacrotema.forEach(([_, mod]) => {
+                        tableRows += `<tr class="border-b border-slate-200"><td class="p-3 font-semibold text-slate-700">${mod.titulo}</td><td class="p-3 text-slate-600">${mod.eixo}</td><td class="p-3 text-slate-600">${mod.microtema}</td><td class="p-3 text-slate-500 text-sm">${mod.bncc || 'N/A'}</td><td class="p-3 text-slate-500 text-sm">${mod.entrecomp || 'N/A'}</td><td class="p-3 text-slate-500 text-sm">${mod.objetivo}</td></tr>`;
+                    });
+
+                    contentHTML += `<section class="section-break"><h2 class="text-2xl font-bold text-slate-800 border-l-4 border-${macroData.cor}-500 pl-4 mb-6">${macroData.titulo}</h2><div class="overflow-x-auto table-container"><table class="w-full text-left"><thead><tr class="table-header"><th class="p-3">Título do Módulo</th><th class="p-3">Eixo</th><th class="p-3">Microtema</th><th class="p-3">BNCC</th><th class="p-3">EntreComp</th><th class="p-3">Objetivo de Aprendizagem</th></tr></thead><tbody>${tableRows}</tbody></table></div></section>`;
+                });
+                
+                contentHTML += `</main>`;
+                compiladaViewContainer.innerHTML = contentHTML;
+                showView('compilada');
+                lucide.createIcons();
+                document.getElementById('back-to-main-from-compilada-btn').addEventListener('click', () => showView('main'));
+            };
+
+            // --- CONTEÚDO DO MODAL DO SELO TNL (ADAPTADO) ---
+            const seloData = {
+                '4ds': { title: 'Sensor de Realidade (4Ds)', icon: 'heart-pulse', color: 'text-red-400', content: `<h4 class="text-xl font-bold text-white mb-2">Função Central</h4><p class="text-gray-400 mb-6">Diagnosticar a relevância e gerar conexão, garantindo que a solução parta de uma necessidade real de estudantes e professores do Ensino Médio, Técnico e Superior.</p><h4 class="text-xl font-bold text-white mb-2">Indicadores de Sucesso</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li>Os participantes reconhecem e verbalizam seus próprios desafios e aspirações.</li><li>A solução responde diretamente a pelo menos uma Dor, Dúvida, Dilema ou Desejo mapeado no contexto educacional atual.</li><li>O engajamento inicial é alto, pois o público se identifica com o problema e a oportunidade apresentada.</li></ul>`},
+                'tdm': { title: 'Roteiro de Impacto (Teoria da Mudança)', icon: 'map', color: 'text-blue-400', content: `<h4 class="text-xl font-bold text-white mb-2">Função Central</h4><p class="text-gray-400 mb-6">Explicitar o caminho que conecta as atividades aos resultados e ao impacto final desejado. Funciona como um mapa estratégico que orienta a jornada de aprendizagem.</p><h4 class="text-xl font-bold text-white mb-2">Indicadores de Sucesso</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li>Existem objetivos claros e mensuráveis de desenvolvimento de competências e habilidades.</li><li>Todas as atividades propostas têm uma justificativa clara de como contribuem para o projeto de vida e profissional do estudante.</li><li>É possível comunicar de forma simples como o projeto irá gerar a transformação prometida.</li></ul>`},
+                'espiral': { title: 'Espiral da Ação TNL', icon: 'refresh-cw', color: 'text-teal-400', content: `<h4 class="text-xl font-bold text-white mb-2">Função Central</h4><p class="text-gray-400 mb-6">Converter inspiração em aprendizagem ativa e integral. Garante que o conhecimento não seja apenas consumido, mas vivenciado, aplicado e ressignificado pelo estudante.</p><h4 class="text-xl font-bold text-white mb-2">Indicadores de Sucesso</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li>A agenda da atividade inclui um Recurso Ativador (provocação), uma Ação prática, um momento de Reflexão e um Feedback (evidência).</li><li>Os participantes saem com uma evidência concreta do que aprenderam ou produziram.</li><li>O engajamento se mantém alto, pois a estrutura é dinâmica, participativa e relevante.</li></ul>`},
+                'ancora': { title: 'Âncora Pedagógica', icon: 'anchor', color: 'text-yellow-400', content: `<h4 class="text-xl font-bold text-white mb-2">Função Central</h4><p class="text-gray-400 mb-6">Garantir a pertinência curricular e institucional, conectando as atividades inovadoras às diretrizes oficiais da educação e às competências do futuro.</p><h4 class="text-xl font-bold text-white mb-2">Indicadores de Sucesso</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li>Cada atividade declara explicitamente quais competências da <strong>BNCC do Ensino Médio</strong> estão sendo trabalhadas.</li><li>A solução se conecta ao framework de competências empreendedoras <strong>EntreComp</strong>, preparando para o mundo do trabalho.</li><li>Professores e gestores sentem-se seguros ao aplicar a metodologia, pois ela dialoga com os documentos norteadores.</li></ul>`},
+                'arquitetura': { title: 'Arquitetura Orgânica', icon: 'tree-pine', color: 'text-green-400', content: `<h4 class="text-xl font-bold text-white mb-2">Função Central</h4><p class="text-gray-400 mb-6">Garantir a coerência e a integridade da solução, conectando os valores (o porquê), os processos (o como) e as evidências (o quê) em uma narrativa poderosa.</p><h4 class="text-xl font-bold text-white mb-2">Indicadores de Sucesso</h4><ul class="list-disc pl-5 space-y-2 text-gray-400"><li>A narrativa do projeto é coesa e inspiradora para estudantes e educadores.</li><li>As atividades (Tronco) refletem claramente os valores (Raízes) do projeto.</li><li>Os resultados (Frutos) são uma consequência natural e visível dos valores e processos aplicados.</li></ul>`}
+            };
+            const abrirSeloModal = (seloId) => {
+                const data = seloData[seloId];
+                if (!data) return;
+                seloModalBody.innerHTML = `<div class="flex items-center gap-4 mb-4"><i data-lucide="${data.icon}" class="w-10 h-10 ${data.color}"></i><h3 class="text-3xl font-black text-white">${data.title}</h3></div><div class="border-t border-gray-700 pt-4">${data.content}</div>`;
+                lucide.createIcons();
+                seloModal.style.display = 'flex';
+            };
+            const fecharSeloModal = () => { seloModal.style.display = 'none'; };
+
+            const attachMainViewListeners = () => {
+                document.querySelectorAll('.macro-card').forEach(card => card.addEventListener('click', () => renderDetalhesView(card.dataset.macrotema)));
+                document.getElementById('show-compilada-btn').addEventListener('click', renderCompiladaView);
+                document.querySelectorAll('[data-selo]').forEach(card => {
+                    card.addEventListener('click', () => abrirSeloModal(card.dataset.selo));
+                });
+            };
+            
+            renderMainView();
+            showView('main');
+            
+            seloModalCloseBtn.addEventListener('click', fecharSeloModal);
+            seloModal.addEventListener('click', (e) => { if (e.target === seloModal) fecharSeloModal(); });
+
+            document.addEventListener('keydown', (e) => { 
+                if (e.key === "Escape") {
+                    fecharSeloModal();
+                } 
+            });
+        });
+    </script>
+</body>
+</html>
