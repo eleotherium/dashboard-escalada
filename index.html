@@ -2095,6 +2095,23 @@
       return normalizeTextKey(sourceName);
     }
 
+    function sourceRowMatchesSelectedUf(row, selectedUfCode, selectedUfRaw) {
+      if (!selectedUfCode && !selectedUfRaw) return true;
+      const topPairs = Array.isArray(row?.topUfs)
+        ? row.topUfs
+        : normalizedTopPairs(row?.top_ufs, ["uf", "label", "nome"], ["qtd", "count"], 10);
+      if (!topPairs.length) return false;
+      for (const [label, count] of topPairs) {
+        if (Number(count || 0) <= 0) continue;
+        const ufLabel = String(label || "").trim();
+        if (!ufLabel) continue;
+        const ufCode = resolveUfCode(ufLabel);
+        if (selectedUfCode && ufCode === selectedUfCode) return true;
+        if (selectedUfRaw && ufLabel === selectedUfRaw) return true;
+      }
+      return false;
+    }
+
     function buildSourceAnalyticsFromEvents(events) {
       const bySource = new Map();
       const taggedUsers = new Set();
@@ -5172,8 +5189,15 @@
     }
 
     function renderSourcesPage(setText, setHtml, analytics) {
-      const rows = Array.isArray(analytics?.rows) ? analytics.rows : [];
-      const top10 = Array.isArray(analytics?.top10) ? analytics.top10 : rows.slice(0, 10);
+      const selectedUfRaw = sanitizeFilterValue(state?.filters?.uf);
+      const selectedUfCode = resolveUfCode(selectedUfRaw);
+      const rowsRaw = Array.isArray(analytics?.rows) ? analytics.rows : [];
+      const rows = selectedUfRaw
+        ? rowsRaw.filter((row) => sourceRowMatchesSelectedUf(row, selectedUfCode, selectedUfRaw))
+        : rowsRaw;
+      const top10 = selectedUfRaw
+        ? rows.slice(0, 10)
+        : (Array.isArray(analytics?.top10) ? analytics.top10 : rows.slice(0, 10));
       const byKey = new Map();
       for (const row of rows) {
         const key = sourceKeyFromName(row?.source);
@@ -5181,14 +5205,21 @@
       }
       state.sourceRowsByKey = byKey;
 
+      const totalInscritos = rows.reduce((sum, row) => sum + Number(row?.inscritos || 0), 0);
+      const totalAtendimentos = rows.reduce((sum, row) => sum + Number(row?.atendimentos || 0), 0);
+      const avgConversao = rows.length
+        ? rows.reduce((sum, row) => sum + Number(row?.conversao || 0), 0) / rows.length
+        : 0;
+      const taggedEvents = rows.reduce((sum, row) => sum + Number(row?.eventos || 0), 0);
+
       setText("sourcesTotal", fmtInt(rows.length));
-      setText("sourcesInscritosTotal", fmtInt(Number(analytics?.totalInscritos || 0)));
-      setText("sourcesAtendTotal", fmtInt(Number(analytics?.totalAtendimentos || 0)));
-      setText("sourcesAvgConv", rows.length ? fmtPct(Number(analytics?.avgConversao || 0)) : "--");
+      setText("sourcesInscritosTotal", fmtInt(totalInscritos));
+      setText("sourcesAtendTotal", fmtInt(totalAtendimentos));
+      setText("sourcesAvgConv", rows.length ? fmtPct(avgConversao) : "--");
       setText(
         "sourcesCoverageHint",
         rows.length
-          ? `${fmtInt(Number(analytics?.taggedEvents || 0))} registros com tag de fonte neste recorte.`
+          ? `${fmtInt(taggedEvents)} registros com tag de fonte neste recorte.`
           : "Sem tags no padrao Fonte: ... no recorte atual."
       );
 

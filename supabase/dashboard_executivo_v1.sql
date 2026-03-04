@@ -533,6 +533,16 @@ begin
       on tp.fonte = coalesce(i.fonte, a.fonte, u.fonte)
     left join fonte_top_canais tc
       on tc.fonte = coalesce(i.fonte, a.fonte, u.fonte)
+    where
+      p_uf is null
+      or exists (
+        select 1
+        from fonte_uf_counts fuc_filter
+        where
+          fuc_filter.fonte = coalesce(i.fonte, a.fonte, u.fonte)
+          and fuc_filter.uf = p_uf
+          and fuc_filter.qtd > 0
+      )
     order by atendimentos desc, inscritos desc, fonte
     limit v_top_limit
   ),
