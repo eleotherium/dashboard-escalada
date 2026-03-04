@@ -2607,6 +2607,7 @@
       mapCityFocus: null,
       ufOnboardingUnlocked: false,
       competencyMode: COMPETENCY_MODES.BNCC,
+      modalDraftFilters: null,
       filters: {
         dateFrom: "",
         dateTo: "",
@@ -2708,15 +2709,15 @@
       gate.classList.toggle("hidden", !visible);
     }
 
-    function syncFilterForm() {
+    function syncFilterForm(sourceFilters = state.filters) {
       const fFrom = document.getElementById("fFrom");
       const fTo = document.getElementById("fTo");
       const fUf = document.getElementById("fUf");
       const fPublico = document.getElementById("fPublico");
-      if (fFrom) fFrom.value = state.filters.dateFrom || "";
-      if (fTo) fTo.value = state.filters.dateTo || "";
-      if (fUf) fUf.value = state.filters.uf || "Todos";
-      if (fPublico) fPublico.value = state.filters.publico || "Todos";
+      if (fFrom) fFrom.value = sourceFilters?.dateFrom || "";
+      if (fTo) fTo.value = sourceFilters?.dateTo || "";
+      if (fUf) fUf.value = sourceFilters?.uf || "Todos";
+      if (fPublico) fPublico.value = sourceFilters?.publico || "Todos";
     }
 
     function updateBootError(message = "") {
@@ -5368,20 +5369,27 @@
         if (el) el.addEventListener("input", fn);
       };
 
-      bind("fFrom", (e)=>applyFilters({ dateFrom: e.target.value }, { reason: "field-date-from" }));
-      bind("fTo", (e)=>applyFilters({ dateTo: e.target.value }, { reason: "field-date-to" }));
+      const updateModalDraftFilters = (patch = {}) => {
+        const base = state.modalDraftFilters && typeof state.modalDraftFilters === "object"
+          ? state.modalDraftFilters
+          : state.filters;
+        state.modalDraftFilters = { ...base, ...patch };
+      };
+
+      bind("fFrom", (e)=>updateModalDraftFilters({ dateFrom: e.target.value }));
+      bind("fTo", (e)=>updateModalDraftFilters({ dateTo: e.target.value }));
 
       const fUf = document.getElementById("fUf");
       if (fUf) {
         fUf.addEventListener("change", (e)=>{
-          applyFilters({ uf: e.target.value }, { reason: "field-uf" });
+          updateModalDraftFilters({ uf: e.target.value });
         });
       }
 
       const fPublico = document.getElementById("fPublico");
       if (fPublico) {
         fPublico.addEventListener("change", (e)=> {
-          applyFilters({ publico: e.target.value }, { reason: "field-publico" });
+          updateModalDraftFilters({ publico: e.target.value });
         });
       }
 
@@ -5424,10 +5432,14 @@
         if (!modal) return;
         modal.classList.add("hidden");
         modal.setAttribute("aria-hidden", "true");
+        state.modalDraftFilters = null;
+        syncFilterForm(state.filters);
         syncModalBackdropState();
       };
       const openModal = () => {
         if (!modal) return;
+        state.modalDraftFilters = { ...state.filters };
+        syncFilterForm(state.modalDraftFilters);
         modal.classList.remove("hidden");
         modal.setAttribute("aria-hidden", "false");
         syncModalBackdropState();
@@ -5435,17 +5447,17 @@
       if (btnOpen) btnOpen.addEventListener("click", openModal);
       if (btnClose) btnClose.addEventListener("click", closeModal);
       if (btnApply) btnApply.addEventListener("click", () => {
-        applyFilters({}, { immediate: true, reason: "modal-apply" });
+        applyFilters(state.modalDraftFilters || {}, { immediate: true, reason: "modal-apply" });
         closeModal();
       });
       if (btnReset) btnReset.addEventListener("click", () => {
-        applyFilters({
+        state.modalDraftFilters = {
           dateFrom: state.fullRange.from || state.filters.dateFrom,
           dateTo: state.fullRange.to || state.filters.dateTo,
           uf: "Todos",
           publico: "Todos",
-        }, { immediate: true, reason: "modal-reset" });
-        closeModal();
+        };
+        syncFilterForm(state.modalDraftFilters);
       });
       if (modal) {
         modal.addEventListener("click", (e) => {
