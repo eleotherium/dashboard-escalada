@@ -61,7 +61,7 @@ create index if not exists geo_ceps_cep_norm_lpad_idx
 
 
 -- =========================================================
--- FUNCAO (mesmo nome): otimizada + by_cidade (inscricoes/atendimentos/acoes) e by_cep resumido
+-- FUNCAO (mesmo nome): otimizada + by_cidade, by_cep e by_fonte (tags "Fonte: ...")
 -- =========================================================
 create or replace function public.dashboard_executivo_v1(
   p_date_from date default null,
@@ -164,6 +164,7 @@ begin
       'series_daily', '[]'::jsonb,
       'by_uf', '[]'::jsonb,
       'by_publico', '[]'::jsonb,
+      'by_fonte', '[]'::jsonb,
       'by_cidade', '[]'::jsonb,
       'by_cep', '[]'::jsonb,
       'top_tipos', '[]'::jsonb,
@@ -187,7 +188,8 @@ begin
       p.cidade as cidade,
       p.publico as publico,
       p."SubscriptedAt"::date as sub_dt,
-      nullif(regexp_replace(coalesce(p.cep, ''), '\D', '', 'g'), '') as cep_norm
+      nullif(regexp_replace(coalesce(p.cep, ''), '\D', '', 'g'), '') as cep_norm,
+      to_jsonb(p) as raw_json
     from public."Participantes Escalada" p
     where
       (p_uf is null or p."UF" = p_uf)
@@ -203,7 +205,8 @@ begin
       coalesce(cidade, 'N/A') as cidade,
       coalesce(publico, 'N/A') as publico,
       sub_dt,
-      cep_norm
+      cep_norm,
+      raw_json
     from participants_raw
     where usuario_id is not null
     order by usuario_id, sub_dt desc nulls last
@@ -223,7 +226,8 @@ begin
       a.usuario_id,
       a.criado_em::date as dt,
       a.tipo,
-      a.nome_item
+      a.nome_item,
+      to_jsonb(a) as raw_json
     from public.acoes_usuarios a
     where
       a.criado_em >= p_date_from
@@ -240,7 +244,8 @@ begin
       p.uf,
       p.cidade,
       p.publico,
-      p.cep_norm
+      p.cep_norm,
+      a.raw_json
     from actions_source a
     join participants_join p
       on p.usuario_id = a.usuario_id
@@ -365,6 +370,171 @@ begin
     left join by_publico_atend a on a.publico = i.publico
     left join by_publico_ativos v on v.publico = i.publico
     order by atendimentos desc, inscritos desc
+  ),
+
+  -- Extracao de tags no formato "Fonte: Nome da Fonte"
+  -- Base principal: cadastro de membros (Participantes Escalada).
+  participantes_fonte_tags as (
+    select
+      p.usuario_id,
+      nullif(btrim(m[1]), '') as fonte
+    from participants_period p
+    cross join lateral regexp_matches(
+      concat_ws(' | ',
+        coalesce(p.raw_json->>'tags', ''),
+        coalesce(p.raw_json->>'Tags', ''),
+        coalesce(p.raw_json->>'tag', ''),
+        coalesce(p.raw_json->>'Tag', ''),
+        coalesce(p.raw_json->>'labels', ''),
+        coalesce(p.raw_json->>'Labels', ''),
+        coalesce(p.raw_json->>'source_tags', ''),
+        coalesce(p.raw_json->>'origem_tags', ''),
+        coalesce(p.raw_json->>'fonte_tags', ''),
+        coalesce(p.raw_json#>>'{metadata,tags}', ''),
+        coalesce(p.raw_json#>>'{meta,tags}', ''),
+        p.raw_json::text
+      ),
+      '(?i)fonte\s*:\s*([^",;|\]\}\n]+)',
+      'g'
+    ) as m
+    where p.usuario_id is not null
+  ),
+  participantes_fontes as (
+    select distinct
+      usuario_id,
+      fonte
+    from participantes_fonte_tags
+    where fonte is not null and fonte <> ''
+  ),
+  by_fonte_inscritos as (
+    select
+      fonte,
+      count(distinct usuario_id)::int as inscritos
+    from participantes_fontes
+    group by fonte
+  ),
+  by_fonte_atend as (
+    select
+      pf.fonte,
+      count(*)::int as atendimentos
+    from actions a
+    join participantes_fontes pf
+      on pf.usuario_id = a.usuario_id
+    group by pf.fonte
+  ),
+  by_fonte_usuarios as (
+    select
+      fonte,
+      count(distinct usuario_id)::int as usuarios
+    from participantes_fontes
+    where usuario_id is not null
+    group by fonte
+  ),
+  fonte_uf_counts as (
+    select
+      pf.fonte,
+      coalesce(pj.uf, 'N/A') as uf,
+      count(*)::int as qtd
+    from participantes_fontes pf
+    join participants_join pj
+      on pj.usuario_id = pf.usuario_id
+    group by pf.fonte, coalesce(pj.uf, 'N/A')
+  ),
+  fonte_publico_counts as (
+    select
+      pf.fonte,
+      coalesce(pj.publico, 'N/A') as publico,
+      count(*)::int as qtd
+    from participantes_fontes pf
+    join participants_join pj
+      on pj.usuario_id = pf.usuario_id
+    group by pf.fonte, coalesce(pj.publico, 'N/A')
+  ),
+  fonte_canal_counts as (
+    select
+      pf.fonte,
+      coalesce(nullif(btrim(coalesce(a.raw_json->>'channel', '')), ''), 'N/A') as canal,
+      count(*)::int as qtd
+    from actions a
+    join participantes_fontes pf
+      on pf.usuario_id = a.usuario_id
+    group by pf.fonte, coalesce(nullif(btrim(coalesce(a.raw_json->>'channel', '')), ''), 'N/A')
+  ),
+  fonte_top_ufs as (
+    select
+      s.fonte,
+      jsonb_agg(
+        jsonb_build_object('uf', s.uf, 'qtd', s.qtd)
+        order by s.qtd desc, s.uf
+      ) as top_ufs
+    from (
+      select
+        fuc.*,
+        row_number() over (partition by fuc.fonte order by fuc.qtd desc, fuc.uf) as rn
+      from fonte_uf_counts fuc
+    ) s
+    where s.rn <= 5
+    group by s.fonte
+  ),
+  fonte_top_publicos as (
+    select
+      s.fonte,
+      jsonb_agg(
+        jsonb_build_object('publico', s.publico, 'qtd', s.qtd)
+        order by s.qtd desc, s.publico
+      ) as top_publicos
+    from (
+      select
+        fpc.*,
+        row_number() over (partition by fpc.fonte order by fpc.qtd desc, fpc.publico) as rn
+      from fonte_publico_counts fpc
+    ) s
+    where s.rn <= 5
+    group by s.fonte
+  ),
+  fonte_top_canais as (
+    select
+      s.fonte,
+      jsonb_agg(
+        jsonb_build_object('canal', s.canal, 'qtd', s.qtd)
+        order by s.qtd desc, s.canal
+      ) as top_canais
+    from (
+      select
+        fcc.*,
+        row_number() over (partition by fcc.fonte order by fcc.qtd desc, fcc.canal) as rn
+      from fonte_canal_counts fcc
+    ) s
+    where s.rn <= 5
+    group by s.fonte
+  ),
+  by_fonte as (
+    select
+      coalesce(i.fonte, a.fonte, u.fonte) as fonte,
+      coalesce(i.inscritos, 0)::int as inscritos,
+      coalesce(a.atendimentos, 0)::int as atendimentos,
+      coalesce(u.usuarios, 0)::int as usuarios,
+      case
+        when coalesce(i.inscritos, 0) > 0
+          then round((coalesce(a.atendimentos, 0)::numeric / i.inscritos::numeric) * 100, 2)
+        else 0
+      end as conversao_pct,
+      coalesce(tu.top_ufs, '[]'::jsonb) as top_ufs,
+      coalesce(tp.top_publicos, '[]'::jsonb) as top_publicos,
+      coalesce(tc.top_canais, '[]'::jsonb) as top_canais
+    from by_fonte_inscritos i
+    full join by_fonte_atend a
+      on a.fonte = i.fonte
+    full join by_fonte_usuarios u
+      on u.fonte = coalesce(i.fonte, a.fonte)
+    left join fonte_top_ufs tu
+      on tu.fonte = coalesce(i.fonte, a.fonte, u.fonte)
+    left join fonte_top_publicos tp
+      on tp.fonte = coalesce(i.fonte, a.fonte, u.fonte)
+    left join fonte_top_canais tc
+      on tc.fonte = coalesce(i.fonte, a.fonte, u.fonte)
+    order by atendimentos desc, inscritos desc, fonte
+    limit v_top_limit
   ),
 
   by_cidade_inscritos as (
@@ -558,6 +728,24 @@ begin
         ),
         '[]'::jsonb
       ) from by_publico
+    ),
+    'by_fonte', (
+      select coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'fonte', fonte,
+            'inscritos', inscritos,
+            'atendimentos', atendimentos,
+            'usuarios', usuarios,
+            'conversao_pct', conversao_pct,
+            'top_ufs', top_ufs,
+            'top_publicos', top_publicos,
+            'top_canais', top_canais
+          )
+          order by atendimentos desc, inscritos desc, fonte
+        ),
+        '[]'::jsonb
+      ) from by_fonte
     ),
     'by_cidade', (
       select coalesce(

@@ -1960,6 +1960,347 @@
       }
     }
 
+    const SOURCE_TAG_PATTERN = /(?:^|[,\n;|])\s*fonte\s*:\s*([^,;\n|]+)/gi;
+
+    function normalizeSourceName(value) {
+      const raw = String(value || "")
+        .replace(/^[\s"'`]+|[\s"'`]+$/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!raw) return "";
+      return raw.length > 120 ? `${raw.slice(0, 117).trim()}...` : raw;
+    }
+
+    function extractSourceNamesFromString(value) {
+      const text = String(value || "").trim();
+      if (!text) return [];
+
+      // Quando vier em texto livre/lista, captura apenas tags no formato "Fonte: X".
+      const matches = [];
+      SOURCE_TAG_PATTERN.lastIndex = 0;
+      let match;
+      while ((match = SOURCE_TAG_PATTERN.exec(text)) !== null) {
+        const source = normalizeSourceName(match[1]);
+        if (source) matches.push(source);
+      }
+      if (!matches.length) {
+        const direct = text.match(/^\s*fonte\s*:\s*(.+)\s*$/i);
+        if (direct) {
+          const source = normalizeSourceName(direct[1]);
+          if (source) matches.push(source);
+        }
+      }
+      return Array.from(new Set(matches));
+    }
+
+    function extractSourceNamesFromUnknown(value, depth = 0) {
+      if (depth > 3 || value === null || value === undefined) return [];
+
+      if (Array.isArray(value)) {
+        const out = [];
+        for (const item of value) out.push(...extractSourceNamesFromUnknown(item, depth + 1));
+        return Array.from(new Set(out));
+      }
+
+      if (typeof value === "object") {
+        const out = [];
+        const preferredKeys = ["tags", "tag", "labels", "label", "name", "value", "text", "items"];
+        const selectedValues = [];
+        for (const key of preferredKeys) {
+          if (Object.prototype.hasOwnProperty.call(value, key)) {
+            selectedValues.push(value[key]);
+          }
+        }
+        if (!selectedValues.length) {
+          selectedValues.push(...Object.values(value).slice(0, 6));
+        }
+        for (const item of selectedValues) out.push(...extractSourceNamesFromUnknown(item, depth + 1));
+        return Array.from(new Set(out));
+      }
+
+      const text = String(value || "").trim();
+      if (!text) return [];
+
+      if ((text.startsWith("[") || text.startsWith("{")) && text.length <= 5000) {
+        try {
+          const parsed = JSON.parse(text);
+          const parsedSources = extractSourceNamesFromUnknown(parsed, depth + 1);
+          if (parsedSources.length) return parsedSources;
+        } catch {}
+      }
+
+      return extractSourceNamesFromString(text);
+    }
+
+    function extractSourceNamesFromEvent(event) {
+      const candidates = [
+        event?.tags,
+        event?.tag,
+        event?.labels,
+        event?.label,
+        event?.source_tags,
+        event?.origem_tags,
+        event?.fonte_tags,
+        event?.metadata?.tags,
+        event?.metadata?.labels,
+        event?.meta?.tags,
+      ];
+
+      const found = new Set();
+      for (const candidate of candidates) {
+        const sources = extractSourceNamesFromUnknown(candidate);
+        for (const source of sources) {
+          const normalized = normalizeSourceName(source);
+          if (normalized) found.add(normalized);
+        }
+      }
+      return Array.from(found);
+    }
+
+    function isInscricaoEventType(typeValue) {
+      return normalizeTextKey(typeValue) === "INSCRICAO";
+    }
+
+    function isAtendimentoEventType(typeValue) {
+      const key = normalizeTextKey(typeValue);
+      return key === "ATENDIMENTO" || key === "ACAO";
+    }
+
+    function createSourceBucket(source) {
+      return {
+        source,
+        inscritos: 0,
+        atendimentos: 0,
+        eventos: 0,
+        userIds: new Set(),
+        ufCounts: new Map(),
+        publicoCounts: new Map(),
+        channelCounts: new Map(),
+      };
+    }
+
+    function sortSourceRows(rows) {
+      return [...rows].sort((a, b) => {
+        const byIns = Number(b.inscritos || 0) - Number(a.inscritos || 0);
+        if (byIns !== 0) return byIns;
+        const byAt = Number(b.atendimentos || 0) - Number(a.atendimentos || 0);
+        if (byAt !== 0) return byAt;
+        const byUsers = Number(b.usuarios || 0) - Number(a.usuarios || 0);
+        if (byUsers !== 0) return byUsers;
+        return String(a.source || "").localeCompare(String(b.source || ""), "pt-BR");
+      });
+    }
+
+    function sourceKeyFromName(sourceName) {
+      return normalizeTextKey(sourceName);
+    }
+
+    function buildSourceAnalyticsFromEvents(events) {
+      const bySource = new Map();
+      const taggedUsers = new Set();
+      let taggedEvents = 0;
+
+      for (const event of (events || [])) {
+        const sources = extractSourceNamesFromEvent(event);
+        if (!sources.length) continue;
+        taggedEvents += 1;
+        const uniqSources = Array.from(new Set(sources));
+        for (const source of uniqSources) {
+          if (!bySource.has(source)) bySource.set(source, createSourceBucket(source));
+          const bucket = bySource.get(source);
+          bucket.eventos += 1;
+
+          if (isInscricaoEventType(event?.type)) bucket.inscritos += 1;
+          if (isAtendimentoEventType(event?.type)) bucket.atendimentos += 1;
+
+          const userId = String(event?.user_id || "").trim();
+          if (userId) {
+            bucket.userIds.add(userId);
+            taggedUsers.add(userId);
+          }
+
+          const ufLabel = resolveUfCode(event?.uf) || String(event?.uf || "").trim();
+          if (isValidUfValue(ufLabel)) addWeightedCount(bucket.ufCounts, ufLabel, 1);
+          addWeightedCount(bucket.publicoCounts, String(event?.publico || "").trim(), 1);
+          addWeightedCount(bucket.channelCounts, String(event?.channel || "").trim(), 1);
+        }
+      }
+
+      const rows = sortSourceRows(
+        Array.from(bySource.values()).map((bucket) => {
+          const inscritos = Number(bucket.inscritos || 0);
+          const atendimentos = Number(bucket.atendimentos || 0);
+          const usuarios = bucket.userIds.size;
+          return {
+            source: bucket.source,
+            inscritos,
+            atendimentos,
+            eventos: Number(bucket.eventos || 0),
+            usuarios,
+            conversao: inscritos > 0 ? (atendimentos / inscritos) : 0,
+            topUfs: toSortedPairs(bucket.ufCounts, 5),
+            topPublicos: toSortedPairs(bucket.publicoCounts, 5),
+            topCanais: toSortedPairs(bucket.channelCounts, 5),
+            canOpenDetails: true,
+          };
+        })
+      );
+
+      const totalInscritos = rows.reduce((sum, row) => sum + Number(row.inscritos || 0), 0);
+      const totalAtendimentos = rows.reduce((sum, row) => sum + Number(row.atendimentos || 0), 0);
+      const totalEventos = rows.reduce((sum, row) => sum + Number(row.eventos || 0), 0);
+      const avgConversao = rows.length
+        ? rows.reduce((sum, row) => sum + Number(row.conversao || 0), 0) / rows.length
+        : 0;
+
+      return {
+        rows,
+        top10: rows.slice(0, 10),
+        totalInscritos,
+        totalAtendimentos,
+        totalEventos,
+        totalUsuarios: taggedUsers.size,
+        avgConversao,
+        taggedEvents,
+      };
+    }
+
+    function getSourceRowsFromAggregatedPayload(payload) {
+      const candidates = [
+        payload?.by_fonte,
+        payload?.by_fontes,
+        payload?.by_source,
+        payload?.sources,
+        payload?.top_fontes,
+        payload?.top_sources,
+      ];
+      for (const rows of candidates) {
+        if (Array.isArray(rows) && rows.length) return rows;
+      }
+      return [];
+    }
+
+    function firstNonEmptyString(obj, keys = []) {
+      for (const key of keys) {
+        const value = String(obj?.[key] || "").trim();
+        if (value) return value;
+      }
+      return "";
+    }
+
+    function firstFiniteNumber(obj, keys = []) {
+      for (const key of keys) {
+        const value = Number(obj?.[key]);
+        if (Number.isFinite(value)) return value;
+      }
+      return 0;
+    }
+
+    function normalizedTopPairs(rows, labelKeys = [], countKeys = ["qtd", "count", "valor", "total"], limit = 5) {
+      if (!Array.isArray(rows) || !rows.length) return [];
+      return rows
+        .map((row) => [firstNonEmptyString(row, labelKeys), firstFiniteNumber(row, countKeys)])
+        .filter(([label, count]) => String(label || "").trim() && Number(count || 0) > 0)
+        .slice(0, limit);
+    }
+
+    function buildSourceAnalyticsFromAggregatedPayload(payload) {
+      const rowsRaw = getSourceRowsFromAggregatedPayload(payload);
+      const bySource = new Map();
+
+      for (const row of rowsRaw) {
+        const sourceRaw = firstNonEmptyString(row, [
+          "fonte",
+          "fonte_nome",
+          "origem",
+          "origem_nome",
+          "source",
+          "source_name",
+          "nome",
+          "label",
+          "tag",
+        ]);
+        const source = normalizeSourceName(sourceRaw);
+        if (!source) continue;
+
+        const inscritos = firstFiniteNumber(row, ["inscritos", "inscricoes", "entradas", "qtd_inscritos", "qtd_entradas"]);
+        const atendimentos = firstFiniteNumber(row, ["atendimentos", "qtd_atendimentos", "acoes", "qtd_acoes"]);
+        const usuarios = firstFiniteNumber(row, ["usuarios", "usuarios_unicos", "users", "qtd_usuarios"]);
+        const eventosRaw = firstFiniteNumber(row, ["eventos", "qtd", "total", "qtd_total"]);
+        const eventos = eventosRaw > 0 ? eventosRaw : (inscritos + atendimentos);
+
+        if (!bySource.has(source)) {
+          bySource.set(source, {
+            source,
+            inscritos: 0,
+            atendimentos: 0,
+            eventos: 0,
+            usuarios: 0,
+            conversao: 0,
+            topUfs: [],
+            topPublicos: [],
+            topCanais: [],
+            canOpenDetails: true,
+          });
+        }
+        const bucket = bySource.get(source);
+        bucket.inscritos += inscritos;
+        bucket.atendimentos += atendimentos;
+        bucket.eventos += eventos;
+        bucket.usuarios += usuarios;
+        if (!bucket.topUfs.length) {
+          bucket.topUfs = normalizedTopPairs(row?.top_ufs, ["uf", "label", "nome"], ["qtd", "count"]);
+        }
+        if (!bucket.topPublicos.length) {
+          bucket.topPublicos = normalizedTopPairs(row?.top_publicos, ["publico", "label", "nome"], ["qtd", "count"]);
+        }
+        if (!bucket.topCanais.length) {
+          bucket.topCanais = normalizedTopPairs(row?.top_canais, ["canal", "channel", "label", "nome"], ["qtd", "count"]);
+        }
+      }
+
+      const rows = sortSourceRows(Array.from(bySource.values()).map((row) => {
+        const inscritos = Number(row.inscritos || 0);
+        const atendimentos = Number(row.atendimentos || 0);
+        return {
+          ...row,
+          conversao: inscritos > 0 ? (atendimentos / inscritos) : 0,
+        };
+      }));
+
+      const totalInscritos = rows.reduce((sum, row) => sum + Number(row.inscritos || 0), 0);
+      const totalAtendimentos = rows.reduce((sum, row) => sum + Number(row.atendimentos || 0), 0);
+      const totalEventos = rows.reduce((sum, row) => sum + Number(row.eventos || 0), 0);
+      const totalUsuarios = rows.reduce((sum, row) => sum + Number(row.usuarios || 0), 0);
+      const avgConversao = rows.length
+        ? rows.reduce((sum, row) => sum + Number(row.conversao || 0), 0) / rows.length
+        : 0;
+
+      return {
+        rows,
+        top10: rows.slice(0, 10),
+        totalInscritos,
+        totalAtendimentos,
+        totalEventos,
+        totalUsuarios,
+        avgConversao,
+        taggedEvents: totalEventos,
+      };
+    }
+
+    function getSourceAnalytics(options = {}) {
+      const preferAggregated = Boolean(options?.preferAggregated);
+      const payload = state.raw || {};
+      if (preferAggregated || isAggregatedPayload(payload)) {
+        const aggregatedRows = getSourceRowsFromAggregatedPayload(payload);
+        if (aggregatedRows.length) {
+          return buildSourceAnalyticsFromAggregatedPayload(payload);
+        }
+      }
+      const events = Array.isArray(state.filtered) ? state.filtered : (Array.isArray(payload?.events) ? payload.events : []);
+      return buildSourceAnalyticsFromEvents(events);
+    }
+
     // =========================================================
     // Dados (RPC Supabase + fallback mock)
     // =========================================================
@@ -2264,6 +2605,16 @@
       const material = ["E-book","Vídeo","Material Interativo"];
       const publico = ["Estudante","Professor","Parceiro"];
       const channels = CHANNELS;
+      const sourceTags = [
+        "Instagram",
+        "TikTok",
+        "Google",
+        "Escola parceira",
+        "Indicacao",
+        "Email",
+        "WhatsApp",
+        "Evento presencial",
+      ];
       const modulePool = MODULE_CATALOG_ENRICHED
         .filter((mod) => String(mod?.macrotemaId || "").trim())
         .map((mod) => ({
@@ -2328,6 +2679,7 @@
           entrecomp: modulePick.entrecomp,
           trail: modulePick.trail,
           channel: channels[Math.floor(Math.random()*channels.length)],
+          tags: `Fonte: ${sourceTags[Math.floor(Math.random()*sourceTags.length)]}`,
           duration_min: 10 + Math.floor(Math.random()*50),
           user_id: u.id,
           actions_total_user: u.actions_total_user,
@@ -2607,6 +2959,8 @@
       mapCityFocus: null,
       ufOnboardingUnlocked: false,
       competencyMode: COMPETENCY_MODES.BNCC,
+      sourceRowsByKey: new Map(),
+      selectedSourceKey: "",
       modalDraftFilters: null,
       filters: {
         dateFrom: "",
@@ -3277,6 +3631,313 @@
           cutout: "65%"
         }
       });
+    }
+
+    function renderSourcesBubbleChart(canvasId, rows, options = {}) {
+      destroyChart(canvasId);
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+
+      const safeRows = Array.isArray(rows) ? rows.slice(0, 10) : [];
+      const onPointClick = typeof options?.onPointClick === "function" ? options.onPointClick : null;
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+      const dpr = Math.max(1, Math.min(2, Number(window.devicePixelRatio || 1)));
+      const parentRect = canvas.parentElement?.getBoundingClientRect?.() || { width: 0, height: 0 };
+      const rect = canvas.getBoundingClientRect();
+      const measuredWidth = Math.max(
+        0,
+        Number(rect.width || 0),
+        Number(canvas.clientWidth || 0),
+        Number(parentRect.width || 0)
+      );
+      const measuredHeight = Math.max(
+        0,
+        Number(rect.height || 0),
+        Number(canvas.clientHeight || 0),
+        Number(parentRect.height || 0)
+      );
+      if (measuredWidth < 200 || measuredHeight < 160) {
+        const retries = Number(canvas.dataset.sourcesRenderRetries || 0);
+        if (retries < 5) {
+          canvas.dataset.sourcesRenderRetries = String(retries + 1);
+          window.requestAnimationFrame(() => renderSourcesBubbleChart(canvasId, rows, options));
+        }
+        return;
+      }
+      canvas.dataset.sourcesRenderRetries = "0";
+
+      const width = Math.max(260, Math.floor(measuredWidth));
+      const height = Math.max(240, Math.floor(measuredHeight));
+      const nextW = Math.max(1, Math.floor(width * dpr));
+      const nextH = Math.max(1, Math.floor(height * dpr));
+      if (canvas.width !== nextW || canvas.height !== nextH) {
+        canvas.width = nextW;
+        canvas.height = nextH;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+
+      if (!safeRows.length) {
+        ctx.save();
+        ctx.fillStyle = "#64748b";
+        ctx.font = `600 13px "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("Sem fontes no recorte atual.", width / 2, height / 2);
+        ctx.restore();
+        canvas.onclick = null;
+        canvas.onmousemove = null;
+        return;
+      }
+
+      const attendValues = safeRows.map((row) => Math.max(0, Number(row?.atendimentos || 0)));
+      const minAtend = Math.min(...attendValues);
+      const maxAtend = Math.max(...attendValues);
+      const minR = clamp(Math.min(width, height) * 0.09, 18, 34);
+      const maxR = clamp(Math.min(width, height) * 0.24, minR + 8, 96);
+      const toRadius = (atendimentos) => {
+        const value = Math.max(0, Number(atendimentos || 0));
+        if (maxAtend <= minAtend) return Math.round((minR + maxR) / 2);
+        const t = (value - minAtend) / (maxAtend - minAtend);
+        return Math.round(minR + (t * (maxR - minR)));
+      };
+      const shortLabel = (value, max = 30) => {
+        const text = String(value || "").trim();
+        if (text.length <= max) return text;
+        return `${text.slice(0, Math.max(1, max - 3)).trim()}...`;
+      };
+
+      const wrapByWidth = (text, maxWidth, maxLines = 3) => {
+        const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+        if (!words.length) return [];
+        const lines = [];
+        let current = "";
+        for (const word of words) {
+          const candidate = current ? `${current} ${word}` : word;
+          const candidateWidth = ctx.measureText(candidate).width;
+          if (candidateWidth <= maxWidth) {
+            current = candidate;
+            continue;
+          }
+          if (current) lines.push(current);
+          current = word;
+          if (lines.length >= maxLines - 1) break;
+        }
+        if (current && lines.length < maxLines) lines.push(current);
+        if (lines.length > maxLines) lines.length = maxLines;
+        if (words.length && lines.length === maxLines) {
+          const consumed = lines.join(" ").split(/\s+/).length;
+          if (consumed < words.length) lines[maxLines - 1] = shortLabel(lines[maxLines - 1], 28);
+        }
+        return lines;
+      };
+
+      const textGap = 8;
+      const computeTextLayout = (sourceLabel, atendLabel, radius) => {
+        const mainFont = clamp(radius * 0.19, 10, 15);
+        const subFont = clamp(radius * 0.16, 9, 13);
+        const lineHeight = Math.round(mainFont * 1.15);
+
+        ctx.font = `700 ${mainFont}px "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif`;
+        const maxLabelWidth = Math.max(42, (radius * 2) - (textGap * 2));
+        const lines = wrapByWidth(sourceLabel, maxLabelWidth, 2);
+        const maxLineWidth = lines.length
+          ? Math.max(...lines.map((line) => ctx.measureText(line).width))
+          : 0;
+
+        ctx.font = `700 ${subFont}px "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif`;
+        const countWidth = ctx.measureText(atendLabel).width;
+
+        const textBlockH = (lines.length * lineHeight) + subFont + 4;
+        const neededR = Math.ceil(Math.max((Math.max(maxLineWidth, countWidth) / 2) + textGap, (textBlockH / 2) + textGap));
+
+        return {
+          mainFont,
+          subFont,
+          lineHeight,
+          lines,
+          textBlockH,
+          neededR,
+        };
+      };
+
+      const nodes = safeRows
+        .map((row, idx) => ({
+          row,
+          color: chartPalette[idx % chartPalette.length],
+          r: 0,
+          labelCount: fmtInt(Number(row?.atendimentos || 0)),
+          textLayout: null,
+          x: width / 2,
+          y: height / 2,
+        }))
+        .map((node) => {
+          let radius = toRadius(node.row?.atendimentos);
+          let layout = computeTextLayout(node.row?.source, node.labelCount, radius);
+          for (let i = 0; i < 6; i++) {
+            if (layout.neededR <= radius + 0.5) break;
+            radius = layout.neededR;
+            layout = computeTextLayout(node.row?.source, node.labelCount, radius);
+          }
+          node.r = Math.ceil(radius);
+          node.textLayout = computeTextLayout(node.row?.source, node.labelCount, node.r);
+          return node;
+        })
+        .sort((a, b) => Number(b.r || 0) - Number(a.r || 0));
+
+      const cx = width / 2;
+      const cy = height / 2;
+      const margin = 6;
+      const padding = 1;
+      const placed = [];
+      const collides = (x, y, r) => {
+        for (const other of placed) {
+          const dx = x - other.x;
+          const dy = y - other.y;
+          const minDist = r + other.r + padding;
+          if ((dx * dx) + (dy * dy) < (minDist * minDist)) return true;
+        }
+        return false;
+      };
+
+      for (const node of nodes) {
+        if (!placed.length) {
+          node.x = cx;
+          node.y = cy;
+          placed.push(node);
+          continue;
+        }
+
+        let found = null;
+        const maxDist = Math.max(width, height);
+        const stepDist = Math.max(2, Math.round(node.r * 0.22));
+        for (let dist = node.r; dist <= maxDist; dist += stepDist) {
+          for (let deg = 0; deg < 360; deg += 8) {
+            const rad = (deg * Math.PI) / 180;
+            const x = cx + (Math.cos(rad) * dist);
+            const y = cy + (Math.sin(rad) * dist);
+            if ((x - node.r) < margin || (x + node.r) > (width - margin)) continue;
+            if ((y - node.r) < margin || (y + node.r) > (height - margin)) continue;
+            if (collides(x, y, node.r)) continue;
+            const score = ((x - cx) ** 2) + ((y - cy) ** 2);
+            if (!found || score < found.score) found = { x, y, score };
+          }
+          if (found) break;
+        }
+
+        if (!found) {
+          const angle = (placed.length * 137.5) * (Math.PI / 180);
+          const fallbackDist = Math.min(maxDist * 0.42, node.r + (placed[0]?.r || 0) + (placed.length * 4));
+          found = {
+            x: clamp(cx + (Math.cos(angle) * fallbackDist), margin + node.r, width - margin - node.r),
+            y: clamp(cy + (Math.sin(angle) * fallbackDist), margin + node.r, height - margin - node.r),
+          };
+        }
+
+        node.x = found.x;
+        node.y = found.y;
+        placed.push(node);
+      }
+
+      const boundsOf = (arr) => {
+        if (!arr.length) return { minX: cx, maxX: cx, minY: cy, maxY: cy };
+        return {
+          minX: Math.min(...arr.map((n) => n.x - n.r)),
+          maxX: Math.max(...arr.map((n) => n.x + n.r)),
+          minY: Math.min(...arr.map((n) => n.y - n.r)),
+          maxY: Math.max(...arr.map((n) => n.y + n.r)),
+        };
+      };
+      if (placed.length) {
+        const b0 = boundsOf(placed);
+        let shiftX = cx - ((b0.minX + b0.maxX) / 2);
+        let shiftY = cy - ((b0.minY + b0.maxY) / 2);
+        for (const node of placed) {
+          node.x += shiftX;
+          node.y += shiftY;
+        }
+        const b1 = boundsOf(placed);
+        shiftX = 0;
+        shiftY = 0;
+        if (b1.minX < margin) shiftX += (margin - b1.minX);
+        if (b1.maxX > (width - margin)) shiftX -= (b1.maxX - (width - margin));
+        if (b1.minY < margin) shiftY += (margin - b1.minY);
+        if (b1.maxY > (height - margin)) shiftY -= (b1.maxY - (height - margin));
+        if (shiftX || shiftY) {
+          for (const node of placed) {
+            node.x += shiftX;
+            node.y += shiftY;
+          }
+        }
+      }
+
+      for (const node of placed) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+        ctx.fillStyle = `${node.color}DD`;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(255,255,255,0.95)";
+        ctx.stroke();
+
+        const lines = node.textLayout?.lines || [];
+        const countLabel = node.labelCount;
+        const mainFont = Number(node.textLayout?.mainFont || 11);
+        const subFont = Number(node.textLayout?.subFont || 10);
+        const lineHeight = Number(node.textLayout?.lineHeight || (mainFont + 1));
+        const textBlockH = Number(node.textLayout?.textBlockH || ((lines.length * lineHeight) + subFont + 4));
+        let y = node.y - (textBlockH / 2) + lineHeight;
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "rgba(255,255,255,0.96)";
+        ctx.font = `700 ${mainFont}px "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif`;
+        for (const line of lines) {
+          ctx.fillText(line, node.x, y);
+          y += lineHeight;
+        }
+        ctx.font = `700 ${subFont}px "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif`;
+        ctx.fillText(countLabel, node.x, y + 2);
+        ctx.restore();
+      }
+
+      const hitNodes = placed.map((node) => ({ x: node.x, y: node.y, r: node.r, row: node.row }));
+      canvas.onclick = (evt) => {
+        if (!onPointClick) return;
+        const rectClick = canvas.getBoundingClientRect();
+        const x = Number(evt.clientX - rectClick.left);
+        const y = Number(evt.clientY - rectClick.top);
+        for (let i = hitNodes.length - 1; i >= 0; i--) {
+          const node = hitNodes[i];
+          const dx = x - node.x;
+          const dy = y - node.y;
+          if ((dx * dx) + (dy * dy) <= (node.r * node.r)) {
+            onPointClick(node.row);
+            return;
+          }
+        }
+      };
+      canvas.onmousemove = (evt) => {
+        const rectMove = canvas.getBoundingClientRect();
+        const x = Number(evt.clientX - rectMove.left);
+        const y = Number(evt.clientY - rectMove.top);
+        let over = false;
+        for (let i = 0; i < hitNodes.length; i++) {
+          const node = hitNodes[i];
+          const dx = x - node.x;
+          const dy = y - node.y;
+          if ((dx * dx) + (dy * dy) <= (node.r * node.r)) {
+            over = true;
+            break;
+          }
+        }
+        canvas.style.cursor = over ? "pointer" : "default";
+      };
     }
 
     function renderUfPills(pairs) {
@@ -4349,7 +5010,7 @@
       render();
     }
 
-    const PAGES = new Set(["overview", "territory", "engagement", "content"]);
+    const PAGES = new Set(["overview", "territory", "engagement", "content", "sources"]);
 
     function currentHashPage() {
       const h = (location.hash || "").replace("#", "").trim();
@@ -4435,6 +5096,141 @@
         `).join("")
         : `<div class="text-sm text-slate-500">Sem dados de cidades para o recorte atual.</div>`;
       setHtml("topCitiesList", html);
+    }
+
+    function sourcePairsListHtml(pairs = [], emptyMessage = "Sem detalhes para esta fonte.") {
+      if (!Array.isArray(pairs) || !pairs.length) {
+        return `<li class="text-sm text-slate-500">${escapeHtml(emptyMessage)}</li>`;
+      }
+      return pairs.map(([label, count]) => `
+        <li class="flex items-center justify-between text-sm">
+          <span>${escapeHtml(String(label || "N/A"))}</span>
+          <span class="text-slate-500">${fmtInt(Number(count || 0))}</span>
+        </li>
+      `).join("");
+    }
+
+    function updateSourceDetailModal(row) {
+      if (!row) return;
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      const setHtml = (id, html) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+      };
+
+      setText("sourceDetailName", String(row.source || "Fonte"));
+      setText("sourceDetailInscritos", fmtInt(Number(row.inscritos || 0)));
+      setText("sourceDetailAtendimentos", fmtInt(Number(row.atendimentos || 0)));
+      setText("sourceDetailUsuarios", fmtInt(Number(row.usuarios || 0)));
+      setText("sourceDetailEventos", fmtInt(Number(row.eventos || 0)));
+      setText("sourceDetailConversao", fmtPct(Number(row.conversao || 0)));
+
+      const hasUfFilter = Boolean(sanitizeFilterValue(state?.filters?.uf));
+      const ufBlock = document.getElementById("sourceDetailUfBlock");
+      const insightsGrid = document.getElementById("sourceDetailInsightsGrid");
+      if (ufBlock) ufBlock.classList.toggle("hidden", hasUfFilter);
+      if (insightsGrid) {
+        insightsGrid.classList.toggle("md:grid-cols-2", !hasUfFilter);
+        insightsGrid.classList.toggle("md:grid-cols-1", hasUfFilter);
+      }
+
+      if (!hasUfFilter) {
+        setHtml("sourceDetailUfList", sourcePairsListHtml(row.topUfs, "Sem distribuicao por UF."));
+      }
+      setHtml("sourceDetailPublicoList", sourcePairsListHtml(row.topPublicos, "Sem distribuicao por publico."));
+    }
+
+    function openSourceDetailModal(row) {
+      if (!row) return;
+      const modal = document.getElementById("sourceDetailModal");
+      if (!modal) return;
+      state.selectedSourceKey = sourceKeyFromName(row.source);
+      updateSourceDetailModal(row);
+      modal.classList.remove("hidden");
+      modal.setAttribute("aria-hidden", "false");
+      syncModalBackdropState();
+    }
+
+    function openSourceDetailModalByKey(sourceKey) {
+      const key = String(sourceKey || "").trim();
+      if (!key || !(state.sourceRowsByKey instanceof Map)) return;
+      const row = state.sourceRowsByKey.get(key);
+      if (!row) return;
+      openSourceDetailModal(row);
+    }
+
+    function closeSourceDetailModal() {
+      const modal = document.getElementById("sourceDetailModal");
+      if (!modal) return;
+      modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
+      state.selectedSourceKey = "";
+      syncModalBackdropState();
+    }
+
+    function renderSourcesPage(setText, setHtml, analytics) {
+      const rows = Array.isArray(analytics?.rows) ? analytics.rows : [];
+      const top10 = Array.isArray(analytics?.top10) ? analytics.top10 : rows.slice(0, 10);
+      const byKey = new Map();
+      for (const row of rows) {
+        const key = sourceKeyFromName(row?.source);
+        if (key) byKey.set(key, row);
+      }
+      state.sourceRowsByKey = byKey;
+
+      setText("sourcesTotal", fmtInt(rows.length));
+      setText("sourcesInscritosTotal", fmtInt(Number(analytics?.totalInscritos || 0)));
+      setText("sourcesAtendTotal", fmtInt(Number(analytics?.totalAtendimentos || 0)));
+      setText("sourcesAvgConv", rows.length ? fmtPct(Number(analytics?.avgConversao || 0)) : "--");
+      setText(
+        "sourcesCoverageHint",
+        rows.length
+          ? `${fmtInt(Number(analytics?.taggedEvents || 0))} registros com tag de fonte neste recorte.`
+          : "Sem tags no padrao Fonte: ... no recorte atual."
+      );
+
+      renderSourcesBubbleChart("chartSourcesBubble", top10, {
+        onPointClick: (row) => openSourceDetailModal(row),
+      });
+
+      const listRows = rows.slice(0, 20);
+      const listHtml = listRows.length
+        ? listRows.map((row, idx) => {
+            const source = String(row.source || "Fonte");
+            const key = sourceKeyFromName(source);
+            return `
+              <button
+                type="button"
+                class="w-full text-left rounded-xl border border-slate-200 bg-white/90 px-3 py-3 hover:border-blue-300 hover:shadow-sm transition"
+                data-source-key="${escapeHtml(key)}"
+                title="Ver detalhes da fonte"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-sm font-semibold text-slate-800">${idx + 1}. ${escapeHtml(source)}</span>
+                  <span class="text-xs text-slate-500">Conv. ${fmtPct(Number(row.conversao || 0))}</span>
+                </div>
+                <div class="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                  <span>Inscritos <strong>${fmtInt(Number(row.inscritos || 0))}</strong></span>
+                  <span>Atendimentos <strong>${fmtInt(Number(row.atendimentos || 0))}</strong></span>
+                  <span>Usuarios <strong>${fmtInt(Number(row.usuarios || 0))}</strong></span>
+                </div>
+              </button>
+            `;
+          }).join("")
+        : `<div class="text-sm text-slate-500">Nenhuma fonte identificada no formato <strong>Fonte: Nome da fonte</strong>.</div>`;
+      setHtml("sourcesTopList", listHtml);
+
+      if (state.selectedSourceKey) {
+        const selectedRow = byKey.get(state.selectedSourceKey);
+        if (selectedRow) {
+          updateSourceDetailModal(selectedRow);
+        } else {
+          closeSourceDetailModal();
+        }
+      }
     }
 
     function renderAggregated(setText, setHtml) {
@@ -4640,6 +5436,11 @@
         renderDoughnut("chartMatBar", competencyPairs, `Competências (${competencyModeLabel(state.competencyMode)})`, { percentMode: true });
       }
 
+      if (state.page === "sources") {
+        const sourceAnalytics = getSourceAnalytics({ preferAggregated: true });
+        renderSourcesPage(setText, setHtml, sourceAnalytics);
+      }
+
     }
 
     function render() {
@@ -4665,6 +5466,8 @@
       document.querySelectorAll("[data-page]").forEach(sec => {
         sec.classList.toggle("hidden", sec.getAttribute("data-page") !== state.page);
       });
+      const topKpiWrap = document.getElementById("topKpiWrap");
+      if (topKpiWrap) topKpiWrap.classList.toggle("hidden", state.page === "sources");
       syncCompetencyModeControls();
 
       const capEl = document.getElementById("dataCapLabel");
@@ -4827,6 +5630,11 @@
         renderDoughnut("chartMatBar", competencyPairs, `Competências (${competencyModeLabel(state.competencyMode)})`, { percentMode: true });
       }
 
+      if (state.page === "sources") {
+        const sourceAnalytics = getSourceAnalytics();
+        renderSourcesPage(setText, setHtml, sourceAnalytics);
+      }
+
       syncPresetButtons();
       renderIconsNow();
     }
@@ -4936,6 +5744,7 @@
         "chartChannels",
         "chartMacroBar",
         "chartMatBar",
+        "chartSourcesBubble",
       ];
 
       const chartSnapshots = new Map();
@@ -5065,6 +5874,7 @@
         filterModal.classList.add("hidden");
         filterModal.setAttribute("aria-hidden", "true");
       }
+      closeSourceDetailModal();
       closeUfWelcomeModal();
       syncModalBackdropState();
       await wait(120);
@@ -5090,7 +5900,7 @@
       const stamp = new Date().toISOString().slice(0, 19).replaceAll(":", "-");
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
-      const pagesForExport = ["overview", "territory", "engagement", "content"];
+      const pagesForExport = ["overview", "territory", "engagement", "content", "sources"];
       const prevPage = state.page;
       const prevHash = location.hash;
       let shouldAddPage = false;
@@ -5099,6 +5909,7 @@
         setLoadingState(true);
         setBootLoadingGate(true, "Gerando PDF visual do dashboard...");
         setPdfCaptureMode(true);
+        closeSourceDetailModal();
         closeUfWelcomeModal();
         const filterModal = document.getElementById("filterModal");
         if (filterModal) {
@@ -5207,7 +6018,8 @@
     function syncModalBackdropState() {
       const filterModal = document.getElementById("filterModal");
       const ufModal = document.getElementById("ufWelcomeModal");
-      const hasOpenModal = [filterModal, ufModal].some((el) => el && !el.classList.contains("hidden"));
+      const sourceModal = document.getElementById("sourceDetailModal");
+      const hasOpenModal = [filterModal, ufModal, sourceModal].some((el) => el && !el.classList.contains("hidden"));
       document.body.classList.toggle("modal-open", hasOpenModal);
     }
 
@@ -5341,6 +6153,20 @@
       });
     }
 
+    function bindSourcesListInteractions() {
+      const list = document.getElementById("sourcesTopList");
+      if (!list || list.dataset.boundClick === "1") return;
+      list.dataset.boundClick = "1";
+      list.addEventListener("click", (ev) => {
+        const btn = ev.target?.closest?.("[data-source-key]");
+        if (!btn) return;
+        ev.preventDefault();
+        const sourceKey = String(btn.getAttribute("data-source-key") || "").trim();
+        if (!sourceKey) return;
+        openSourceDetailModalByKey(sourceKey);
+      });
+    }
+
     function wireUi() {
       // nav
       document.querySelectorAll("[data-nav]").forEach(btn => {
@@ -5350,6 +6176,7 @@
         });
       });
       bindTopCitiesListInteractions();
+      bindSourcesListInteractions();
 
       const bindCompetencyToggle = (id, mode) => {
         const btn = document.getElementById(id);
@@ -5425,6 +6252,8 @@
       const btnApply = document.getElementById("btnApplyFilters");
       const btnReset = document.getElementById("btnResetFilters");
       const ufWelcomeModal = document.getElementById("ufWelcomeModal");
+      const sourceDetailModal = document.getElementById("sourceDetailModal");
+      const btnCloseSourceDetail = document.getElementById("btnCloseSourceDetail");
       const btnCloseUfWelcome = document.getElementById("btnCloseUfWelcome");
       const btnSkipUfWelcome = document.getElementById("btnSkipUfWelcome");
       const btnBootLoadingRetry = document.getElementById("btnBootLoadingRetry");
@@ -5478,9 +6307,16 @@
           if (e.target === ufWelcomeModal) closeUfWelcomeModal();
         });
       }
+      if (btnCloseSourceDetail) btnCloseSourceDetail.addEventListener("click", closeSourceDetailModal);
+      if (sourceDetailModal) {
+        sourceDetailModal.addEventListener("click", (e) => {
+          if (e.target === sourceDetailModal) closeSourceDetailModal();
+        });
+      }
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") closeModal();
         if (e.key === "Escape") closeUfWelcomeModal();
+        if (e.key === "Escape") closeSourceDetailModal();
       });
 
       const sidebarToggle = document.getElementById("sidebarToggle");
@@ -5538,6 +6374,9 @@
             ctx.map.invalidateSize({ pan: false, animate: false });
           }
         });
+        if (state.page === "sources") {
+          render();
+        }
       });
       window.addEventListener("beforeunload", () => {
         try {
@@ -5675,6 +6514,12 @@
               <span>Conte&uacute;dos</span>
             </span>
           </a>
+          <a href="#sources" data-nav="sources">
+            <span class="flex items-center gap-2">
+              <i data-lucide="radio" class="w-4 h-4"></i>
+              <span>Fontes</span>
+            </span>
+          </a>
         </nav>
       </div>
 
@@ -5721,7 +6566,7 @@
         <button id="btnClearUf" class="btn btn-ghost btn-sm" type="button">Limpar UF</button>
       </div>
 
-      <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+      <div id="topKpiWrap" class="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
         <div class="card p-3 kpi kpi-compact">
           <div class="label">Atendimentos</div>
           <div id="kpiAtend" class="value">&mdash;</div>
@@ -5956,6 +6801,55 @@
 
         </section>
 
+        <section data-page="sources" class="hidden grid grid-cols-12 gap-4 wrap-accent-blue wrap-soft p-4">
+          <div class="col-span-12 lg:col-span-8 card p-5">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <h2 class="section-title">Top 10 fontes de entrada</h2>
+                <div class="text-sm text-slate-600">
+                  Bolhas agrupadas por fonte, sem eixos. O tamanho de cada bolha representa os atendimentos gerados.
+                </div>
+              </div>
+              <span class="chip soft">Bubble chart</span>
+            </div>
+            <div class="mt-4 h-72">
+              <canvas id="chartSourcesBubble" class="w-full h-full"></canvas>
+            </div>
+            <div id="sourcesCoverageHint" class="text-xs text-slate-500 mt-3">Aguardando dados de fontes...</div>
+          </div>
+
+          <div class="col-span-12 lg:col-span-4 card p-5">
+            <h2 class="section-title">Resumo de fontes</h2>
+            <div class="text-sm text-slate-600">Indicadores agregados do recorte atual.</div>
+            <div class="grid grid-cols-2 gap-2 mt-4">
+              <div class="metric">
+                <span class="label">Fontes ativas</span>
+                <span id="sourcesTotal" class="value">&mdash;</span>
+              </div>
+              <div class="metric">
+                <span class="label">Conversao media</span>
+                <span id="sourcesAvgConv" class="value">&mdash;</span>
+              </div>
+              <div class="metric col-span-2">
+                <span class="label">Inscritos</span>
+                <span id="sourcesInscritosTotal" class="value">&mdash;</span>
+              </div>
+              <div class="metric col-span-2">
+                <span class="label">Atendimentos</span>
+                <span id="sourcesAtendTotal" class="value">&mdash;</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-span-12 card p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="section-title">Ranking de fontes</h2>
+              <span class="text-xs text-slate-500">Clique em uma linha para abrir detalhes.</span>
+            </div>
+            <div id="sourcesTopList" class="mt-4 grid gap-2"></div>
+          </div>
+        </section>
+
         <footer class="text-xs text-slate-500 mt-2">
           &copy; Escalada &bull; Relat&oacute;rio executivo &bull; Vers&atilde;o est&aacute;tica para an&aacute;lise institucional.
         </footer>
@@ -5996,6 +6890,54 @@
       <p class="text-xs text-slate-500 mt-3">
         Modo de autenticação: <strong id="authModeLabel">interno</strong> (usuário autenticado no Supabase).
       </p>
+    </div>
+  </div>
+
+  <div id="sourceDetailModal" class="modal-backdrop hidden" aria-hidden="true" aria-modal="true" role="dialog">
+    <div class="modal-card">
+      <div class="flex items-center justify-between">
+        <h2 class="section-title">Detalhes da fonte</h2>
+        <button id="btnCloseSourceDetail" class="btn btn-ghost btn-sm" title="Fechar">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="mt-3">
+        <div id="sourceDetailName" class="text-base font-semibold text-slate-800">Fonte</div>
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div class="metric">
+            <span class="label">Inscritos</span>
+            <span id="sourceDetailInscritos" class="value">&mdash;</span>
+          </div>
+          <div class="metric">
+            <span class="label">Atendimentos</span>
+            <span id="sourceDetailAtendimentos" class="value">&mdash;</span>
+          </div>
+          <div class="metric">
+            <span class="label">Usuarios unicos</span>
+            <span id="sourceDetailUsuarios" class="value">&mdash;</span>
+          </div>
+          <div class="metric">
+            <span class="label">Eventos marcados</span>
+            <span id="sourceDetailEventos" class="value">&mdash;</span>
+          </div>
+          <div class="metric col-span-2">
+            <span class="label">Conversao (inscritos -> atendimentos)</span>
+            <span id="sourceDetailConversao" class="value">&mdash;</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="sourceDetailInsightsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+        <div id="sourceDetailUfBlock">
+          <h3 class="text-sm font-semibold text-slate-800">Top UFs</h3>
+          <ul id="sourceDetailUfList" class="insight-list mt-2"></ul>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-slate-800">Top publicos</h3>
+          <ul id="sourceDetailPublicoList" class="insight-list mt-2"></ul>
+        </div>
+      </div>
     </div>
   </div>
 
