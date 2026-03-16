@@ -290,6 +290,61 @@
       box-shadow: 0 10px 20px rgba(0, 0, 0, 0.24);
     }
 
+    .sidebar-sources-root {
+      justify-content: space-between;
+    }
+
+    .sidebar-sources-root-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .sidebar-sources-chevron {
+      transition: transform 0.18s ease;
+    }
+
+    .sidebar-sources-group.is-open .sidebar-sources-chevron {
+      transform: rotate(180deg);
+    }
+
+    .sidebar-subnav {
+      margin: 2px 0 2px 18px;
+      padding: 6px 0 0 12px;
+      border-left: 1px solid rgba(255, 255, 255, 0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sidebar-subnav a {
+      display: flex;
+      align-items: center;
+      min-height: 34px;
+      border-radius: 10px;
+      padding: 7px 10px;
+      color: rgba(255, 255, 255, 0.82);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+      transition: transform 0.15s ease, background 0.15s ease, border 0.15s ease, color 0.15s ease;
+    }
+
+    .sidebar-subnav a:hover {
+      transform: translateX(2px);
+      color: rgba(255, 255, 255, 0.96);
+      border-color: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.09);
+    }
+
+    .sidebar-subnav a.is-active {
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.26);
+      background: rgba(255, 255, 255, 0.16);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
     .section-band {
       border: 1px solid rgba(18, 47, 155, 0.15);
       border-radius: 20px;
@@ -526,6 +581,42 @@
       font-size: 1.02rem;
       font-weight: 700;
       color: var(--ink-strong);
+    }
+
+    .sources-summary-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .sources-summary-grid {
+      width: 100%;
+      max-width: 320px;
+      margin: 20px auto 0;
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      align-content: center;
+    }
+
+    .sources-summary-metric {
+      width: 100%;
+      min-height: 110px;
+      padding: 16px 14px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 8px;
+    }
+
+    .sources-summary-metric .label {
+      font-size: 0.78rem;
+    }
+
+    .sources-summary-metric .value {
+      font-size: 1.45rem;
+      line-height: 1.1;
     }
 
     .section-title {
@@ -983,7 +1074,6 @@
       #sidebar,
       #sidebarToggle,
       #btnOpenFilters,
-      #btnExportCsv,
       #toast,
       #filterModal,
       #ufWelcomeModal,
@@ -2095,6 +2185,95 @@
       return normalizeTextKey(sourceName);
     }
 
+    const SOURCE_BUBBLE_LIMIT = 15;
+
+    const SOURCE_FAMILY_META = {
+      geral: {
+        label: "Geral",
+        chartTitle: `Top ${SOURCE_BUBBLE_LIMIT} fontes de entrada`,
+        chartSubtitle: "Leitura consolidada das fontes legadas no recorte atual.",
+        listTitle: "Ranking geral",
+        listHint: "Clique em uma linha para abrir detalhes.",
+        totalLabel: "Itens ativos",
+        emptyMessage: "Nenhuma fonte geral identificada no recorte atual.",
+        coverage: (items, inscritos, atendimentos) => `${fmtInt(atendimentos)} atendimentos e ${fmtInt(inscritos)} inscritos em ${fmtInt(items)} fontes.`
+      },
+      eventos: {
+        label: "Eventos",
+        chartTitle: `Top ${SOURCE_BUBBLE_LIMIT} eventos`,
+        chartSubtitle: "Tags do tipo Evento: ... no recorte atual.",
+        listTitle: "Ranking de eventos",
+        listHint: "Clique em uma linha para abrir detalhes.",
+        totalLabel: "Eventos ativos",
+        emptyMessage: "Nenhum evento classificado no recorte atual.",
+        coverage: (items, inscritos, atendimentos) => `${fmtInt(atendimentos)} atendimentos e ${fmtInt(inscritos)} inscritos em ${fmtInt(items)} eventos.`
+      },
+      multiplicadores: {
+        label: "Multiplicadores",
+        chartTitle: `Top ${SOURCE_BUBBLE_LIMIT} multiplicadores`,
+        chartSubtitle: "Tags do tipo Multiplicador: ... no recorte atual.",
+        listTitle: "Ranking de multiplicadores",
+        listHint: "Clique em uma linha para abrir detalhes.",
+        totalLabel: "Multiplicadores ativos",
+        emptyMessage: "Nenhum multiplicador classificado no recorte atual.",
+        coverage: (items, inscritos, atendimentos) => `${fmtInt(atendimentos)} atendimentos e ${fmtInt(inscritos)} inscritos em ${fmtInt(items)} multiplicadores.`
+      },
+      embaixadores: {
+        label: "Embaixadores",
+        chartTitle: `Top ${SOURCE_BUBBLE_LIMIT} embaixadores`,
+        chartSubtitle: "Tags do tipo Embaixadores: ... no recorte atual.",
+        listTitle: "Ranking de embaixadores",
+        listHint: "Clique em uma linha para abrir detalhes.",
+        totalLabel: "Embaixadores ativos",
+        emptyMessage: "Nenhum embaixador classificado no recorte atual.",
+        coverage: (items, inscritos, atendimentos) => `${fmtInt(atendimentos)} atendimentos e ${fmtInt(inscritos)} inscritos em ${fmtInt(items)} embaixadores.`
+      },
+      convites: {
+        label: "Convites",
+        chartTitle: `Top ${SOURCE_BUBBLE_LIMIT} convites`,
+        chartSubtitle: "Tags do tipo Convite: ... no recorte atual.",
+        listTitle: "Ranking de convites",
+        listHint: "Clique em uma linha para abrir detalhes.",
+        totalLabel: "Convites ativos",
+        emptyMessage: "Nenhum convite classificado no recorte atual.",
+        coverage: (items, inscritos, atendimentos) => `${fmtInt(atendimentos)} atendimentos e ${fmtInt(inscritos)} inscritos em ${fmtInt(items)} convites.`
+      }
+    };
+
+    function normalizeSourceFamily(value) {
+      const key = normalizeTextKey(value).toLowerCase();
+      if (!key) return "geral";
+      if (key === "geral") return "geral";
+      if (key === "eventos" || key === "evento") return "eventos";
+      if (key === "multiplicadores" || key === "multiplicador") return "multiplicadores";
+      if (key === "embaixadores" || key === "embaixador") return "embaixadores";
+      if (key === "convites" || key === "convite") return "convites";
+      return "geral";
+    }
+
+    function getSourceFamilyMeta(family = "geral") {
+      const normalized = normalizeSourceFamily(family);
+      return SOURCE_FAMILY_META[normalized] || SOURCE_FAMILY_META.geral;
+    }
+
+    function buildEmptySourceAnalytics(family = "geral") {
+      const normalized = normalizeSourceFamily(family);
+      return {
+        rows: [],
+        top10: [],
+        totalItems: 0,
+        totalInscritos: 0,
+        totalAtendimentos: 0,
+        totalEventos: 0,
+        totalUsuarios: 0,
+        avgConversao: 0,
+        taggedEvents: 0,
+        family: normalized,
+        meta: getSourceFamilyMeta(normalized),
+        preFiltered: true,
+      };
+    }
+
     function sourceRowMatchesSelectedUf(row, selectedUfCode, selectedUfRaw) {
       if (!selectedUfCode && !selectedUfRaw) return true;
       const topPairs = Array.isArray(row?.topUfs)
@@ -2112,7 +2291,11 @@
       return false;
     }
 
-    function buildSourceAnalyticsFromEvents(events) {
+    function buildSourceAnalyticsFromEvents(events, family = "geral") {
+      const normalizedFamily = normalizeSourceFamily(family);
+      if (normalizedFamily !== "geral") {
+        return buildEmptySourceAnalytics(normalizedFamily);
+      }
       const bySource = new Map();
       const taggedUsers = new Set();
       let taggedEvents = 0;
@@ -2172,17 +2355,25 @@
 
       return {
         rows,
-        top10: rows.slice(0, 10),
+        top10: rows.slice(0, SOURCE_BUBBLE_LIMIT),
+        totalItems: rows.length,
         totalInscritos,
         totalAtendimentos,
         totalEventos,
         totalUsuarios: taggedUsers.size,
         avgConversao,
         taggedEvents,
+        family: normalizedFamily,
+        meta: getSourceFamilyMeta(normalizedFamily),
+        preFiltered: false,
       };
     }
 
-    function getSourceRowsFromAggregatedPayload(payload) {
+    function getSourceRowsFromAggregatedPayload(payload, family = "geral") {
+      const normalizedFamily = normalizeSourceFamily(family);
+      const familyRows = payload?.fontes?.[normalizedFamily];
+      if (Array.isArray(familyRows)) return familyRows;
+      if (normalizedFamily !== "geral") return [];
       const candidates = [
         payload?.by_fonte,
         payload?.by_fontes,
@@ -2195,6 +2386,15 @@
         if (Array.isArray(rows) && rows.length) return rows;
       }
       return [];
+    }
+
+    function getSourceTotalsFromAggregatedPayload(payload, family = "geral") {
+      const normalizedFamily = normalizeSourceFamily(family);
+      const totals = payload?.fontes_totais?.[normalizedFamily];
+      if (totals && typeof totals === "object" && !Array.isArray(totals)) {
+        return totals;
+      }
+      return null;
     }
 
     function firstNonEmptyString(obj, keys = []) {
@@ -2221,8 +2421,13 @@
         .slice(0, limit);
     }
 
-    function buildSourceAnalyticsFromAggregatedPayload(payload) {
-      const rowsRaw = getSourceRowsFromAggregatedPayload(payload);
+    function buildSourceAnalyticsFromAggregatedPayload(payload, options = {}) {
+      const family = normalizeSourceFamily(options?.family);
+      const rowsRaw = getSourceRowsFromAggregatedPayload(payload, family);
+      const totalsRaw = getSourceTotalsFromAggregatedPayload(payload, family);
+      if (!rowsRaw.length && !totalsRaw) {
+        return buildEmptySourceAnalytics(family);
+      }
       const bySource = new Map();
 
       for (const row of rowsRaw) {
@@ -2285,37 +2490,48 @@
         };
       }));
 
-      const totalInscritos = rows.reduce((sum, row) => sum + Number(row.inscritos || 0), 0);
-      const totalAtendimentos = rows.reduce((sum, row) => sum + Number(row.atendimentos || 0), 0);
-      const totalEventos = rows.reduce((sum, row) => sum + Number(row.eventos || 0), 0);
-      const totalUsuarios = rows.reduce((sum, row) => sum + Number(row.usuarios || 0), 0);
-      const avgConversao = rows.length
-        ? rows.reduce((sum, row) => sum + Number(row.conversao || 0), 0) / rows.length
-        : 0;
+      const fallbackTotalInscritos = rows.reduce((sum, row) => sum + Number(row.inscritos || 0), 0);
+      const fallbackTotalAtendimentos = rows.reduce((sum, row) => sum + Number(row.atendimentos || 0), 0);
+      const fallbackTotalEventos = rows.reduce((sum, row) => sum + Number(row.eventos || 0), 0);
+      const fallbackTotalUsuarios = rows.reduce((sum, row) => sum + Number(row.usuarios || 0), 0);
+      const totalItems = Math.max(firstFiniteNumber(totalsRaw, ["itens", "items", "qtd", "total"]), rows.length);
+      const totalInscritos = firstFiniteNumber(totalsRaw, ["inscritos", "inscricoes", "entradas", "qtd_inscritos", "qtd_entradas"]) || fallbackTotalInscritos;
+      const totalAtendimentos = firstFiniteNumber(totalsRaw, ["atendimentos", "qtd_atendimentos", "acoes", "qtd_acoes"]) || fallbackTotalAtendimentos;
+      const totalEventos = fallbackTotalEventos > 0 ? fallbackTotalEventos : totalAtendimentos;
+      const totalUsuarios = firstFiniteNumber(totalsRaw, ["usuarios", "usuarios_unicos", "users", "qtd_usuarios"]) || fallbackTotalUsuarios;
+      const avgConversao = totalInscritos > 0
+        ? (totalAtendimentos / totalInscritos)
+        : (rows.length ? rows.reduce((sum, row) => sum + Number(row.conversao || 0), 0) / rows.length : 0);
 
       return {
         rows,
-        top10: rows.slice(0, 10),
+        top10: rows.slice(0, SOURCE_BUBBLE_LIMIT),
+        totalItems,
         totalInscritos,
         totalAtendimentos,
         totalEventos,
         totalUsuarios,
         avgConversao,
         taggedEvents: totalEventos,
+        family,
+        meta: getSourceFamilyMeta(family),
+        preFiltered: true,
       };
     }
 
     function getSourceAnalytics(options = {}) {
       const preferAggregated = Boolean(options?.preferAggregated);
+      const family = normalizeSourceFamily(options?.family || state?.sourceFamily || "geral");
       const payload = state.raw || {};
       if (preferAggregated || isAggregatedPayload(payload)) {
-        const aggregatedRows = getSourceRowsFromAggregatedPayload(payload);
-        if (aggregatedRows.length) {
-          return buildSourceAnalyticsFromAggregatedPayload(payload);
+        const aggregatedRows = getSourceRowsFromAggregatedPayload(payload, family);
+        const aggregatedTotals = getSourceTotalsFromAggregatedPayload(payload, family);
+        if (aggregatedRows.length || aggregatedTotals) {
+          return buildSourceAnalyticsFromAggregatedPayload(payload, { family });
         }
       }
       const events = Array.isArray(state.filtered) ? state.filtered : (Array.isArray(payload?.events) ? payload.events : []);
-      return buildSourceAnalyticsFromEvents(events);
+      return buildSourceAnalyticsFromEvents(events, family);
     }
 
     // =========================================================
@@ -2325,6 +2541,11 @@
     const MAX_RPC_LIMIT = 200000;
     const RPC_TIMEOUT_MS = 12000;
     const RPC_RETRY_ATTEMPTS = 1;
+    const DEFAULT_DASHBOARD_YEAR = 2026;
+    const DEFAULT_DASHBOARD_RANGE = Object.freeze({
+      from: `${DEFAULT_DASHBOARD_YEAR}-01-01`,
+      to: `${DEFAULT_DASHBOARD_YEAR}-12-31`,
+    });
     const DEV_MOCK_FALLBACK = Boolean(
       window.__USE_MOCK_FALLBACK__ ??
       ENV.USE_MOCK_FALLBACK ??
@@ -2966,6 +3187,8 @@
       fullRange: { from: "", to: "" },
       toastTimer: null,
       refreshDebounceTimer: null,
+      layoutRefreshTimer: null,
+      layoutRefreshRaf: 0,
       requestSeq: 0,
       isLoading: false,
       lastDataWarning: "",
@@ -2978,14 +3201,99 @@
       competencyMode: COMPETENCY_MODES.BNCC,
       sourceRowsByKey: new Map(),
       selectedSourceKey: "",
+      sourceFamily: "geral",
       modalDraftFilters: null,
       filters: {
-        dateFrom: "",
-        dateTo: "",
+        dateFrom: DEFAULT_DASHBOARD_RANGE.from,
+        dateTo: DEFAULT_DASHBOARD_RANGE.to,
         uf: "Todos",
         publico: "Todos",
       }
     };
+
+    function syncSourceFamilyControls() {
+      document.querySelectorAll("[data-source-family]").forEach((btn) => {
+        const family = normalizeSourceFamily(btn.getAttribute("data-source-family"));
+        const active = family === normalizeSourceFamily(state.sourceFamily);
+        btn.classList.toggle("is-active", active);
+        btn.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+    }
+
+    function syncSidebarSourcesGroup() {
+      const root = document.querySelector("[data-sidebar-sources-root]");
+      const group = document.getElementById("sidebarSourcesGroup");
+      const subnav = document.getElementById("sidebarSourcesSubnav");
+      const isOpen = state.page === "sources";
+      if (group) group.classList.toggle("is-open", isOpen);
+      if (root) root.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      if (subnav) subnav.classList.toggle("hidden", !isOpen);
+    }
+
+    function refreshResponsiveLayout() {
+      maps.forEach((ctx) => {
+        if (ctx?.map && isRenderableMapHost(ctx?.host)) {
+          ctx.map.invalidateSize({ pan: false, animate: false });
+        }
+      });
+      render();
+    }
+
+    function scheduleResponsiveLayoutRefresh(transitionMs = 260) {
+      if (state.layoutRefreshRaf) cancelAnimationFrame(state.layoutRefreshRaf);
+      if (state.layoutRefreshTimer) clearTimeout(state.layoutRefreshTimer);
+
+      state.layoutRefreshRaf = window.requestAnimationFrame(() => {
+        state.layoutRefreshRaf = 0;
+        refreshResponsiveLayout();
+      });
+
+      state.layoutRefreshTimer = window.setTimeout(() => {
+        state.layoutRefreshTimer = null;
+        refreshResponsiveLayout();
+      }, transitionMs);
+    }
+
+    function renderActiveSourcesFamily() {
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      const setHtml = (id, html) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+      };
+      const sourceAnalytics = getSourceAnalytics({
+        preferAggregated: isAggregatedPayload(state.raw),
+        family: state.sourceFamily,
+      });
+      renderSourcesPage(setText, setHtml, sourceAnalytics);
+      syncSourceFamilyControls();
+      syncSidebarSourcesGroup();
+      renderIconsNow();
+    }
+
+    function setSourceFamily(nextFamily) {
+      const normalized = normalizeSourceFamily(nextFamily);
+      const shouldNavigate = state.page !== "sources";
+      if (state.sourceFamily === normalized && !shouldNavigate) {
+        syncSourceFamilyControls();
+        syncSidebarSourcesGroup();
+        return;
+      }
+      state.sourceFamily = normalized;
+      state.page = "sources";
+      syncSourceFamilyUrl({ family: normalized, page: "sources" });
+      closeSourceDetailModal();
+      if (!shouldNavigate) {
+        renderActiveSourcesFamily();
+        return;
+      }
+      syncSourceFamilyControls();
+      syncSidebarSourcesGroup();
+      render();
+    }
+    window.__setSourceFamily = setSourceFamily;
 
     function syncCompetencyModeControls() {
       const mode = state.competencyMode === COMPETENCY_MODES.ENTRECOMP
@@ -3108,7 +3416,7 @@
         "btnOpenFilters",
         "btnApplyFilters",
         "btnResetFilters",
-        "btnExportCsv",
+        "btnPreset2026",
         "btnPreset30",
         "btnPreset90",
         "btnPresetAll",
@@ -3135,9 +3443,15 @@
       if (from && to) {
         state.fullRange.from = from;
         state.fullRange.to = to;
-        if (!state.filters.dateFrom || state.filters.dateFrom < from) state.filters.dateFrom = from;
-        if (!state.filters.dateTo || state.filters.dateTo > to) state.filters.dateTo = to;
-        if (state.filters.dateFrom > state.filters.dateTo) state.filters.dateFrom = from;
+        const defaultRange = getDefaultDashboardDateRange({ from, to });
+        if (!state.filters.dateFrom) state.filters.dateFrom = defaultRange.from;
+        if (!state.filters.dateTo) state.filters.dateTo = defaultRange.to;
+        if (state.filters.dateFrom < from) state.filters.dateFrom = from;
+        if (state.filters.dateTo > to) state.filters.dateTo = to;
+        if (state.filters.dateFrom > state.filters.dateTo) {
+          state.filters.dateFrom = defaultRange.from;
+          state.filters.dateTo = defaultRange.to;
+        }
       }
     }
 
@@ -3655,7 +3969,7 @@
       const canvas = document.getElementById(canvasId);
       if (!canvas) return;
 
-      const safeRows = Array.isArray(rows) ? rows.slice(0, 10) : [];
+      const safeRows = Array.isArray(rows) ? rows.slice(0, SOURCE_BUBBLE_LIMIT) : [];
       const onPointClick = typeof options?.onPointClick === "function" ? options.onPointClick : null;
       canvas.style.width = "100%";
       canvas.style.height = "100%";
@@ -5023,36 +5337,120 @@
     // =========================================================
     function setPage(page) {
       state.page = page;
-      location.hash = page;
+      syncSourceFamilyUrl({ page });
       render();
     }
 
     const PAGES = new Set(["overview", "territory", "engagement", "content", "sources"]);
 
+    function parseHashRoute() {
+      const raw = String(location.hash || "").replace(/^#/, "").trim();
+      if (!raw) return { page: "", family: "" };
+      const [pathRaw, queryRaw = ""] = raw.split("?");
+      const path = String(pathRaw || "").trim();
+      const query = new URLSearchParams(String(queryRaw || ""));
+      const sepMatch = path.match(/^([^:/]+)(?:[:/](.+))?$/);
+      const page = sepMatch?.[1] ? String(sepMatch[1]).trim() : path;
+      const familyFromPath = sepMatch?.[2] ? String(sepMatch[2]).trim() : "";
+      const familyFromQuery =
+        query.get("source_family") ||
+        query.get("sourceFamily") ||
+        query.get("fonte") ||
+        query.get("fontes") ||
+        "";
+      return {
+        page,
+        family: normalizeSourceFamily(familyFromPath || familyFromQuery || ""),
+      };
+    }
+
+    function currentSourceFamilyFromUrl() {
+      const hashRoute = parseHashRoute();
+      if (hashRoute.page === "sources" && hashRoute.family) {
+        return hashRoute.family;
+      }
+      try {
+        const url = new URL(window.location.href);
+        const params = url.searchParams;
+        return normalizeSourceFamily(
+          params.get("source_family") ||
+          params.get("sourceFamily") ||
+          params.get("fonte") ||
+          params.get("fontes") ||
+          "geral"
+        );
+      } catch (_) {
+        return "geral";
+      }
+    }
+
     function currentHashPage() {
-      const h = (location.hash || "").replace("#", "").trim();
-      if (!h) return "overview";
+      const h = parseHashRoute().page;
+      if (!h) {
+        return currentSourceFamilyFromUrl() !== "geral" ? "sources" : "overview";
+      }
       return PAGES.has(h) ? h : "overview";
     }
 
+    function syncSourceFamilyUrl(options = {}) {
+      try {
+        const url = new URL(window.location.href);
+        const page = PAGES.has(options?.page) ? options.page : state.page;
+        const family = normalizeSourceFamily(options?.family || state.sourceFamily || "geral");
+        if (family === "geral") url.searchParams.delete("source_family");
+        else url.searchParams.set("source_family", family);
+        url.hash = page === "sources" && family !== "geral"
+          ? `${page}:${family}`
+          : page;
+        const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+        history.replaceState(null, "", nextUrl);
+      } catch (_) {
+        const page = PAGES.has(options?.page) ? options.page : state.page;
+        const family = normalizeSourceFamily(options?.family || state.sourceFamily || "geral");
+        location.hash = page === "sources" && family !== "geral"
+          ? `${page}:${family}`
+          : page;
+      }
+    }
+
     function syncPresetButtons() {
+      const btn2026 = document.getElementById("btnPreset2026");
       const btn30 = document.getElementById("btnPreset30");
       const btn90 = document.getElementById("btnPreset90");
       const btnAll = document.getElementById("btnPresetAll");
       if (!state.fullRange.from || !state.fullRange.to) return;
 
+      const defaultRange = getDefaultDashboardDateRange();
       let d30 = shiftDate(state.fullRange.to, -29);
       let d90 = shiftDate(state.fullRange.to, -89);
       if (d30 < state.fullRange.from) d30 = state.fullRange.from;
       if (d90 < state.fullRange.from) d90 = state.fullRange.from;
 
+      const is2026 = state.filters.dateFrom === defaultRange.from && state.filters.dateTo === defaultRange.to;
       const is30 = state.filters.dateFrom === d30 && state.filters.dateTo === state.fullRange.to;
       const is90 = state.filters.dateFrom === d90 && state.filters.dateTo === state.fullRange.to;
-      const isAll = state.filters.dateFrom === state.fullRange.from && state.filters.dateTo === state.fullRange.to;
+      const isAll = !is2026 && state.filters.dateFrom === state.fullRange.from && state.filters.dateTo === state.fullRange.to;
 
+      if (btn2026) btn2026.classList.toggle("is-active", is2026);
       if (btn30) btn30.classList.toggle("is-active", is30);
       if (btn90) btn90.classList.toggle("is-active", is90);
       if (btnAll) btnAll.classList.toggle("is-active", isAll);
+    }
+
+    function getDefaultDashboardDateRange(range = state.fullRange) {
+      const fullFrom = normalizeDateYmd(range?.from);
+      const fullTo = normalizeDateYmd(range?.to);
+      let from = DEFAULT_DASHBOARD_RANGE.from;
+      let to = DEFAULT_DASHBOARD_RANGE.to;
+
+      if (fullFrom && from < fullFrom) from = fullFrom;
+      if (fullTo && to > fullTo) to = fullTo;
+
+      if (fullFrom && fullTo && from > to) {
+        return { from: fullFrom, to: fullTo };
+      }
+
+      return { from, to };
     }
 
     function renderTerritoryHighlightHeader(setText, selectedUfCode) {
@@ -5138,26 +5536,40 @@
         if (el) el.innerHTML = html;
       };
 
-      setText("sourceDetailName", String(row.source || "Fonte"));
+      const sourceName = String(row.source || row.label || "Fonte");
+      const topUfs = Array.isArray(row?.topUfs)
+        ? row.topUfs
+        : normalizedTopPairs(row?.top_ufs, ["uf", "label", "nome"], ["qtd", "count"], 5);
+      const topPublicos = Array.isArray(row?.topPublicos)
+        ? row.topPublicos
+        : normalizedTopPairs(row?.top_publicos, ["publico", "label", "nome"], ["qtd", "count"], 5);
+
+      setText("sourceDetailName", sourceName);
       setText("sourceDetailInscritos", fmtInt(Number(row.inscritos || 0)));
       setText("sourceDetailAtendimentos", fmtInt(Number(row.atendimentos || 0)));
-      setText("sourceDetailUsuarios", fmtInt(Number(row.usuarios || 0)));
-      setText("sourceDetailEventos", fmtInt(Number(row.eventos || 0)));
       setText("sourceDetailConversao", fmtPct(Number(row.conversao || 0)));
 
       const hasUfFilter = Boolean(sanitizeFilterValue(state?.filters?.uf));
       const ufBlock = document.getElementById("sourceDetailUfBlock");
+      const publicoBlock = document.getElementById("sourceDetailPublicoBlock");
       const insightsGrid = document.getElementById("sourceDetailInsightsGrid");
-      if (ufBlock) ufBlock.classList.toggle("hidden", hasUfFilter);
+      const showUfBlock = !hasUfFilter && topUfs.length > 0;
+      const showPublicoBlock = topPublicos.length > 0;
+      if (ufBlock) ufBlock.classList.toggle("hidden", !showUfBlock);
+      if (publicoBlock) publicoBlock.classList.toggle("hidden", !showPublicoBlock);
       if (insightsGrid) {
-        insightsGrid.classList.toggle("md:grid-cols-2", !hasUfFilter);
-        insightsGrid.classList.toggle("md:grid-cols-1", hasUfFilter);
+        const hasInsights = showUfBlock || showPublicoBlock;
+        insightsGrid.classList.toggle("hidden", !hasInsights);
+        insightsGrid.classList.toggle("md:grid-cols-2", showUfBlock && showPublicoBlock);
+        insightsGrid.classList.toggle("md:grid-cols-1", !(showUfBlock && showPublicoBlock));
       }
 
-      if (!hasUfFilter) {
-        setHtml("sourceDetailUfList", sourcePairsListHtml(row.topUfs, "Sem distribuicao por UF."));
+      if (showUfBlock) {
+        setHtml("sourceDetailUfList", sourcePairsListHtml(topUfs, "Sem distribuicao por UF."));
       }
-      setHtml("sourceDetailPublicoList", sourcePairsListHtml(row.topPublicos, "Sem distribuicao por publico."));
+      if (showPublicoBlock) {
+        setHtml("sourceDetailPublicoList", sourcePairsListHtml(topPublicos, "Sem distribuicao por publico."));
+      }
     }
 
     function openSourceDetailModal(row) {
@@ -5189,15 +5601,17 @@
     }
 
     function renderSourcesPage(setText, setHtml, analytics) {
+      const family = normalizeSourceFamily(analytics?.family || state.sourceFamily);
+      const familyMeta = analytics?.meta || getSourceFamilyMeta(family);
       const selectedUfRaw = sanitizeFilterValue(state?.filters?.uf);
       const selectedUfCode = resolveUfCode(selectedUfRaw);
       const rowsRaw = Array.isArray(analytics?.rows) ? analytics.rows : [];
-      const rows = selectedUfRaw
+      const rows = !analytics?.preFiltered && selectedUfRaw
         ? rowsRaw.filter((row) => sourceRowMatchesSelectedUf(row, selectedUfCode, selectedUfRaw))
         : rowsRaw;
       const top10 = selectedUfRaw
-        ? rows.slice(0, 10)
-        : (Array.isArray(analytics?.top10) ? analytics.top10 : rows.slice(0, 10));
+        ? rows.slice(0, SOURCE_BUBBLE_LIMIT)
+        : (Array.isArray(analytics?.top10) ? analytics.top10 : rows.slice(0, SOURCE_BUBBLE_LIMIT));
       const byKey = new Map();
       for (const row of rows) {
         const key = sourceKeyFromName(row?.source);
@@ -5205,22 +5619,26 @@
       }
       state.sourceRowsByKey = byKey;
 
-      const totalInscritos = rows.reduce((sum, row) => sum + Number(row?.inscritos || 0), 0);
-      const totalAtendimentos = rows.reduce((sum, row) => sum + Number(row?.atendimentos || 0), 0);
+      const totalItems = Number(analytics?.totalItems || rows.length || 0);
+      const totalInscritos = Number(analytics?.totalInscritos || rows.reduce((sum, row) => sum + Number(row?.inscritos || 0), 0));
+      const totalAtendimentos = Number(analytics?.totalAtendimentos || rows.reduce((sum, row) => sum + Number(row?.atendimentos || 0), 0));
       const avgConversao = rows.length
-        ? rows.reduce((sum, row) => sum + Number(row?.conversao || 0), 0) / rows.length
+        ? Number(analytics?.avgConversao || rows.reduce((sum, row) => sum + Number(row?.conversao || 0), 0) / rows.length)
         : 0;
-      const taggedEvents = rows.reduce((sum, row) => sum + Number(row?.eventos || 0), 0);
+      const taggedEvents = Number(analytics?.taggedEvents || rows.reduce((sum, row) => sum + Number(row?.eventos || 0), 0));
 
-      setText("sourcesTotal", fmtInt(rows.length));
+      setText("sourcesSectionTitle", familyMeta.chartTitle);
+      setText("sourcesSectionSubtitle", familyMeta.chartSubtitle);
+      setText("sourcesListTitle", familyMeta.listTitle);
+      setText("sourcesListHint", familyMeta.listHint);
       setText("sourcesInscritosTotal", fmtInt(totalInscritos));
       setText("sourcesAtendTotal", fmtInt(totalAtendimentos));
-      setText("sourcesAvgConv", rows.length ? fmtPct(avgConversao) : "--");
+      setText("sourcesAvgConv", totalInscritos > 0 || rows.length ? fmtPct(avgConversao) : "--");
       setText(
         "sourcesCoverageHint",
-        rows.length
-          ? `${fmtInt(taggedEvents)} registros com tag de fonte neste recorte.`
-          : "Sem tags no padrao Fonte: ... no recorte atual."
+        rows.length || totalItems
+          ? familyMeta.coverage(totalItems, totalInscritos, totalAtendimentos, taggedEvents)
+          : familyMeta.emptyMessage
       );
 
       renderSourcesBubbleChart("chartSourcesBubble", top10, {
@@ -5251,7 +5669,7 @@
               </button>
             `;
           }).join("")
-        : `<div class="text-sm text-slate-500">Nenhuma fonte identificada no formato <strong>Fonte: Nome da fonte</strong>.</div>`;
+        : `<div class="text-sm text-slate-500">${escapeHtml(familyMeta.emptyMessage)}</div>`;
       setHtml("sourcesTopList", listHtml);
 
       if (state.selectedSourceKey) {
@@ -5468,7 +5886,7 @@
       }
 
       if (state.page === "sources") {
-        const sourceAnalytics = getSourceAnalytics({ preferAggregated: true });
+        const sourceAnalytics = getSourceAnalytics({ preferAggregated: true, family: state.sourceFamily });
         renderSourcesPage(setText, setHtml, sourceAnalytics);
       }
 
@@ -5492,6 +5910,7 @@
         btn.classList.toggle("nav-active", active);
         btn.setAttribute("aria-current", active ? "page" : "false");
       });
+      syncSidebarSourcesGroup();
 
       // show page
       document.querySelectorAll("[data-page]").forEach(sec => {
@@ -5500,6 +5919,7 @@
       const topKpiWrap = document.getElementById("topKpiWrap");
       if (topKpiWrap) topKpiWrap.classList.toggle("hidden", state.page === "sources");
       syncCompetencyModeControls();
+      syncSourceFamilyControls();
 
       const capEl = document.getElementById("dataCapLabel");
       if (capEl) {
@@ -5662,7 +6082,7 @@
       }
 
       if (state.page === "sources") {
-        const sourceAnalytics = getSourceAnalytics();
+        const sourceAnalytics = getSourceAnalytics({ family: state.sourceFamily });
         renderSourcesPage(setText, setHtml, sourceAnalytics);
       }
 
@@ -6082,15 +6502,16 @@
         btn.className = "uf-onboarding-item";
         btn.textContent = uf;
         btn.addEventListener("click", () => {
+          const defaultRange = getDefaultDashboardDateRange();
           const today = normalizeDateYmd(new Date().toISOString().slice(0, 10));
-          const from = state.fullRange.from || state.filters.dateFrom || today;
-          const to = state.fullRange.to || state.filters.dateTo || from;
+          const from = state.filters.dateFrom || defaultRange.from || today;
+          const to = state.filters.dateTo || defaultRange.to || from;
           applyFilters(
             { uf, dateFrom: from, dateTo: to, publico: state.filters.publico || "Todos" },
             { immediate: true, reason: "onboarding-uf-select" }
           );
           closeUfWelcomeModal();
-          showToast(`UF ${uf} aplicada com periodo completo.`, "success");
+          showToast(`UF ${uf} aplicada no recorte atual.`, "success");
         });
         list.appendChild(btn);
       }
@@ -6203,11 +6624,38 @@
       document.querySelectorAll("[data-nav]").forEach(btn => {
         btn.addEventListener("click", (e) => {
           if (btn.tagName.toLowerCase() === "a") e.preventDefault();
+          if (btn.getAttribute("data-nav") === "sources") {
+            setSourceFamily("geral");
+            return;
+          }
           setPage(btn.getAttribute("data-nav"));
         });
       });
+      document.querySelectorAll("[data-source-family]").forEach((btn) => {
+        if (btn.dataset.boundClick === "1") return;
+        btn.dataset.boundClick = "1";
+        const handleSourceFamilyInteraction = (event) => {
+          if (event?.type === "click" && event?.cancelable) event.preventDefault();
+          if (event?.type === "keydown" && !["Enter", " "].includes(String(event.key || ""))) return;
+          if (event?.type === "keydown" && event?.cancelable) event.preventDefault();
+          setSourceFamily(btn.getAttribute("data-source-family"));
+        };
+        btn.addEventListener("click", handleSourceFamilyInteraction);
+        btn.addEventListener("keydown", handleSourceFamilyInteraction);
+      });
+      if (document.body && document.body.dataset.sourceFamilyDelegated !== "1") {
+        document.body.dataset.sourceFamilyDelegated = "1";
+        document.addEventListener("click", (e) => {
+          if (e.defaultPrevented) return;
+          const btn = e.target?.closest?.("[data-source-family]");
+          if (!btn) return;
+          if (e.cancelable) e.preventDefault();
+          setSourceFamily(btn.getAttribute("data-source-family"));
+        });
+      }
       bindTopCitiesListInteractions();
       bindSourcesListInteractions();
+      syncSourceFamilyControls();
 
       const bindCompetencyToggle = (id, mode) => {
         const btn = document.getElementById(id);
@@ -6251,25 +6699,31 @@
         });
       }
 
-      const applyPreset = (days) => {
+      const applyPreset = (preset) => {
         if (!state.fullRange.from || !state.fullRange.to) return;
         const patch = {};
-        if (days === "all") {
+        if (preset === "all") {
           patch.dateFrom = state.fullRange.from;
           patch.dateTo = state.fullRange.to;
+        } else if (preset === "2026") {
+          const defaultRange = getDefaultDashboardDateRange();
+          patch.dateFrom = defaultRange.from;
+          patch.dateTo = defaultRange.to;
         } else {
-          let from = shiftDate(state.fullRange.to, -days + 1);
+          let from = shiftDate(state.fullRange.to, -preset + 1);
           if (from < state.fullRange.from) from = state.fullRange.from;
           patch.dateFrom = from;
           patch.dateTo = state.fullRange.to;
         }
-        applyFilters(patch, { immediate: true, reason: `preset-${days}` });
+        applyFilters(patch, { immediate: true, reason: `preset-${preset}` });
       };
 
+      const btnPreset2026 = document.getElementById("btnPreset2026");
       const btnPreset30 = document.getElementById("btnPreset30");
       const btnPreset90 = document.getElementById("btnPreset90");
       const btnPresetAll = document.getElementById("btnPresetAll");
       const btnClearUf = document.getElementById("btnClearUf");
+      if (btnPreset2026) btnPreset2026.addEventListener("click", () => applyPreset("2026"));
       if (btnPreset30) btnPreset30.addEventListener("click", () => applyPreset(30));
       if (btnPreset90) btnPreset90.addEventListener("click", () => applyPreset(90));
       if (btnPresetAll) btnPresetAll.addEventListener("click", () => applyPreset("all"));
@@ -6311,9 +6765,10 @@
         closeModal();
       });
       if (btnReset) btnReset.addEventListener("click", () => {
+        const defaultRange = getDefaultDashboardDateRange();
         state.modalDraftFilters = {
-          dateFrom: state.fullRange.from || state.filters.dateFrom,
-          dateTo: state.fullRange.to || state.filters.dateTo,
+          dateFrom: defaultRange.from || state.filters.dateFrom,
+          dateTo: defaultRange.to || state.filters.dateTo,
           uf: "Todos",
           publico: "Todos",
         };
@@ -6358,10 +6813,12 @@
       const openSidebar = () => {
         document.body.classList.remove("sidenav-closed");
         syncSidebarAria();
+        scheduleResponsiveLayoutRefresh();
       };
       const closeSidebar = () => {
         document.body.classList.add("sidenav-closed");
         syncSidebarAria();
+        scheduleResponsiveLayoutRefresh();
       };
       const toggleSidebar = () => {
         if (document.body.classList.contains("sidenav-closed")) {
@@ -6378,39 +6835,24 @@
       });
       syncSidebarAria();
 
-      const btnExportCsv = document.getElementById("btnExportCsv");
-      if (btnExportCsv) btnExportCsv.addEventListener("click", ()=>{
-        const cols = ["date","uf","city","type","publico","material_type","macrotema","channel","duration_min","user_id"];
-        const lines = [cols.join(",")];
-        for (const e of state.filtered.slice(0, 200000)) { // protecao
-          const row = cols.map(c => {
-            const v = (e[c] ?? "");
-            const s = String(v).replaceAll('"','""');
-            return `"${s}"`;
-          });
-          lines.push(row.join(","));
-        }
-        const stamp = new Date().toISOString().slice(0,19).replaceAll(":","-");
-        downloadText(`escalada_export_${stamp}.csv`, lines.join("\n"), "text/csv;charset=utf-8");
-        showToast("CSV exportado com sucesso.", "success");
-      });
-
       window.addEventListener("hashchange", ()=>{
         state.page = currentHashPage();
+        state.sourceFamily = currentSourceFamilyFromUrl();
+        syncSourceFamilyControls();
+        render();
+      });
+      window.addEventListener("popstate", ()=>{
+        state.page = currentHashPage();
+        state.sourceFamily = currentSourceFamilyFromUrl();
         render();
       });
       window.addEventListener("resize", () => {
-        maps.forEach((ctx) => {
-          if (ctx?.map && isRenderableMapHost(ctx?.host)) {
-            ctx.map.invalidateSize({ pan: false, animate: false });
-          }
-        });
-        if (state.page === "sources") {
-          render();
-        }
+        refreshResponsiveLayout();
       });
       window.addEventListener("beforeunload", () => {
         try {
+          if (state.layoutRefreshRaf) cancelAnimationFrame(state.layoutRefreshRaf);
+          if (state.layoutRefreshTimer) clearTimeout(state.layoutRefreshTimer);
           mapRenderRetryTimers.forEach((timer) => clearTimeout(timer));
           mapRenderRetryTimers.clear();
           if (authSubscription && typeof authSubscription.unsubscribe === "function") {
@@ -6443,6 +6885,7 @@
         }
 
         state.page = currentHashPage();
+        state.sourceFamily = currentSourceFamilyFromUrl();
         syncFilterForm();
         if (skeleton) skeleton.classList.add("hidden");
         if (app) app.classList.remove("hidden");
@@ -6545,12 +6988,22 @@
               <span>Conte&uacute;dos</span>
             </span>
           </a>
-          <a href="#sources" data-nav="sources">
-            <span class="flex items-center gap-2">
-              <i data-lucide="radio" class="w-4 h-4"></i>
-              <span>Fontes</span>
-            </span>
-          </a>
+          <div id="sidebarSourcesGroup" class="sidebar-sources-group">
+            <a href="#sources" data-nav="sources" data-sidebar-sources-root="1" class="sidebar-sources-root" aria-expanded="false">
+              <span class="sidebar-sources-root-main">
+                <i data-lucide="radio" class="w-4 h-4"></i>
+                <span>Fontes</span>
+              </span>
+              <i data-lucide="chevron-down" class="w-4 h-4 sidebar-sources-chevron"></i>
+            </a>
+            <div id="sidebarSourcesSubnav" class="sidebar-subnav hidden" aria-label="Subdivisões de fontes">
+              <a href="?source_family=geral#sources:geral" data-source-family="geral" aria-pressed="false">Geral</a>
+              <a href="?source_family=eventos#sources:eventos" data-source-family="eventos" aria-pressed="false">Eventos</a>
+              <a href="?source_family=multiplicadores#sources:multiplicadores" data-source-family="multiplicadores" aria-pressed="false">Multiplicadores</a>
+              <a href="?source_family=embaixadores#sources:embaixadores" data-source-family="embaixadores" aria-pressed="false">Embaixadores</a>
+              <a href="?source_family=convites#sources:convites" data-source-family="convites" aria-pressed="false">Convites</a>
+            </div>
+          </div>
         </nav>
       </div>
 
@@ -6582,15 +7035,12 @@
             <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
             Filtros
           </button>
-          <button id="btnExportCsv" class="btn btn-primary btn-sm" title="Exportar CSV filtrado">
-            <i data-lucide="download" class="w-4 h-4"></i>
-            Exportar CSV
-          </button>
         </div>
       </div>
 
       <div class="mt-3 flex flex-wrap items-center gap-2">
         <span id="dataCapLabel" class="chip hidden"></span>
+        <button id="btnPreset2026" class="btn btn-ghost btn-sm" type="button">2026</button>
         <button id="btnPreset30" class="btn btn-ghost btn-sm" type="button">30 dias</button>
         <button id="btnPreset90" class="btn btn-ghost btn-sm" type="button">90 dias</button>
         <button id="btnPresetAll" class="btn btn-ghost btn-sm" type="button">Per&iacute;odo completo</button>
@@ -6833,11 +7283,22 @@
         </section>
 
         <section data-page="sources" class="hidden grid grid-cols-12 gap-4 wrap-accent-blue wrap-soft p-4">
+          <div class="col-span-12 card p-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Subdivisões</span>
+              <a href="?source_family=geral#sources:geral" class="btn btn-sm btn-ghost is-active" data-source-family="geral" aria-pressed="true">Geral</a>
+              <a href="?source_family=eventos#sources:eventos" class="btn btn-sm btn-ghost" data-source-family="eventos" aria-pressed="false">Eventos</a>
+              <a href="?source_family=multiplicadores#sources:multiplicadores" class="btn btn-sm btn-ghost" data-source-family="multiplicadores" aria-pressed="false">Multiplicadores</a>
+              <a href="?source_family=embaixadores#sources:embaixadores" class="btn btn-sm btn-ghost" data-source-family="embaixadores" aria-pressed="false">Embaixadores</a>
+              <a href="?source_family=convites#sources:convites" class="btn btn-sm btn-ghost" data-source-family="convites" aria-pressed="false">Convites</a>
+            </div>
+          </div>
+
           <div class="col-span-12 lg:col-span-8 card p-5">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
-                <h2 class="section-title">Top 10 fontes de entrada</h2>
-                <div class="text-sm text-slate-600">
+                <h2 id="sourcesSectionTitle" class="section-title">Top 15 fontes de entrada</h2>
+                <div id="sourcesSectionSubtitle" class="text-sm text-slate-600">
                   Bolhas agrupadas por fonte, sem eixos. O tamanho de cada bolha representa os atendimentos gerados.
                 </div>
               </div>
@@ -6849,23 +7310,19 @@
             <div id="sourcesCoverageHint" class="text-xs text-slate-500 mt-3">Aguardando dados de fontes...</div>
           </div>
 
-          <div class="col-span-12 lg:col-span-4 card p-5">
+          <div class="col-span-12 lg:col-span-4 card p-5 sources-summary-card">
             <h2 class="section-title">Resumo de fontes</h2>
             <div class="text-sm text-slate-600">Indicadores agregados do recorte atual.</div>
-            <div class="grid grid-cols-2 gap-2 mt-4">
-              <div class="metric">
-                <span class="label">Fontes ativas</span>
-                <span id="sourcesTotal" class="value">&mdash;</span>
-              </div>
-              <div class="metric">
+            <div class="sources-summary-grid">
+              <div class="metric sources-summary-metric">
                 <span class="label">Conversao media</span>
                 <span id="sourcesAvgConv" class="value">&mdash;</span>
               </div>
-              <div class="metric col-span-2">
+              <div class="metric sources-summary-metric">
                 <span class="label">Inscritos</span>
                 <span id="sourcesInscritosTotal" class="value">&mdash;</span>
               </div>
-              <div class="metric col-span-2">
+              <div class="metric sources-summary-metric">
                 <span class="label">Atendimentos</span>
                 <span id="sourcesAtendTotal" class="value">&mdash;</span>
               </div>
@@ -6874,8 +7331,8 @@
 
           <div class="col-span-12 card p-5">
             <div class="flex items-center justify-between">
-              <h2 class="section-title">Ranking de fontes</h2>
-              <span class="text-xs text-slate-500">Clique em uma linha para abrir detalhes.</span>
+              <h2 id="sourcesListTitle" class="section-title">Ranking de fontes</h2>
+              <span id="sourcesListHint" class="text-xs text-slate-500">Clique em uma linha para abrir detalhes.</span>
             </div>
             <div id="sourcesTopList" class="mt-4 grid gap-2"></div>
           </div>
@@ -6944,14 +7401,6 @@
             <span class="label">Atendimentos</span>
             <span id="sourceDetailAtendimentos" class="value">&mdash;</span>
           </div>
-          <div class="metric">
-            <span class="label">Usuarios unicos</span>
-            <span id="sourceDetailUsuarios" class="value">&mdash;</span>
-          </div>
-          <div class="metric">
-            <span class="label">Eventos marcados</span>
-            <span id="sourceDetailEventos" class="value">&mdash;</span>
-          </div>
           <div class="metric col-span-2">
             <span class="label">Conversao (inscritos -> atendimentos)</span>
             <span id="sourceDetailConversao" class="value">&mdash;</span>
@@ -6964,7 +7413,7 @@
           <h3 class="text-sm font-semibold text-slate-800">Top UFs</h3>
           <ul id="sourceDetailUfList" class="insight-list mt-2"></ul>
         </div>
-        <div>
+        <div id="sourceDetailPublicoBlock">
           <h3 class="text-sm font-semibold text-slate-800">Top publicos</h3>
           <ul id="sourceDetailPublicoList" class="insight-list mt-2"></ul>
         </div>

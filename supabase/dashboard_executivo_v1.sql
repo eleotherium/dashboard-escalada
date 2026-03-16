@@ -61,7 +61,9 @@ create index if not exists geo_ceps_cep_norm_lpad_idx
 
 
 -- =========================================================
--- FUNCAO (mesmo nome): otimizada + by_cidade, by_cep e by_fonte (tags "Fonte: ...")
+-- FUNCAO (mesmo nome): otimizada + by_cidade, by_cep e blocos de fontes
+-- `by_fonte` permanece por compatibilidade com a UI atual.
+-- O novo bloco `fontes` entrega recortes numericos leves por familia.
 -- =========================================================
 create or replace function public.dashboard_executivo_v1(
   p_date_from date default null,
@@ -165,6 +167,20 @@ begin
       'by_uf', '[]'::jsonb,
       'by_publico', '[]'::jsonb,
       'by_fonte', '[]'::jsonb,
+      'fontes', jsonb_build_object(
+        'geral', '[]'::jsonb,
+        'eventos', '[]'::jsonb,
+        'multiplicadores', '[]'::jsonb,
+        'embaixadores', '[]'::jsonb,
+        'convites', '[]'::jsonb
+      ),
+      'fontes_totais', jsonb_build_object(
+        'geral', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'usuarios', 0),
+        'eventos', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'usuarios', 0),
+        'multiplicadores', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'usuarios', 0),
+        'embaixadores', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'usuarios', 0),
+        'convites', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'usuarios', 0)
+      ),
       'by_cidade', '[]'::jsonb,
       'by_cep', '[]'::jsonb,
       'top_tipos', '[]'::jsonb,
@@ -232,6 +248,7 @@ begin
     where
       a.criado_em >= p_date_from
       and a.criado_em < (p_date_to + 1)
+      and lower(coalesce(to_jsonb(a)->>'atendimento_registrado', 'false')) in ('true', 't', '1')
       and lower(coalesce(a.tipo, '')) = any(v_allowed_types)
   ),
   actions as materialized (
@@ -372,14 +389,9 @@ begin
     order by atendimentos desc, inscritos desc
   ),
 
-  -- Extracao de tags no formato "Fonte: Nome da Fonte"
-  -- Base principal: cadastro de membros (Participantes Escalada).
-  participantes_fonte_tags as (
+  participants_tags_text as (
     select
       p.usuario_id,
-      nullif(btrim(m[1]), '') as fonte
-    from participants_period p
-    cross join lateral regexp_matches(
       concat_ws(' | ',
         coalesce(p.raw_json->>'tags', ''),
         coalesce(p.raw_json->>'Tags', ''),
@@ -393,11 +405,77 @@ begin
         coalesce(p.raw_json#>>'{metadata,tags}', ''),
         coalesce(p.raw_json#>>'{meta,tags}', ''),
         p.raw_json::text
-      ),
-      '(?i)fonte\s*:\s*([^",;|\]\}\n]+)',
-      'g'
-    ) as m
+      ) as tags_text
+    from participants_period p
     where p.usuario_id is not null
+  ),
+  participants_tag_items as (
+    select distinct
+      p.usuario_id,
+      nullif(btrim(item.tag_text), '') as tag_text
+    from participants_period p
+    cross join lateral (
+      select jsonb_array_elements_text(p.raw_json->'tags') as tag_text
+      where jsonb_typeof(p.raw_json->'tags') = 'array'
+
+      union all
+
+      select jsonb_array_elements_text(p.raw_json->'Tags') as tag_text
+      where jsonb_typeof(p.raw_json->'Tags') = 'array'
+
+      union all
+
+      select jsonb_array_elements_text(p.raw_json->'labels') as tag_text
+      where jsonb_typeof(p.raw_json->'labels') = 'array'
+
+      union all
+
+      select jsonb_array_elements_text(p.raw_json->'Labels') as tag_text
+      where jsonb_typeof(p.raw_json->'Labels') = 'array'
+
+      union all
+
+      select p.raw_json->>'tags' as tag_text
+      where jsonb_typeof(p.raw_json->'tags') = 'string'
+
+      union all
+
+      select p.raw_json->>'Tags' as tag_text
+      where jsonb_typeof(p.raw_json->'Tags') = 'string'
+
+      union all
+
+      select p.raw_json->>'label' as tag_text
+      where jsonb_typeof(p.raw_json->'label') = 'string'
+
+      union all
+
+      select p.raw_json->>'Label' as tag_text
+      where jsonb_typeof(p.raw_json->'Label') = 'string'
+    ) item
+    where
+      p.usuario_id is not null
+      and nullif(btrim(item.tag_text), '') is not null
+  ),
+
+  -- Extracao de tags no formato "Fonte: Nome da Fonte"
+  -- Base principal: cadastro de membros (Participantes Escalada).
+  participantes_fonte_tags as (
+    select
+      p.usuario_id,
+      nullif(
+        btrim(
+          regexp_replace(
+            p.tag_text,
+            '^fontes?\s*:\s*',
+            '',
+            'i'
+          )
+        ),
+        ''
+      ) as fonte
+    from participants_tag_items p
+    where p.tag_text ~* '^fontes?\s*:'
   ),
   participantes_fontes as (
     select distinct
@@ -545,6 +623,183 @@ begin
       )
     order by atendimentos desc, inscritos desc, fonte
     limit v_top_limit
+  ),
+
+  participantes_familia_tags as (
+    select
+      p.usuario_id,
+      'eventos'::text as familia,
+      nullif(
+        btrim(
+          regexp_replace(
+            p.tag_text,
+            '^eventos?\s*:\s*',
+            '',
+            'i'
+          )
+        ),
+        ''
+      ) as label
+    from participants_tag_items p
+    where p.tag_text ~* '^eventos?\s*:'
+
+    union all
+
+    select
+      p.usuario_id,
+      'multiplicadores'::text as familia,
+      nullif(
+        btrim(
+          regexp_replace(
+            p.tag_text,
+            '^multiplicador(?:es)?\s*:\s*',
+            '',
+            'i'
+          )
+        ),
+        ''
+      ) as label
+    from participants_tag_items p
+    where p.tag_text ~* '^multiplicador(?:es)?\s*:'
+
+    union all
+
+    select
+      p.usuario_id,
+      'embaixadores'::text as familia,
+      nullif(
+        btrim(
+          regexp_replace(
+            p.tag_text,
+            '^embaixad(?:or|ores)\s*:\s*',
+            '',
+            'i'
+          )
+        ),
+        ''
+      ) as label
+    from participants_tag_items p
+    where p.tag_text ~* '^embaixad(?:or|ores)\s*:'
+
+    union all
+
+    select
+      p.usuario_id,
+      'convites'::text as familia,
+      nullif(
+        btrim(
+          regexp_replace(
+            p.tag_text,
+            '^convites?\s*:\s*',
+            '',
+            'i'
+          )
+        ),
+        ''
+      ) as label
+    from participants_tag_items p
+    where p.tag_text ~* '^convites?\s*:'
+  ),
+  participantes_fontes_especializadas as (
+    select distinct
+      usuario_id,
+      familia,
+      label
+    from participantes_familia_tags
+    where label is not null and label <> ''
+  ),
+  fontes_especializadas_inscritos as (
+    select
+      familia,
+      label,
+      count(distinct usuario_id)::int as inscritos
+    from participantes_fontes_especializadas
+    group by familia, label
+  ),
+  fontes_especializadas_atend as (
+    select
+      pfe.familia,
+      pfe.label,
+      count(*)::int as atendimentos
+    from actions a
+    join participantes_fontes_especializadas pfe
+      on pfe.usuario_id = a.usuario_id
+    group by pfe.familia, pfe.label
+  ),
+  fontes_especializadas_usuarios as (
+    select
+      familia,
+      label,
+      count(distinct usuario_id)::int as usuarios
+    from participantes_fontes_especializadas
+    group by familia, label
+  ),
+  fontes_numericas as (
+    select
+      'geral'::text as familia,
+      fonte as label,
+      inscritos,
+      atendimentos,
+      usuarios,
+      conversao_pct
+    from by_fonte
+
+    union all
+
+    select
+      coalesce(i.familia, a.familia, u.familia) as familia,
+      coalesce(i.label, a.label, u.label) as label,
+      coalesce(i.inscritos, 0)::int as inscritos,
+      coalesce(a.atendimentos, 0)::int as atendimentos,
+      coalesce(u.usuarios, 0)::int as usuarios,
+      case
+        when coalesce(i.inscritos, 0) > 0
+          then round((coalesce(a.atendimentos, 0)::numeric / i.inscritos::numeric) * 100, 2)
+        else 0
+      end as conversao_pct
+    from fontes_especializadas_inscritos i
+    full join fontes_especializadas_atend a
+      on a.familia = i.familia
+     and a.label = i.label
+    full join fontes_especializadas_usuarios u
+      on u.familia = coalesce(i.familia, a.familia)
+     and u.label = coalesce(i.label, a.label)
+  ),
+  fontes_numericas_ranked as (
+    select
+      familia,
+      label,
+      inscritos,
+      atendimentos,
+      usuarios,
+      conversao_pct,
+      row_number() over (
+        partition by familia
+        order by atendimentos desc, inscritos desc, label
+      ) as rn
+    from fontes_numericas
+    where coalesce(label, '') <> ''
+  ),
+  fontes_numericas_limited as (
+    select
+      familia,
+      label,
+      inscritos,
+      atendimentos,
+      usuarios,
+      conversao_pct
+    from fontes_numericas_ranked
+    where rn <= v_top_limit
+  ),
+  fontes_totais as (
+    select
+      familia,
+      count(*)::int as itens,
+      coalesce(sum(inscritos), 0)::int as inscritos,
+      coalesce(sum(atendimentos), 0)::int as atendimentos,
+      coalesce(sum(usuarios), 0)::int as usuarios
+    from fontes_numericas
+    group by familia
   ),
 
   by_cidade_inscritos as (
@@ -756,6 +1011,125 @@ begin
         ),
         '[]'::jsonb
       ) from by_fonte
+    ),
+    'fontes', jsonb_build_object(
+      'geral', (
+        select coalesce(
+          jsonb_agg(
+            jsonb_build_object(
+              'label', label,
+              'inscritos', inscritos,
+              'atendimentos', atendimentos,
+              'usuarios', usuarios,
+              'conversao_pct', conversao_pct
+            )
+            order by atendimentos desc, inscritos desc, label
+          ),
+          '[]'::jsonb
+        )
+        from fontes_numericas_limited
+        where familia = 'geral'
+      ),
+      'eventos', (
+        select coalesce(
+          jsonb_agg(
+            jsonb_build_object(
+              'label', label,
+              'inscritos', inscritos,
+              'atendimentos', atendimentos,
+              'usuarios', usuarios,
+              'conversao_pct', conversao_pct
+            )
+            order by atendimentos desc, inscritos desc, label
+          ),
+          '[]'::jsonb
+        )
+        from fontes_numericas_limited
+        where familia = 'eventos'
+      ),
+      'multiplicadores', (
+        select coalesce(
+          jsonb_agg(
+            jsonb_build_object(
+              'label', label,
+              'inscritos', inscritos,
+              'atendimentos', atendimentos,
+              'usuarios', usuarios,
+              'conversao_pct', conversao_pct
+            )
+            order by atendimentos desc, inscritos desc, label
+          ),
+          '[]'::jsonb
+        )
+        from fontes_numericas_limited
+        where familia = 'multiplicadores'
+      ),
+      'embaixadores', (
+        select coalesce(
+          jsonb_agg(
+            jsonb_build_object(
+              'label', label,
+              'inscritos', inscritos,
+              'atendimentos', atendimentos,
+              'usuarios', usuarios,
+              'conversao_pct', conversao_pct
+            )
+            order by atendimentos desc, inscritos desc, label
+          ),
+          '[]'::jsonb
+        )
+        from fontes_numericas_limited
+        where familia = 'embaixadores'
+      ),
+      'convites', (
+        select coalesce(
+          jsonb_agg(
+            jsonb_build_object(
+              'label', label,
+              'inscritos', inscritos,
+              'atendimentos', atendimentos,
+              'usuarios', usuarios,
+              'conversao_pct', conversao_pct
+            )
+            order by atendimentos desc, inscritos desc, label
+          ),
+          '[]'::jsonb
+        )
+        from fontes_numericas_limited
+        where familia = 'convites'
+      )
+    ),
+    'fontes_totais', jsonb_build_object(
+      'geral', jsonb_build_object(
+        'itens', coalesce((select itens from fontes_totais where familia = 'geral'), 0),
+        'inscritos', coalesce((select inscritos from fontes_totais where familia = 'geral'), 0),
+        'atendimentos', coalesce((select atendimentos from fontes_totais where familia = 'geral'), 0),
+        'usuarios', coalesce((select usuarios from fontes_totais where familia = 'geral'), 0)
+      ),
+      'eventos', jsonb_build_object(
+        'itens', coalesce((select itens from fontes_totais where familia = 'eventos'), 0),
+        'inscritos', coalesce((select inscritos from fontes_totais where familia = 'eventos'), 0),
+        'atendimentos', coalesce((select atendimentos from fontes_totais where familia = 'eventos'), 0),
+        'usuarios', coalesce((select usuarios from fontes_totais where familia = 'eventos'), 0)
+      ),
+      'multiplicadores', jsonb_build_object(
+        'itens', coalesce((select itens from fontes_totais where familia = 'multiplicadores'), 0),
+        'inscritos', coalesce((select inscritos from fontes_totais where familia = 'multiplicadores'), 0),
+        'atendimentos', coalesce((select atendimentos from fontes_totais where familia = 'multiplicadores'), 0),
+        'usuarios', coalesce((select usuarios from fontes_totais where familia = 'multiplicadores'), 0)
+      ),
+      'embaixadores', jsonb_build_object(
+        'itens', coalesce((select itens from fontes_totais where familia = 'embaixadores'), 0),
+        'inscritos', coalesce((select inscritos from fontes_totais where familia = 'embaixadores'), 0),
+        'atendimentos', coalesce((select atendimentos from fontes_totais where familia = 'embaixadores'), 0),
+        'usuarios', coalesce((select usuarios from fontes_totais where familia = 'embaixadores'), 0)
+      ),
+      'convites', jsonb_build_object(
+        'itens', coalesce((select itens from fontes_totais where familia = 'convites'), 0),
+        'inscritos', coalesce((select inscritos from fontes_totais where familia = 'convites'), 0),
+        'atendimentos', coalesce((select atendimentos from fontes_totais where familia = 'convites'), 0),
+        'usuarios', coalesce((select usuarios from fontes_totais where familia = 'convites'), 0)
+      )
     ),
     'by_cidade', (
       select coalesce(
