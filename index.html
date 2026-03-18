@@ -1320,13 +1320,6 @@
       MG: 853, MS: 79, MT: 141, PA: 144, PB: 223, PE: 185, PI: 224, PR: 399, RJ: 92, RN: 167,
       RO: 52, RR: 15, RS: 497, SC: 295, SE: 75, SP: 645, TO: 139
     };
-    const KPI_TARGETS = {
-      atendimentos: 500000,
-      inscricoes: 45000,
-      inscritos: 45000,
-      conversaoAtendimento: 0.70
-    };
-
     function deriveChannel(e) {
       if (e.channel) return e.channel;
       const seed = `${e.user_id || ""}|${e.date || ""}|${e.type || ""}|${e.uf || ""}`;
@@ -3643,9 +3636,6 @@
 
       const flags = [];
       if (conc.top5 > 0.70) flags.push("Concentracao alta: 5 UFs lideres somam " + fmtPct(conc.top5) + " dos atendimentos.");
-      if (k.conversaoAtendimento < KPI_TARGETS.conversaoAtendimento) {
-        flags.push("Taxa de ativacao abaixo da meta: " + fmtPct(k.conversaoAtendimento) + " (meta " + fmtPct(KPI_TARGETS.conversaoAtendimento) + ").");
-      }
       if (growth !== null) flags.push("Variacao recente de inscricoes (30d vs 30d anteriores): " + (growth>=0?"+":"") + fmtPct(growth));
 
       return {
@@ -5782,12 +5772,6 @@
       setText("kpiAtend", fmtInt(atendimentos));
       setText("kpiAtivos", fmtInt(inscritos));
       setText("kpiConv", fmtPct(convRatio));
-      setText("kpiAtendTarget", fmtInt(KPI_TARGETS.atendimentos));
-      setText("kpiAtivosTarget", fmtInt(KPI_TARGETS.inscritos));
-      setText("kpiConvTarget", fmtPct(KPI_TARGETS.conversaoAtendimento));
-      updateProgress("kpiAtendBar", atendimentos, KPI_TARGETS.atendimentos);
-      updateProgress("kpiAtivosBar", inscritos, KPI_TARGETS.inscritos);
-      updateProgress("kpiConvBar", convRatio, KPI_TARGETS.conversaoAtendimento);
       updateDeltaEl("kpiAtendDelta", atendimentos, 0);
       updateDeltaEl("kpiAtivosDelta", inscritos, 0);
       updateDeltaEl("kpiConvDelta", convRatio, 0);
@@ -5819,9 +5803,6 @@
 
       const flags = [];
       if (topShare.top5 >= 0.75) flags.push("Alta concentracao territorial nas 5 UFs lideres.");
-      if (convRatio < KPI_TARGETS.conversaoAtendimento) {
-        flags.push("Taxa de ativacao abaixo da meta no recorte atual: " + fmtPct(convRatio) + " (meta " + fmtPct(KPI_TARGETS.conversaoAtendimento) + ").");
-      }
       if (!flags.length) flags.push("Sem alertas criticos no recorte atual.");
       setHtml("insightsList", flags.map((line)=>`<li>${line}</li>`).join(""));
 
@@ -5949,14 +5930,6 @@
       setText("kpiAtend", fmtInt(ins.kpis.atendimentos));
       setText("kpiAtivos", fmtInt(ins.kpis.inscritos));
       setText("kpiConv", fmtPct(ins.kpis.conversaoAtendimento));
-
-      setText("kpiAtendTarget", fmtInt(KPI_TARGETS.atendimentos));
-      setText("kpiAtivosTarget", fmtInt(KPI_TARGETS.inscritos));
-      setText("kpiConvTarget", fmtPct(KPI_TARGETS.conversaoAtendimento));
-
-      updateProgress("kpiAtendBar", ins.kpis.atendimentos, KPI_TARGETS.atendimentos);
-      updateProgress("kpiAtivosBar", ins.kpis.inscritos, KPI_TARGETS.inscritos);
-      updateProgress("kpiConvBar", ins.kpis.conversaoAtendimento, KPI_TARGETS.conversaoAtendimento);
 
       const prev = computePreviousKpis();
       updateDeltaEl("kpiAtendDelta", ins.kpis.atendimentos, prev?.kpis.atendimentos || 0);
@@ -7055,29 +7028,23 @@
         <div class="card p-3 kpi kpi-compact">
           <div class="label">Atendimentos acumulados</div>
           <div id="kpiAtend" class="value">&mdash;</div>
-          <div class="flex items-center justify-between text-[11px] text-slate-600">
+          <div class="text-[11px] text-slate-600">
             <span id="kpiAtendDelta" class="delta">&mdash;</span>
-            <span>Meta <strong id="kpiAtendTarget">&mdash;</strong></span>
           </div>
-          <div class="progress mt-2"><span id="kpiAtendBar"></span></div>
         </div>
         <div class="card p-3 kpi kpi-compact">
           <div class="label">Inscritos</div>
           <div id="kpiAtivos" class="value">&mdash;</div>
-          <div class="flex items-center justify-between text-[11px] text-slate-600">
+          <div class="text-[11px] text-slate-600">
             <span id="kpiAtivosDelta" class="delta">&mdash;</span>
-            <span>Meta <strong id="kpiAtivosTarget">&mdash;</strong></span>
           </div>
-          <div class="progress mt-2"><span id="kpiAtivosBar"></span></div>
         </div>
         <div class="card p-3 kpi kpi-compact">
           <div class="label">Taxa de ativa&ccedil;&atilde;o (inscrito&rarr;atendido)</div>
           <div id="kpiConv" class="value">&mdash;</div>
-          <div class="flex items-center justify-between text-[11px] text-slate-600">
+          <div class="text-[11px] text-slate-600">
             <span id="kpiConvDelta" class="delta">&mdash;</span>
-            <span>Meta <strong id="kpiConvTarget">&mdash;</strong></span>
           </div>
-          <div class="progress mt-2"><span id="kpiConvBar"></span></div>
         </div>
       </div>
       </header>
