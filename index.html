@@ -1321,10 +1321,10 @@
       RO: 52, RR: 15, RS: 497, SC: 295, SE: 75, SP: 645, TO: 139
     };
     const KPI_TARGETS = {
-      atendimentos: 120000,
+      atendimentos: 500000,
       inscricoes: 45000,
       inscritos: 45000,
-      conversaoAtendimento: 0.32
+      conversaoAtendimento: 0.70
     };
 
     function deriveChannel(e) {
@@ -3643,7 +3643,9 @@
 
       const flags = [];
       if (conc.top5 > 0.70) flags.push("Concentracao alta: 5 UFs lideres somam " + fmtPct(conc.top5) + " dos atendimentos.");
-      if (k.conversaoAtendimento < 0.20) flags.push("Conversao inscrito->atendido baixa: " + fmtPct(k.conversaoAtendimento) + " (oportunidade de reforcar jornada).");
+      if (k.conversaoAtendimento < KPI_TARGETS.conversaoAtendimento) {
+        flags.push("Taxa de ativacao abaixo da meta: " + fmtPct(k.conversaoAtendimento) + " (meta " + fmtPct(KPI_TARGETS.conversaoAtendimento) + ").");
+      }
       if (growth !== null) flags.push("Variacao recente de inscricoes (30d vs 30d anteriores): " + (growth>=0?"+":"") + fmtPct(growth));
 
       return {
@@ -3743,7 +3745,7 @@
       return [
         `Volume do periodo: ${fmtInt(k.atendimentos)} atendimentos e ${fmtInt(k.inscricoes)} inscricoes, com ${fmtInt(k.inscritos)} inscritos.`,
         `UF lider: ${topUf ? `${topUf[0]} (${fmtInt(topUf[1])})` : "—"}; media de ${fmtInt(Math.round(atendPerDay))} atendimentos/dia.`,
-        `Preferencia: ${macroTop ? macroTop[0] : "—"} e ${competencyModeLabel(competencyMode)} ${competencyTop ? competencyTop[0] : "—"}. Canal dominante: ${channelTop ? channelTop[0] : "—"}. Conversao inscrito->atendido em ${fmtPct(conv)}.`
+        `Preferencia: ${macroTop ? macroTop[0] : "—"} e ${competencyModeLabel(competencyMode)} ${competencyTop ? competencyTop[0] : "—"}. Canal dominante: ${channelTop ? channelTop[0] : "—"}. Taxa de ativacao (inscrito->atendido) em ${fmtPct(conv)}.`
       ];
     }
 
@@ -5811,13 +5813,15 @@
       const summary = [
         `Volume do periodo: ${fmtInt(atendimentos)} atendimentos e ${fmtInt(inscritos)} inscritos.`,
         `Atendidos unicos: ${fmtInt(atendidos)}. Membros ativos: ${fmtInt(membrosAtivos)}.`,
-        `Conversao em ${fmtPct(convRatio)} no recorte atual.`
+        `Taxa de ativacao em ${fmtPct(convRatio)} no recorte atual.`
       ];
       setHtml("summaryList", summary.map((line)=>`<li>${line}</li>`).join(""));
 
       const flags = [];
       if (topShare.top5 >= 0.75) flags.push("Alta concentracao territorial nas 5 UFs lideres.");
-      if (convRatio < 0.2) flags.push("Conversao abaixo de 20% no recorte atual.");
+      if (convRatio < KPI_TARGETS.conversaoAtendimento) {
+        flags.push("Taxa de ativacao abaixo da meta no recorte atual: " + fmtPct(convRatio) + " (meta " + fmtPct(KPI_TARGETS.conversaoAtendimento) + ").");
+      }
       if (!flags.length) flags.push("Sem alertas criticos no recorte atual.");
       setHtml("insightsList", flags.map((line)=>`<li>${line}</li>`).join(""));
 
@@ -7049,7 +7053,7 @@
 
       <div id="topKpiWrap" class="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
         <div class="card p-3 kpi kpi-compact">
-          <div class="label">Atendimentos</div>
+          <div class="label">Atendimentos acumulados</div>
           <div id="kpiAtend" class="value">&mdash;</div>
           <div class="flex items-center justify-between text-[11px] text-slate-600">
             <span id="kpiAtendDelta" class="delta">&mdash;</span>
@@ -7067,7 +7071,7 @@
           <div class="progress mt-2"><span id="kpiAtivosBar"></span></div>
         </div>
         <div class="card p-3 kpi kpi-compact">
-          <div class="label">Convers&atilde;o (inscrito&rarr;atendido)</div>
+          <div class="label">Taxa de ativa&ccedil;&atilde;o (inscrito&rarr;atendido)</div>
           <div id="kpiConv" class="value">&mdash;</div>
           <div class="flex items-center justify-between text-[11px] text-slate-600">
             <span id="kpiConvDelta" class="delta">&mdash;</span>
