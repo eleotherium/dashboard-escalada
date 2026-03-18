@@ -267,6 +267,17 @@ begin
     join participants_join p
       on p.usuario_id = a.usuario_id
   ),
+  participants_with_actions as materialized (
+    select distinct
+      p.*
+    from participants_join p
+    join (
+      select distinct usuario_id
+      from actions
+      where usuario_id is not null
+    ) a
+      on a.usuario_id = p.usuario_id
+  ),
   kpi_actions as (
     select
       count(*)::int as atendimentos,
@@ -388,32 +399,11 @@ begin
     left join by_publico_ativos v on v.publico = i.publico
     order by atendimentos desc, inscritos desc
   ),
-
-  participants_tags_text as (
-    select
-      p.usuario_id,
-      concat_ws(' | ',
-        coalesce(p.raw_json->>'tags', ''),
-        coalesce(p.raw_json->>'Tags', ''),
-        coalesce(p.raw_json->>'tag', ''),
-        coalesce(p.raw_json->>'Tag', ''),
-        coalesce(p.raw_json->>'labels', ''),
-        coalesce(p.raw_json->>'Labels', ''),
-        coalesce(p.raw_json->>'source_tags', ''),
-        coalesce(p.raw_json->>'origem_tags', ''),
-        coalesce(p.raw_json->>'fonte_tags', ''),
-        coalesce(p.raw_json#>>'{metadata,tags}', ''),
-        coalesce(p.raw_json#>>'{meta,tags}', ''),
-        p.raw_json::text
-      ) as tags_text
-    from participants_period p
-    where p.usuario_id is not null
-  ),
   participants_tag_items as (
     select distinct
       p.usuario_id,
       nullif(btrim(item.tag_text), '') as tag_text
-    from participants_period p
+    from participants_with_actions p
     cross join lateral (
       select jsonb_array_elements_text(p.raw_json->'tags') as tag_text
       where jsonb_typeof(p.raw_json->'tags') = 'array'
@@ -459,7 +449,7 @@ begin
   ),
 
   -- Extracao de tags no formato "Fonte: Nome da Fonte"
-  -- Base principal: cadastro de membros (Participantes Escalada).
+  -- Base principal: participantes deduplicados com acoes registradas no periodo filtrado.
   participantes_fonte_tags as (
     select
       p.usuario_id,
@@ -511,22 +501,22 @@ begin
   fonte_uf_counts as (
     select
       pf.fonte,
-      coalesce(pj.uf, 'N/A') as uf,
+      coalesce(pwa.uf, 'N/A') as uf,
       count(*)::int as qtd
     from participantes_fontes pf
-    join participants_join pj
-      on pj.usuario_id = pf.usuario_id
-    group by pf.fonte, coalesce(pj.uf, 'N/A')
+    join participants_with_actions pwa
+      on pwa.usuario_id = pf.usuario_id
+    group by pf.fonte, coalesce(pwa.uf, 'N/A')
   ),
   fonte_publico_counts as (
     select
       pf.fonte,
-      coalesce(pj.publico, 'N/A') as publico,
+      coalesce(pwa.publico, 'N/A') as publico,
       count(*)::int as qtd
     from participantes_fontes pf
-    join participants_join pj
-      on pj.usuario_id = pf.usuario_id
-    group by pf.fonte, coalesce(pj.publico, 'N/A')
+    join participants_with_actions pwa
+      on pwa.usuario_id = pf.usuario_id
+    group by pf.fonte, coalesce(pwa.publico, 'N/A')
   ),
   fonte_canal_counts as (
     select
