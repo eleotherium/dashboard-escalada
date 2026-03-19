@@ -1051,6 +1051,10 @@
         transform: translateX(-100%);
       }
 
+      body:not(.sidenav-closed) .sidenav {
+        transform: translateX(0);
+      }
+
       .sidenav-closed #sidebarContent {
         opacity: 1;
         pointer-events: auto;
@@ -3390,6 +3394,20 @@
       if (fTo) fTo.value = sourceFilters?.dateTo || "";
       if (fUf) fUf.value = sourceFilters?.uf || "Todos";
       if (fPublico) fPublico.value = sourceFilters?.publico || "Todos";
+    }
+
+    function readFilterForm(sourceFilters = state.modalDraftFilters || state.filters) {
+      const fFrom = document.getElementById("fFrom");
+      const fTo = document.getElementById("fTo");
+      const fUf = document.getElementById("fUf");
+      const fPublico = document.getElementById("fPublico");
+      return {
+        ...(sourceFilters && typeof sourceFilters === "object" ? sourceFilters : {}),
+        dateFrom: fFrom ? fFrom.value : (sourceFilters?.dateFrom || ""),
+        dateTo: fTo ? fTo.value : (sourceFilters?.dateTo || ""),
+        uf: fUf ? fUf.value : (sourceFilters?.uf || "Todos"),
+        publico: fPublico ? fPublico.value : (sourceFilters?.publico || "Todos"),
+      };
     }
 
     function updateBootError(message = "") {
@@ -6649,7 +6667,9 @@
       // filtros
       const bind = (id, fn) => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener("input", fn);
+        if (!el) return;
+        el.addEventListener("input", fn);
+        el.addEventListener("change", fn);
       };
 
       const updateModalDraftFilters = (patch = {}) => {
@@ -6738,7 +6758,9 @@
       if (btnOpen) btnOpen.addEventListener("click", openModal);
       if (btnClose) btnClose.addEventListener("click", closeModal);
       if (btnApply) btnApply.addEventListener("click", () => {
-        applyFilters(state.modalDraftFilters || {}, { immediate: true, reason: "modal-apply" });
+        const nextFilters = readFilterForm(state.modalDraftFilters || state.filters);
+        state.modalDraftFilters = nextFilters;
+        applyFilters(nextFilters, { immediate: true, reason: "modal-apply" });
         closeModal();
       });
       if (btnReset) btnReset.addEventListener("click", () => {
