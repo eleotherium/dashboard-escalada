@@ -888,6 +888,52 @@
       padding: 16px;
     }
 
+    .alert-disclaimer-backdrop {
+      z-index: 98;
+      background: rgba(7, 15, 38, 0.76);
+      backdrop-filter: blur(5px);
+    }
+
+    .alert-disclaimer-card {
+      width: min(680px, 94vw);
+      max-height: min(88vh, 760px);
+      overflow: auto;
+      padding: 24px;
+    }
+
+    .alert-disclaimer-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 0, 102, 0.08);
+      color: #a5164b;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .alert-disclaimer-body {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .alert-disclaimer-body p {
+      margin: 0;
+      color: #334155;
+      font-size: 0.95rem;
+      line-height: 1.68;
+    }
+
+    .alert-disclaimer-actions {
+      margin-top: 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
     .uf-onboarding-list {
       max-height: min(54vh, 340px);
       overflow: auto;
@@ -1079,6 +1125,7 @@
       #sidebarToggle,
       #btnOpenFilters,
       #toast,
+      #alertDisclaimerModal,
       #filterModal,
       #ufWelcomeModal,
       #bootLoadingGate,
@@ -1324,6 +1371,13 @@
       MG: 853, MS: 79, MT: 141, PA: 144, PB: 223, PE: 185, PI: 224, PR: 399, RJ: 92, RN: 167,
       RO: 52, RR: 15, RS: 497, SC: 295, SE: 75, SP: 645, TO: 139
     };
+    const KPI_TARGETS = {
+      atendimentos: 500000,
+      inscricoes: 45000,
+      inscritos: 45000,
+      conversaoAtendimento: 0.70
+    };
+
     function deriveChannel(e) {
       if (e.channel) return e.channel;
       const seed = `${e.user_id || ""}|${e.date || ""}|${e.type || ""}|${e.uf || ""}`;
@@ -2569,7 +2623,7 @@
         document.querySelector('meta[name="supabase-anon-key"]')?.content ||
         ""
       ).trim(),
-      rpcName: (window.__DASHBOARD_RPC_NAME__ || ENV.DASHBOARD_RPC_NAME || "dashboard_executivo_v1").trim(),
+      rpcName: (window.__DASHBOARD_RPC_NAME__ || ENV.DASHBOARD_RPC_NAME || "dashboard_executivo_v1_interno").trim(),
       authMode: String(window.__DASHBOARD_AUTH_MODE__ || ENV.DASHBOARD_AUTH_MODE || "internal").toLowerCase(),
       oauthProvider: String(window.__SUPABASE_OAUTH_PROVIDER__ || ENV.SUPABASE_OAUTH_PROVIDER || "google").toLowerCase(),
       rpcLimit: clamp(Number(window.__RPC_LIMIT__ || ENV.RPC_LIMIT || MAX_RPC_LIMIT), 1, MAX_RPC_LIMIT),
@@ -3654,6 +3708,9 @@
 
       const flags = [];
       if (conc.top5 > 0.70) flags.push("Concentracao alta: 5 UFs lideres somam " + fmtPct(conc.top5) + " dos atendimentos.");
+      if (k.conversaoAtendimento < KPI_TARGETS.conversaoAtendimento) {
+        flags.push("Taxa de ativacao abaixo da meta: " + fmtPct(k.conversaoAtendimento) + " (meta " + fmtPct(KPI_TARGETS.conversaoAtendimento) + ").");
+      }
       if (growth !== null) flags.push("Variacao recente de inscricoes (30d vs 30d anteriores): " + (growth>=0?"+":"") + fmtPct(growth));
 
       return {
@@ -5790,6 +5847,12 @@
       setText("kpiAtend", fmtInt(atendimentos));
       setText("kpiAtivos", fmtInt(inscritos));
       setText("kpiConv", fmtPct(convRatio));
+      setText("kpiAtendTarget", fmtInt(KPI_TARGETS.atendimentos));
+      setText("kpiAtivosTarget", fmtInt(KPI_TARGETS.inscritos));
+      setText("kpiConvTarget", fmtPct(KPI_TARGETS.conversaoAtendimento));
+      updateProgress("kpiAtendBar", atendimentos, KPI_TARGETS.atendimentos);
+      updateProgress("kpiAtivosBar", inscritos, KPI_TARGETS.inscritos);
+      updateProgress("kpiConvBar", convRatio, KPI_TARGETS.conversaoAtendimento);
       updateDeltaEl("kpiAtendDelta", atendimentos, 0);
       updateDeltaEl("kpiAtivosDelta", inscritos, 0);
       updateDeltaEl("kpiConvDelta", convRatio, 0);
@@ -5821,6 +5884,9 @@
 
       const flags = [];
       if (topShare.top5 >= 0.75) flags.push("Alta concentracao territorial nas 5 UFs lideres.");
+      if (convRatio < KPI_TARGETS.conversaoAtendimento) {
+        flags.push("Taxa de ativacao abaixo da meta no recorte atual: " + fmtPct(convRatio) + " (meta " + fmtPct(KPI_TARGETS.conversaoAtendimento) + ").");
+      }
       if (!flags.length) flags.push("Sem alertas criticos no recorte atual.");
       setHtml("insightsList", flags.map((line)=>`<li>${line}</li>`).join(""));
 
@@ -5948,6 +6014,14 @@
       setText("kpiAtend", fmtInt(ins.kpis.atendimentos));
       setText("kpiAtivos", fmtInt(ins.kpis.inscritos));
       setText("kpiConv", fmtPct(ins.kpis.conversaoAtendimento));
+
+      setText("kpiAtendTarget", fmtInt(KPI_TARGETS.atendimentos));
+      setText("kpiAtivosTarget", fmtInt(KPI_TARGETS.inscritos));
+      setText("kpiConvTarget", fmtPct(KPI_TARGETS.conversaoAtendimento));
+
+      updateProgress("kpiAtendBar", ins.kpis.atendimentos, KPI_TARGETS.atendimentos);
+      updateProgress("kpiAtivosBar", ins.kpis.inscritos, KPI_TARGETS.inscritos);
+      updateProgress("kpiConvBar", ins.kpis.conversaoAtendimento, KPI_TARGETS.conversaoAtendimento);
 
       const prev = computePreviousKpis();
       updateDeltaEl("kpiAtendDelta", ins.kpis.atendimentos, prev?.kpis.atendimentos || 0);
@@ -6462,11 +6536,35 @@
     }
 
     function syncModalBackdropState() {
+      const alertModal = document.getElementById("alertDisclaimerModal");
       const filterModal = document.getElementById("filterModal");
       const ufModal = document.getElementById("ufWelcomeModal");
       const sourceModal = document.getElementById("sourceDetailModal");
-      const hasOpenModal = [filterModal, ufModal, sourceModal].some((el) => el && !el.classList.contains("hidden"));
+      const hasOpenModal = [alertModal, filterModal, ufModal, sourceModal].some((el) => el && !el.classList.contains("hidden"));
       document.body.classList.toggle("modal-open", hasOpenModal);
+    }
+
+    function openAlertDisclaimerModal() {
+      const modal = document.getElementById("alertDisclaimerModal");
+      if (!modal) return;
+      modal.classList.remove("hidden");
+      modal.setAttribute("aria-hidden", "false");
+      syncModalBackdropState();
+      const primaryAction = document.getElementById("btnAcknowledgeAlertDisclaimer");
+      if (primaryAction && typeof primaryAction.focus === "function") {
+        primaryAction.focus();
+      }
+    }
+
+    function closeAlertDisclaimerModal() {
+      const modal = document.getElementById("alertDisclaimerModal");
+      if (!modal || modal.classList.contains("hidden")) return;
+      modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
+      syncModalBackdropState();
+      if (state.ufOnboardingUnlocked) {
+        openUfWelcomeModal();
+      }
     }
 
     function getUfWelcomeOptions() {
@@ -6517,7 +6615,9 @@
       const modal = document.getElementById("ufWelcomeModal");
       if (!modal) return;
       const gate = document.getElementById("authGate");
+      const alertModal = document.getElementById("alertDisclaimerModal");
       if (gate && !gate.classList.contains("hidden")) return;
+      if (alertModal && !alertModal.classList.contains("hidden")) return;
       populateUfWelcomeList();
       modal.classList.remove("hidden");
       modal.setAttribute("aria-hidden", "false");
@@ -6733,6 +6833,9 @@
       const btnClose = document.getElementById("btnCloseFilters");
       const btnApply = document.getElementById("btnApplyFilters");
       const btnReset = document.getElementById("btnResetFilters");
+      const alertDisclaimerModal = document.getElementById("alertDisclaimerModal");
+      const btnCloseAlertDisclaimer = document.getElementById("btnCloseAlertDisclaimer");
+      const btnAcknowledgeAlertDisclaimer = document.getElementById("btnAcknowledgeAlertDisclaimer");
       const ufWelcomeModal = document.getElementById("ufWelcomeModal");
       const sourceDetailModal = document.getElementById("sourceDetailModal");
       const btnCloseSourceDetail = document.getElementById("btnCloseSourceDetail");
@@ -6778,6 +6881,13 @@
           if (e.target === modal) closeModal();
         });
       }
+      if (btnCloseAlertDisclaimer) btnCloseAlertDisclaimer.addEventListener("click", closeAlertDisclaimerModal);
+      if (btnAcknowledgeAlertDisclaimer) btnAcknowledgeAlertDisclaimer.addEventListener("click", closeAlertDisclaimerModal);
+      if (alertDisclaimerModal) {
+        alertDisclaimerModal.addEventListener("click", (e) => {
+          if (e.target === alertDisclaimerModal) closeAlertDisclaimerModal();
+        });
+      }
       if (btnCloseUfWelcome) btnCloseUfWelcome.addEventListener("click", closeUfWelcomeModal);
       if (btnSkipUfWelcome) btnSkipUfWelcome.addEventListener("click", closeUfWelcomeModal);
       if (btnBootLoadingRetry) {
@@ -6799,6 +6909,7 @@
         });
       }
       document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeAlertDisclaimerModal();
         if (e.key === "Escape") closeModal();
         if (e.key === "Escape") closeUfWelcomeModal();
         if (e.key === "Escape") closeSourceDetailModal();
@@ -6870,6 +6981,7 @@
       try {
         configureCharts();
         wireUi();
+        openAlertDisclaimerModal();
         if (authModeLabel) authModeLabel.textContent = SUPABASE_RPC.authMode;
         if (SUPABASE_RPC.authMode !== "internal") setAuthGate(false);
         bindAuthEvents();
@@ -7050,23 +7162,29 @@
         <div class="card p-3 kpi kpi-compact">
           <div class="label">Atendimentos acumulados</div>
           <div id="kpiAtend" class="value">&mdash;</div>
-          <div class="text-[11px] text-slate-600">
+          <div class="flex items-center justify-between text-[11px] text-slate-600">
             <span id="kpiAtendDelta" class="delta">&mdash;</span>
+            <span>Meta <strong id="kpiAtendTarget">&mdash;</strong></span>
           </div>
+          <div class="progress mt-2"><span id="kpiAtendBar"></span></div>
         </div>
         <div class="card p-3 kpi kpi-compact">
           <div class="label">Inscritos</div>
           <div id="kpiAtivos" class="value">&mdash;</div>
-          <div class="text-[11px] text-slate-600">
+          <div class="flex items-center justify-between text-[11px] text-slate-600">
             <span id="kpiAtivosDelta" class="delta">&mdash;</span>
+            <span>Meta <strong id="kpiAtivosTarget">&mdash;</strong></span>
           </div>
+          <div class="progress mt-2"><span id="kpiAtivosBar"></span></div>
         </div>
         <div class="card p-3 kpi kpi-compact">
           <div class="label">Taxa de ativa&ccedil;&atilde;o (inscrito&rarr;atendido)</div>
           <div id="kpiConv" class="value">&mdash;</div>
-          <div class="text-[11px] text-slate-600">
+          <div class="flex items-center justify-between text-[11px] text-slate-600">
             <span id="kpiConvDelta" class="delta">&mdash;</span>
+            <span>Meta <strong id="kpiConvTarget">&mdash;</strong></span>
           </div>
+          <div class="progress mt-2"><span id="kpiConvBar"></span></div>
         </div>
       </div>
       </header>
@@ -7335,6 +7453,38 @@
           &copy; Escalada &bull; Relat&oacute;rio executivo &bull; Vers&atilde;o est&aacute;tica para an&aacute;lise institucional.
         </footer>
       </main>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="alertDisclaimerModal"
+    class="modal-backdrop alert-disclaimer-backdrop hidden"
+    aria-hidden="true"
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="alertDisclaimerTitle"
+    aria-describedby="alertDisclaimerBody"
+  >
+    <div class="modal-card alert-disclaimer-card">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <span class="alert-disclaimer-eyebrow">Aviso importante</span>
+        </div>
+        <button id="btnCloseAlertDisclaimer" class="btn btn-ghost btn-sm" type="button" title="Fechar aviso" aria-label="Fechar aviso">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div id="alertDisclaimerBody" class="alert-disclaimer-body">
+        <p><strong>ALERTA:</strong> Os dados apresentados neste dashboard referem-se a registros internos da plataforma Escalada, que opera normalmente e consolida as intera&ccedil;&otilde;es realizadas pelos usu&aacute;rios.</p>
+        <p>No entanto, o Sebrae est&aacute; passando por uma transi&ccedil;&atilde;o em seu sistema oficial de contabiliza&ccedil;&atilde;o de atendimentos (FOCO), o que pode gerar instabilidades tempor&aacute;rias na valida&ccedil;&atilde;o e consolida&ccedil;&atilde;o desses dados nos indicadores institucionais.</p>
+        <p>Dessa forma, os n&uacute;meros exibidos neste painel t&ecirc;m car&aacute;ter informativo e podem sofrer ajustes ap&oacute;s a normaliza&ccedil;&atilde;o do sistema do Sebrae.</p>
+        <p>Ressalta-se ainda que pode haver varia&ccedil;&otilde;es nos dados em fun&ccedil;&atilde;o de cadastros incompletos ou inconsistentes, com uma m&eacute;dia hist&oacute;rica máxima estimada em 8% de perdas por esse motivo.</p>
+      </div>
+
+      <div class="alert-disclaimer-actions">
+        <button id="btnAcknowledgeAlertDisclaimer" class="btn btn-primary btn-sm" type="button">Li e entendi</button>
       </div>
     </div>
   </div>

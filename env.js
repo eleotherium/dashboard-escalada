@@ -10,7 +10,7 @@ window.__ENV = {
   SUPABASE_OAUTH_PROVIDER: "google",
 
   // Nome da RPC no Supabase
-  DASHBOARD_RPC_NAME: "dashboard_executivo_v1",
+  DASHBOARD_RPC_NAME: "dashboard_executivo_v1_interno",
 
   // Limite maximo de registros retornados pela RPC
   RPC_LIMIT: 200000,
