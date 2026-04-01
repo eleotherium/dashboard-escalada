@@ -2003,11 +2003,32 @@
       return "";
     }
 
+    const UNKNOWN_CITY_LABEL = "Sem cidade informada";
+
+    function resolveTerritoryCityLabel(row, options = {}) {
+      const city = resolveCityLabelFromRow(row);
+      if (city) return city;
+      if (!options?.allowUnknown) return "";
+
+      const cepNorm = normalizeCep(row?.cep);
+      if (cepNorm) return `CEP ${cepNorm}`;
+
+      const hasCityField = Boolean(
+        row &&
+        typeof row === "object" &&
+        (
+          Object.prototype.hasOwnProperty.call(row, "city") ||
+          Object.prototype.hasOwnProperty.call(row, "cidade")
+        )
+      );
+      return hasCityField ? UNKNOWN_CITY_LABEL : "";
+    }
+
     function aggregateTopCities(rows, limit = 6) {
       const grouped = new Map();
       for (const row of rows || []) {
         const cepNorm = normalizeCep(row?.cep);
-        const cityRaw = resolveCityLabelFromRow(row);
+        const cityRaw = resolveTerritoryCityLabel(row, { allowUnknown: true });
         if (!cityRaw) continue;
 
         const ufRaw = String(row?.uf || "").trim();
@@ -2035,7 +2056,7 @@
       for (const row of rows || []) {
         const ufCode = resolveUfCode(row?.uf);
         if (selectedUfCode && ufCode !== selectedUfCode) continue;
-        const city = resolveCityLabelFromRow(row);
+        const city = resolveTerritoryCityLabel(row, { allowUnknown: true });
         if (!city) continue;
         const metric = Number(row?.[metricKey] || 0);
         if (!Number.isFinite(metric) || metric <= 0) continue;
@@ -2053,14 +2074,14 @@
 
     function mapCityFocusKeyFromRow(row) {
       const ufCode = resolveUfCode(row?.uf) || "";
-      const city = resolveCityLabelFromRow(row);
+      const city = resolveTerritoryCityLabel(row, { allowUnknown: true });
       if (city) return `${ufCode}|city:${normalizeTextKey(city)}`;
       if (ufCode) return `${ufCode}|uf`;
       return "";
     }
 
     function mapCityFocusLabelFromRow(row) {
-      const city = resolveCityLabelFromRow(row);
+      const city = resolveTerritoryCityLabel(row, { allowUnknown: true });
       const ufCode = resolveUfCode(row?.uf);
       if (city && ufCode) return `${city} (${ufCode})`;
       if (city) return city;
@@ -2085,7 +2106,7 @@
       const keys = new Set();
       for (const row of rows || []) {
         const cityRaw = resolveCityLabelFromRow(row);
-        if (!cityRaw) continue;
+        if (!cityRaw || cityRaw === UNKNOWN_CITY_LABEL) continue;
         const ufRaw = String(row?.uf || "").trim();
         const ufCode = resolveUfCode(ufRaw) || ufRaw;
         keys.add(`${ufCode}|${normalizeTextKey(cityRaw)}`);
@@ -3854,6 +3875,19 @@
       el.style.width = `${pct}%`;
     }
 
+    function setKpiTargetMode(showTargets) {
+      for (const prefix of ["kpiAtend", "kpiAtivos", "kpiConv"]) {
+        const targetEl = document.getElementById(`${prefix}Target`);
+        const targetWrap = targetEl?.closest("span");
+        if (targetWrap) targetWrap.classList.toggle("hidden", !showTargets);
+
+        const barEl = document.getElementById(`${prefix}Bar`);
+        const progressWrap = barEl?.parentElement;
+        if (progressWrap) progressWrap.classList.toggle("hidden", !showTargets);
+        if (!showTargets && barEl) barEl.style.width = "0%";
+      }
+    }
+
     // =========================================================
     // UI: charts + map
     // =========================================================
@@ -4968,12 +5002,14 @@
       return points;
     }
 
-    function buildGeoPointsFromByCidade(byCityRows) {
+    function buildGeoPointsFromByCidade(byCityRows, options = {}) {
       if (!Array.isArray(byCityRows)) return [];
+      const cityCoordsByKey = options?.cityCoordsByKey instanceof Map ? options.cityCoordsByKey : null;
+      const allowUnknownCity = Boolean(options?.allowUnknownCity);
       const points = [];
       for (const row of byCityRows) {
         const ufRaw = String(row?.uf || "").trim();
-        const city = resolveCityLabelFromRow(row);
+        const city = resolveTerritoryCityLabel(row, { allowUnknown: allowUnknownCity });
         if (!city) continue;
         const geo = resolveUfGeo(ufRaw);
         if (!geo) continue;
@@ -4984,15 +5020,23 @@
         const weight = Math.max(inscritos, 0);
         if (!Number.isFinite(weight) || weight <= 0) continue;
 
-        const seed = `${geo.uf}|${city}`;
-        const latOffset = (((hashString(seed + "|lat") % 1000) / 1000) - 0.5) * 0.12;
-        const lngOffset = (((hashString(seed + "|lng") % 1000) / 1000) - 0.5) * 0.14;
+        const key = `${geo.uf}|${normalizeTextKey(city)}`;
+        const indexedCoords = cityCoordsByKey?.get(key) || null;
+        let lat = Number(indexedCoords?.lat);
+        let lng = Number(indexedCoords?.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          const seed = `${geo.uf}|${city}`;
+          const latOffset = (((hashString(seed + "|lat") % 1000) / 1000) - 0.5) * 0.12;
+          const lngOffset = (((hashString(seed + "|lng") % 1000) / 1000) - 0.5) * 0.14;
+          lat = geo.lat + latOffset;
+          lng = geo.lng + lngOffset;
+        }
 
         points.push({
           uf: geo.uf,
           city,
-          lat: geo.lat + latOffset,
-          lng: geo.lng + lngOffset,
+          lat,
+          lng,
           weight,
           atendimentos,
           inscritos,
@@ -5002,8 +5046,63 @@
       return points;
     }
 
-    function buildGeoPointsFromByCep(byCepRows) {
+    function buildCityCoordinateIndexFromByCep(byCepRows, selectedUfCode = "") {
+      const index = new Map();
+      if (!Array.isArray(byCepRows) || !byCepRows.length) return index;
+      const grouped = new Map();
+
+      for (const row of byCepRows) {
+        const cep = normalizeCep(row?.cep);
+        if (!cep) continue;
+        const dict = cepGeoDictionary.get(cep);
+        const ufCode = resolveUfCode(row?.uf) || resolveUfCode(dict?.uf);
+        if (!ufCode) continue;
+        if (selectedUfCode && ufCode !== selectedUfCode) continue;
+
+        const city = resolveTerritoryCityLabel({ ...row, cep }, { allowUnknown: true });
+        if (!city) continue;
+
+        let lat = toFiniteNumberOrNaN(row?.lat);
+        let lng = toFiniteNumberOrNaN(row?.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          lat = toFiniteNumberOrNaN(dict?.lat);
+          lng = toFiniteNumberOrNaN(dict?.lng);
+        }
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+        const inscritos = Number(row?.inscritos || 0);
+        const atendimentos = Number(row?.atendimentos || 0);
+        const ativos = Number(row?.ativos || 0);
+        const coordWeight = Math.max(inscritos, atendimentos, ativos, 1);
+        const key = `${ufCode}|${normalizeTextKey(city)}`;
+        const prev = grouped.get(key);
+        if (prev) {
+          prev.latWeightSum += lat * coordWeight;
+          prev.lngWeightSum += lng * coordWeight;
+          prev.coordWeight += coordWeight;
+        } else {
+          grouped.set(key, {
+            latWeightSum: lat * coordWeight,
+            lngWeightSum: lng * coordWeight,
+            coordWeight,
+          });
+        }
+      }
+
+      for (const [key, row] of grouped.entries()) {
+        if (!Number.isFinite(row.coordWeight) || row.coordWeight <= 0) continue;
+        index.set(key, {
+          lat: row.latWeightSum / row.coordWeight,
+          lng: row.lngWeightSum / row.coordWeight,
+        });
+      }
+      return index;
+    }
+
+    function buildGeoPointsFromByCep(byCepRows, options = {}) {
       if (!Array.isArray(byCepRows)) return [];
+      const allowUnknownCity = Boolean(options?.allowUnknownCity);
+      const selectedUfCode = resolveUfCode(options?.selectedUfCode);
       const grouped = new Map();
       for (const row of byCepRows) {
         const cep = normalizeCep(row?.cep);
@@ -5011,10 +5110,9 @@
         const dict = cepGeoDictionary.get(cep);
         const ufCode = resolveUfCode(row?.uf) || resolveUfCode(dict?.uf);
         if (!ufCode) continue;
-        const geo = resolveUfGeo(ufCode);
-        if (!geo) continue;
+        if (selectedUfCode && ufCode !== selectedUfCode) continue;
 
-        const city = resolveCityLabelFromRow({ ...row, cep });
+        const city = resolveTerritoryCityLabel({ ...row, cep }, { allowUnknown: allowUnknownCity });
         if (!city) continue;
 
         let lat = toFiniteNumberOrNaN(row?.lat);
@@ -5029,7 +5127,7 @@
         const inscritos = Number(row?.inscritos || 0);
         const ativos = Number(row?.ativos || 0);
         const weight = Math.max(inscritos, 0);
-        if (!Number.isFinite(weight) || weight <= 0) continue;
+        if (!Number.isFinite(weight) || (weight <= 0 && atendimentos <= 0 && ativos <= 0)) continue;
 
         const key = `${ufCode}|${normalizeTextKey(city)}`;
         const prev = grouped.get(key);
@@ -5038,12 +5136,12 @@
           prev.inscritos += inscritos;
           prev.atendimentos += atendimentos;
           prev.ativos += ativos;
-          const cw = Math.max(1, weight);
+          const cw = Math.max(inscritos, atendimentos, ativos, 1);
           prev.latWeightSum += lat * cw;
           prev.lngWeightSum += lng * cw;
           prev.coordWeight += cw;
         } else {
-          const cw = Math.max(1, weight);
+          const cw = Math.max(inscritos, atendimentos, ativos, 1);
           grouped.set(key, {
             uf: ufCode,
             city,
@@ -5066,7 +5164,29 @@
         atendimentos: row.atendimentos,
         inscritos: row.inscritos,
         ativos: row.ativos,
-      })).filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lng));
+      })).filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lng) && Number(row.weight || 0) > 0);
+    }
+
+    function buildAggregatedTerritoryGeoPoints(byUfRows, byCityRows, byCepRows, selectedUfCode = "") {
+      if (!selectedUfCode) return buildGeoPointsFromByUf(byUfRows);
+
+      const cityRowsForUf = Array.isArray(byCityRows)
+        ? byCityRows.filter((row) => resolveUfCode(row?.uf) === selectedUfCode)
+        : [];
+
+      if (cityRowsForUf.length) {
+        const cityCoordsByKey = buildCityCoordinateIndexFromByCep(byCepRows, selectedUfCode);
+        const cityPoints = buildGeoPointsFromByCidade(cityRowsForUf, {
+          cityCoordsByKey,
+          allowUnknownCity: true,
+        });
+        if (cityPoints.length) return cityPoints;
+      }
+
+      return buildGeoPointsFromByCep(byCepRows, {
+        selectedUfCode,
+        allowUnknownCity: true,
+      });
     }
 
     function hasGeoPointForUf(points, ufValue) {
@@ -5105,7 +5225,7 @@
       const weight = Math.max(Number(inscritos || 0), 0);
       if (!Number.isFinite(weight) || weight <= 0) return null;
 
-      const city = resolveCityLabelFromRow(row);
+      const city = resolveTerritoryCityLabel(row, { allowUnknown: true });
       if (!city) return null;
       const focusKey = mapCityFocusKeyFromRow({ uf, city });
       return { lat, lng, uf, weight, city, inscritos: Number(inscritos || 0), atendimentos: Number(atendimentos || 0), ativos, focusKey };
@@ -5780,52 +5900,22 @@
       const competencyPairsRaw = collectCompetencyPairsFromItemPairs(topItens, state.competencyMode);
       const macroPairs = toPercentagePairs(macroPairsRaw, 10);
       const competencyPairs = toPercentagePairs(competencyPairsRaw, 10);
-      const geoPointsByCep = buildGeoPointsFromByCep(byCepRows);
-      const geoPointsByCity = buildGeoPointsFromByCidade(byCityRows);
-      const geoPointsByUf = buildGeoPointsFromByUf(byUfRows);
       const selectedUfCode = resolveUfCode(state.filters.uf);
+      const hasUfFilter = Boolean(sanitizeFilterValue(state.filters.uf));
       const topCitiesLimit = 10;
-      let geoPoints = [];
-      if (!selectedUfCode) {
-        // Sem UF selecionada: mapa deve operar somente com agregado por UF.
-        geoPoints = geoPointsByUf;
-      } else {
-        if (geoPointsByCep.length && hasGeoPointForUf(geoPointsByCep, selectedUfCode)) {
-          geoPoints = geoPointsByCep;
-        } else if (geoPointsByCity.length && hasGeoPointForUf(geoPointsByCity, selectedUfCode)) {
-          geoPoints = geoPointsByCity;
-        } else {
-          geoPoints = [];
-        }
-      }
-      const topGeoCitiesByCity = aggregateTopCities(
-        byCityRows.map((r) => ({
-          cidade: r?.cidade,
-          uf: r?.uf,
-          weight: Number(r?.inscritos || r?.atendimentos || r?.ativos || 0),
-        })),
-        topCitiesLimit
-      );
-      const topGeoCitiesByCep = aggregateTopCities(
-        byCepRows.map((r) => ({
-          cep: r?.cep,
-          cidade: r?.cidade,
-          uf: r?.uf,
-          weight: Number(r?.inscritos || r?.atendimentos || 0),
-        })),
-        topCitiesLimit
-      );
-      const topGeoCities = topGeoCitiesByCity.length
-        ? topGeoCitiesByCity
-        : (topGeoCitiesByCep.length ? topGeoCitiesByCep : aggregateTopCities(geoPoints, topCitiesLimit));
-      const topGeoCitiesOrdered = [...topGeoCities].sort((a, b) => {
-        const wa = Number(a?.weight || 0);
-        const wb = Number(b?.weight || 0);
-        if (wb !== wa) return wb - wa;
-        const la = mapCityFocusLabelFromRow(a);
-        const lb = mapCityFocusLabelFromRow(b);
-        return String(la).localeCompare(String(lb), "pt-BR");
-      });
+      const geoPoints = buildAggregatedTerritoryGeoPoints(byUfRows, byCityRows, byCepRows, selectedUfCode);
+      const topGeoCitiesOrdered = selectedUfCode
+        ? [...geoPoints]
+            .sort((a, b) => {
+              const wa = Number(a?.weight || 0);
+              const wb = Number(b?.weight || 0);
+              if (wb !== wa) return wb - wa;
+              const la = mapCityFocusLabelFromRow(a);
+              const lb = mapCityFocusLabelFromRow(b);
+              return String(la).localeCompare(String(lb), "pt-BR");
+            })
+            .slice(0, topCitiesLimit)
+        : [];
       const ufCoverage = computeUfCoverageFromRows(byCityRows, state.filters.uf, {
         byUfRows,
         metaCoverage: raw?.meta?.coverage,
@@ -5834,25 +5924,24 @@
       const selectedUfMetrics = selectedUfCode
         ? byUfRows.find((r) => resolveUfCode(r?.uf) === selectedUfCode) || null
         : null;
-      const inscritos = selectedUfMetrics ? Number(selectedUfMetrics.inscritos || 0) : Number(k.inscritos || 0);
-      const atendimentos = selectedUfMetrics ? Number(selectedUfMetrics.atendimentos || 0) : Number(k.atendimentos || 0);
-      const membrosAtivos = selectedUfMetrics ? Number(selectedUfMetrics.ativos || 0) : Number(k.membros_ativos || 0);
-      const convRatioBackend = clamp(Number(k.conversao_pct || 0) / 100, 0, 1);
-      const convRatio = selectedUfMetrics ? convRatioBackend : convRatioBackend;
-      const atendidosBase = Number(k.atendidos || 0);
-      const atendidos = selectedUfMetrics
-        ? Math.round(inscritos * convRatio)
-        : atendidosBase;
+      const inscritos = Number(selectedUfMetrics?.inscritos ?? k.inscritos ?? 0);
+      const atendimentos = Number(selectedUfMetrics?.atendimentos ?? k.atendimentos ?? 0);
+      const membrosAtivos = Number(selectedUfMetrics?.ativos ?? k.membros_ativos ?? 0);
+      const convRatio = Number(k.conversao_pct || 0) / 100;
+      const atendidos = Number(k.atendidos || 0);
 
+      setKpiTargetMode(!hasUfFilter);
       setText("kpiAtend", fmtInt(atendimentos));
       setText("kpiAtivos", fmtInt(inscritos));
       setText("kpiConv", fmtPct(convRatio));
       setText("kpiAtendTarget", fmtInt(KPI_TARGETS.atendimentos));
       setText("kpiAtivosTarget", fmtInt(KPI_TARGETS.inscritos));
       setText("kpiConvTarget", fmtPct(KPI_TARGETS.conversaoAtendimento));
-      updateProgress("kpiAtendBar", atendimentos, KPI_TARGETS.atendimentos);
-      updateProgress("kpiAtivosBar", inscritos, KPI_TARGETS.inscritos);
-      updateProgress("kpiConvBar", convRatio, KPI_TARGETS.conversaoAtendimento);
+      if (!hasUfFilter) {
+        updateProgress("kpiAtendBar", atendimentos, KPI_TARGETS.atendimentos);
+        updateProgress("kpiAtivosBar", inscritos, KPI_TARGETS.inscritos);
+        updateProgress("kpiConvBar", convRatio, KPI_TARGETS.conversaoAtendimento);
+      }
       updateDeltaEl("kpiAtendDelta", atendimentos, 0);
       updateDeltaEl("kpiAtivosDelta", inscritos, 0);
       updateDeltaEl("kpiConvDelta", convRatio, 0);
@@ -5919,11 +6008,16 @@
       }
 
       if (state.page === "territory") {
-        const byCityAtPrimary = selectedUfCode
-          ? aggregateCityMetricPairs(byCityRows, selectedUfCode, "atendimentos", 10)
-          : [];
         const byCityAt = selectedUfCode
-          ? (byCityAtPrimary.length ? byCityAtPrimary : aggregateCityMetricPairs(byCepRows, selectedUfCode, "atendimentos", 10))
+          ? [...geoPoints]
+              .map((point) => [mapCityFocusLabelFromRow(point), Number(point?.atendimentos || 0)])
+              .filter(([label, count]) => String(label || "").trim() && Number(count || 0) > 0)
+              .sort((a, b) => {
+                const diff = Number(b[1] || 0) - Number(a[1] || 0);
+                if (diff !== 0) return diff;
+                return String(a[0]).localeCompare(String(b[0]), "pt-BR");
+              })
+              .slice(0, 10)
           : [];
         const territoryPairs = selectedUfCode ? byCityAt : byUfAt.slice(0, 10);
         const territoryChartTitle = selectedUfCode
@@ -6011,6 +6105,8 @@
 
       // KPIs + insights
       const ins = insights(state.filtered);
+      const hasUfFilter = Boolean(sanitizeFilterValue(state.filters.uf));
+      setKpiTargetMode(!hasUfFilter);
       setText("kpiAtend", fmtInt(ins.kpis.atendimentos));
       setText("kpiAtivos", fmtInt(ins.kpis.inscritos));
       setText("kpiConv", fmtPct(ins.kpis.conversaoAtendimento));
@@ -6019,9 +6115,11 @@
       setText("kpiAtivosTarget", fmtInt(KPI_TARGETS.inscritos));
       setText("kpiConvTarget", fmtPct(KPI_TARGETS.conversaoAtendimento));
 
-      updateProgress("kpiAtendBar", ins.kpis.atendimentos, KPI_TARGETS.atendimentos);
-      updateProgress("kpiAtivosBar", ins.kpis.inscritos, KPI_TARGETS.inscritos);
-      updateProgress("kpiConvBar", ins.kpis.conversaoAtendimento, KPI_TARGETS.conversaoAtendimento);
+      if (!hasUfFilter) {
+        updateProgress("kpiAtendBar", ins.kpis.atendimentos, KPI_TARGETS.atendimentos);
+        updateProgress("kpiAtivosBar", ins.kpis.inscritos, KPI_TARGETS.inscritos);
+        updateProgress("kpiConvBar", ins.kpis.conversaoAtendimento, KPI_TARGETS.conversaoAtendimento);
+      }
 
       const prev = computePreviousKpis();
       updateDeltaEl("kpiAtendDelta", ins.kpis.atendimentos, prev?.kpis.atendimentos || 0);
