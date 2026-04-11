@@ -480,7 +480,8 @@
     }
 
     .btn.is-active,
-    .btn-ghost.is-active {
+    .btn-ghost.is-active,
+    .chip.is-active {
       background: linear-gradient(90deg, var(--brand-green) 0%, var(--brand-green-2) 100%);
       color: #07231a;
       border-color: transparent;
@@ -1907,6 +1908,12 @@
       return normalizeTextKey(row?.type) === "INSCRICAO" ? 1 : 0;
     }
 
+    function rowAtendimentosCount(row) {
+      const v = Number(row?.atendimentos);
+      if (Number.isFinite(v)) return v;
+      return isAtendimentoEventType(row?.type) ? 1 : 0;
+    }
+
     function computeUfCoverageFromRows(byCityRows, ufFilter = "Todos", options = {}) {
       const selectedCode = resolveUfCode(ufFilter);
       const byUfRows = Array.isArray(options?.byUfRows) ? options.byUfRows : [];
@@ -1918,11 +1925,13 @@
         for (const row of byUfRows) {
           const code = resolveUfCode(row?.uf);
           if (!code) continue;
-          if (rowInscritosCount(row) <= 0) continue;
+          if (rowAtendimentosCount(row) <= 0) continue;
           ufSet.add(code);
         }
         let presentUfs = ufSet.size;
-        if (!presentUfs && Number.isFinite(Number(metaCoverage?.ufs_com_inscritos))) {
+        if (!presentUfs && Number.isFinite(Number(metaCoverage?.ufs_com_atendimentos))) {
+          presentUfs = Number(metaCoverage.ufs_com_atendimentos);
+        } else if (!presentUfs && Number.isFinite(Number(metaCoverage?.ufs_com_inscritos))) {
           presentUfs = Number(metaCoverage.ufs_com_inscritos);
         }
         const pct = totalUfs > 0 ? presentUfs / totalUfs : 0;
@@ -1939,13 +1948,15 @@
       const cities = new Set();
       for (const row of byCityRows || []) {
         if (resolveUfCode(row?.uf) !== selectedCode) continue;
-        if (rowInscritosCount(row) <= 0) continue;
+        if (rowAtendimentosCount(row) <= 0) continue;
         const city = resolveCityLabelFromRow(row);
         if (!city) continue;
         cities.add(normalizeTextKey(city));
       }
       let presentCities = cities.size;
-      if (!presentCities && Number.isFinite(Number(metaCoverage?.cidades_uf_com_inscritos))) {
+      if (!presentCities && Number.isFinite(Number(metaCoverage?.cidades_uf_com_atendimentos))) {
+        presentCities = Number(metaCoverage.cidades_uf_com_atendimentos);
+      } else if (!presentCities && Number.isFinite(Number(metaCoverage?.cidades_uf_com_inscritos))) {
         presentCities = Number(metaCoverage.cidades_uf_com_inscritos);
       }
       if (!totalCities) {
@@ -1968,7 +1979,7 @@
       if (!selectedCode) {
         const ufs = new Set();
         for (const e of events || []) {
-          if (normalizeTextKey(e?.type) !== "INSCRICAO") continue;
+          if (!isAtendimentoEventType(e?.type)) continue;
           const code = resolveUfCode(e?.uf);
           if (code) ufs.add(code);
         }
@@ -1978,7 +1989,7 @@
 
       const cities = new Set();
       for (const e of events || []) {
-        if (normalizeTextKey(e?.type) !== "INSCRICAO") continue;
+        if (!isAtendimentoEventType(e?.type)) continue;
         if (resolveUfCode(e?.uf) !== selectedCode) continue;
         const city = resolveCityLabelFromRow({ uf: e?.uf, cidade: e?.city, city: e?.city });
         if (!city) continue;
@@ -3057,11 +3068,13 @@
               if (e.user_id) usersInscritos.add(e.user_id);
             }
           }
+          const inscritosAtendidos = countSetIntersection(usersInscritos, usersAtendidos);
           previousKpis = {
             atendimentos: atend,
             inscricoes: inscr,
             inscritos: usersInscritos.size,
-            conversaoAtendimento: usersInscritos.size ? (usersAtendidos.size / usersInscritos.size) : 0,
+            atendidos: inscritosAtendidos,
+            conversaoAtendimento: usersInscritos.size ? (inscritosAtendidos / usersInscritos.size) : 0,
           };
           prevRange = { from: prevFrom, to: prevTo };
         }
@@ -3634,6 +3647,16 @@
     // =========================================================
     function uniq(arr) { return Array.from(new Set(arr)).sort(); }
 
+    function countSetIntersection(a, b) {
+      if (!(a instanceof Set) || !(b instanceof Set) || !a.size || !b.size) return 0;
+      const [smaller, larger] = a.size <= b.size ? [a, b] : [b, a];
+      let count = 0;
+      for (const value of smaller) {
+        if (larger.has(value)) count += 1;
+      }
+      return count;
+    }
+
     function aggKpis(events) {
       // totais
       let atend = 0, inscr = 0;
@@ -3653,14 +3676,15 @@
         }
       }
 
-      const conv = usersInscritos.size ? (usersAtendidos.size / usersInscritos.size) : 0;
+      const inscritosAtendidos = countSetIntersection(usersInscritos, usersAtendidos);
+      const conv = usersInscritos.size ? (inscritosAtendidos / usersInscritos.size) : 0;
 
       return {
         atendimentos: atend,
         inscricoes: inscr,
         usersAny: usersAny.size,
         inscritos: usersInscritos.size,
-        atendidos: usersAtendidos.size,
+        atendidos: inscritosAtendidos,
         conversaoAtendimento: conv
       };
     }
@@ -3831,7 +3855,7 @@
       return [
         `Volume do periodo: ${fmtInt(k.atendimentos)} atendimentos e ${fmtInt(k.inscricoes)} inscricoes, com ${fmtInt(k.inscritos)} inscritos.`,
         `UF lider: ${topUf ? `${topUf[0]} (${fmtInt(topUf[1])})` : "—"}; media de ${fmtInt(Math.round(atendPerDay))} atendimentos/dia.`,
-        `Preferencia: ${macroTop ? macroTop[0] : "—"} e ${competencyModeLabel(competencyMode)} ${competencyTop ? competencyTop[0] : "—"}. Canal dominante: ${channelTop ? channelTop[0] : "—"}. Taxa de ativacao (inscrito->atendido) em ${fmtPct(conv)}.`
+        `Preferencia: ${macroTop ? macroTop[0] : "—"} e ${competencyModeLabel(competencyMode)} ${competencyTop ? competencyTop[0] : "—"}. Canal dominante: ${channelTop ? channelTop[0] : "—"}. Taxa de ativacao (inscritos atendidos / inscritos) em ${fmtPct(conv)}.`
       ];
     }
 
@@ -4675,7 +4699,7 @@
             <span data-role="low">Baixo: --</span>
             <span data-role="high">Alto: --</span>
           </div>
-          <div class="meta">Intensidade por inscritos</div>
+          <div class="meta">Intensidade por atendimentos</div>
         `;
         L.DomEvent.disableClickPropagation(div);
         return div;
@@ -4686,7 +4710,7 @@
 
     function fmtHeatLegendValue(v) {
       const n = Math.max(0, Math.round(Number(v || 0)));
-      return `${fmtInt(n)} inscrito${n === 1 ? "" : "s"}`;
+      return `${fmtInt(n)} atendimento${n === 1 ? "" : "s"}`;
     }
 
     function updateHeatLegend(ctx, heatData) {
@@ -4697,7 +4721,7 @@
       if (!lowEl || !highEl) return;
 
       const values = (Array.isArray(heatData) ? heatData : [])
-        .map((cell) => Number(cell?.inscritos || 0))
+        .map((cell) => Number(cell?.atendimentos || 0))
         .filter((n) => Number.isFinite(n) && n > 0);
 
       if (!values.length) {
@@ -4733,8 +4757,8 @@
       const atendimentos = Number(cell?.atendimentos || 0);
       return `
         <div class="heat-tip-title">${escapeHtml(title)}</div>
-        <div>Inscritos: <strong>${escapeHtml(fmtInt(inscritos))}</strong></div>
         <div>Atendimentos: <strong>${escapeHtml(fmtInt(atendimentos))}</strong></div>
+        <div>Inscritos: <strong>${escapeHtml(fmtInt(inscritos))}</strong></div>
       `;
     }
 
@@ -4986,7 +5010,7 @@
         const atendimentos = Number(row?.atendimentos || 0);
         const inscritos = Number(row?.inscritos || 0);
         const ativos = Number(row?.ativos || 0);
-        const weight = Math.max(inscritos, 0);
+        const weight = Math.max(atendimentos, 0);
         if (!Number.isFinite(weight) || weight <= 0) continue;
         points.push({
           uf: String(row?.uf || geo.uf || ""),
@@ -5017,7 +5041,7 @@
         const atendimentos = Number(row?.atendimentos || 0);
         const inscritos = Number(row?.inscritos || 0);
         const ativos = Number(row?.ativos || 0);
-        const weight = Math.max(inscritos, 0);
+        const weight = Math.max(atendimentos, 0);
         if (!Number.isFinite(weight) || weight <= 0) continue;
 
         const key = `${geo.uf}|${normalizeTextKey(city)}`;
@@ -5126,7 +5150,7 @@
         const atendimentos = Number(row?.atendimentos || 0);
         const inscritos = Number(row?.inscritos || 0);
         const ativos = Number(row?.ativos || 0);
-        const weight = Math.max(inscritos, 0);
+        const weight = Math.max(atendimentos, 0);
         if (!Number.isFinite(weight) || (weight <= 0 && atendimentos <= 0 && ativos <= 0)) continue;
 
         const key = `${ufCode}|${normalizeTextKey(city)}`;
@@ -5213,16 +5237,14 @@
       let atendimentos = toFiniteNumberOrNaN(row?.atendimentos);
       const ativos = Number(row?.ativos || 0);
 
-      const typeNorm = normalizeTextKey(row?.type);
       if (!Number.isFinite(inscritos)) {
-        if (typeNorm.includes("inscricao")) inscritos = 1;
-        else inscritos = 0;
+        inscritos = rowInscritosCount(row);
       }
       if (!Number.isFinite(atendimentos)) {
-        atendimentos = typeNorm.includes("atendimento") ? 1 : 0;
+        atendimentos = rowAtendimentosCount(row);
       }
 
-      const weight = Math.max(Number(inscritos || 0), 0);
+      const weight = Math.max(Number(atendimentos || 0), 0);
       if (!Number.isFinite(weight) || weight <= 0) return null;
 
       const city = resolveTerritoryCityLabel(row, { allowUnknown: true });
@@ -5298,18 +5320,15 @@
         const code = resolveUfCode(row?.uf);
         if (!code) continue;
 
-        let inscritos = toFiniteNumberOrNaN(row?.inscritos);
-        if (!Number.isFinite(inscritos)) inscritos = toFiniteNumberOrNaN(row?.weight);
-        if (!Number.isFinite(inscritos)) {
-          inscritos = normalizeTextKey(row?.type).includes("INSCRICAO") ? 1 : 0;
-        }
-        if (!Number.isFinite(inscritos) || inscritos <= 0) continue;
-
         let atendimentos = toFiniteNumberOrNaN(row?.atendimentos);
         if (!Number.isFinite(atendimentos)) {
-          atendimentos = normalizeTextKey(row?.type).includes("ATENDIMENTO") ? 1 : 0;
+          atendimentos = rowAtendimentosCount(row);
         }
-        if (!Number.isFinite(atendimentos)) atendimentos = 0;
+        if (!Number.isFinite(atendimentos) || atendimentos <= 0) continue;
+
+        let inscritos = toFiniteNumberOrNaN(row?.inscritos);
+        if (!Number.isFinite(inscritos)) inscritos = rowInscritosCount(row);
+        if (!Number.isFinite(inscritos)) inscritos = 0;
 
         const prev = byUf.get(code) || { inscritos: 0, atendimentos: 0 };
         prev.inscritos += inscritos;
@@ -5319,7 +5338,7 @@
 
       if (!byUf.size) return [];
       const items = Array.from(byUf.entries());
-      const maxW = Math.max(1, ...items.map(([, agg]) => Number(agg?.inscritos || 0)));
+      const maxW = Math.max(1, ...items.map(([, agg]) => Number(agg?.atendimentos || 0)));
 
       return items
         .map(([code, agg]) => {
@@ -5327,12 +5346,12 @@
           if (!geo) return null;
           const inscritos = Number(agg?.inscritos || 0);
           const atendimentos = Number(agg?.atendimentos || 0);
-          if (!Number.isFinite(inscritos) || inscritos <= 0) return null;
+          if (!Number.isFinite(atendimentos) || atendimentos <= 0) return null;
           return {
             lat: Number(geo.lat),
             lng: Number(geo.lng),
-            intensity: clamp(inscritos / maxW, 0.35, 1),
-            weight: inscritos,
+            intensity: clamp(atendimentos / maxW, 0.35, 1),
+            weight: atendimentos,
             city: "",
             uf: code,
             cep: "",
@@ -5605,7 +5624,16 @@
       const btn30 = document.getElementById("btnPreset30");
       const btn90 = document.getElementById("btnPreset90");
       const btnAll = document.getElementById("btnPresetAll");
-      if (!state.fullRange.from || !state.fullRange.to) return;
+      const customRangeChip = document.getElementById("customDateRangeChip");
+      if (!state.fullRange.from || !state.fullRange.to) {
+        if (customRangeChip) {
+          customRangeChip.classList.add("hidden");
+          customRangeChip.classList.remove("is-active");
+          customRangeChip.textContent = "";
+          customRangeChip.removeAttribute("title");
+        }
+        return;
+      }
 
       const defaultRange = getDefaultDashboardDateRange();
       let d30 = shiftDate(state.fullRange.to, -29);
@@ -5622,6 +5650,22 @@
       if (btn30) btn30.classList.toggle("is-active", is30);
       if (btn90) btn90.classList.toggle("is-active", is90);
       if (btnAll) btnAll.classList.toggle("is-active", isAll);
+
+      const hasCustomRange = Boolean(state.filters.dateFrom && state.filters.dateTo && !is2026 && !is30 && !is90 && !isAll);
+      if (customRangeChip) {
+        if (hasCustomRange) {
+          const label = `${fmtDateBr(state.filters.dateFrom)} -> ${fmtDateBr(state.filters.dateTo)}`;
+          customRangeChip.textContent = label;
+          customRangeChip.title = `Intervalo personalizado: ${label}`;
+          customRangeChip.classList.remove("hidden");
+          customRangeChip.classList.add("is-active");
+        } else {
+          customRangeChip.classList.add("hidden");
+          customRangeChip.classList.remove("is-active");
+          customRangeChip.textContent = "";
+          customRangeChip.removeAttribute("title");
+        }
+      }
     }
 
     function getDefaultDashboardDateRange(range = state.fullRange) {
@@ -5654,8 +5698,8 @@
       setText(
         "terrCoverageLabel",
         selectedUfCode
-          ? "Cobertura por cidade (inscritos)"
-          : "Cobertura por UF (inscritos)"
+          ? "Cobertura por cidade (atendimentos)"
+          : "Cobertura por UF (atendimentos)"
       );
     }
 
@@ -5966,7 +6010,7 @@
 
       const summary = [
         `Volume do periodo: ${fmtInt(atendimentos)} atendimentos e ${fmtInt(inscritos)} inscritos.`,
-        `Atendidos unicos: ${fmtInt(atendidos)}. Membros ativos: ${fmtInt(membrosAtivos)}.`,
+        `Inscritos atendidos: ${fmtInt(atendidos)}. Membros ativos: ${fmtInt(membrosAtivos)}.`,
         `Taxa de ativacao em ${fmtPct(convRatio)} no recorte atual.`
       ];
       setHtml("summaryList", summary.map((line)=>`<li>${line}</li>`).join(""));
@@ -5986,7 +6030,7 @@
         renderTerritoryUfButtons(setHtml, byUfAt.slice(0, 10));
       }
       setText("funnelInscr", fmtInt(inscritos));
-      setText("funnelAtend", fmtInt(atendimentos));
+      setText("funnelAtend", fmtInt(atendidos));
       setText("funnelAtendPct", fmtPct(convRatio));
       updateProgress("funnelAtendBar", atendidos, inscritos || 1);
       setHtml(
@@ -6181,7 +6225,7 @@
       }
 
       setText("funnelInscr", fmtInt(ins.kpis.inscritos));
-      setText("funnelAtend", fmtInt(ins.kpis.atendimentos));
+      setText("funnelAtend", fmtInt(ins.kpis.atendidos));
       setText("funnelAtendPct", fmtPct(ins.kpis.conversaoAtendimento));
       updateProgress("funnelAtendBar", ins.kpis.atendidos, ins.kpis.inscritos || 1);
 
@@ -7249,6 +7293,7 @@
 
       <div class="mt-3 flex flex-wrap items-center gap-2">
         <span id="dataCapLabel" class="chip hidden"></span>
+        <span id="customDateRangeChip" class="chip soft hidden"></span>
         <button id="btnPreset2026" class="btn btn-ghost btn-sm" type="button">2026</button>
         <button id="btnPreset30" class="btn btn-ghost btn-sm" type="button">30 dias</button>
         <button id="btnPreset90" class="btn btn-ghost btn-sm" type="button">90 dias</button>
@@ -7276,7 +7321,7 @@
           <div class="progress mt-2"><span id="kpiAtivosBar"></span></div>
         </div>
         <div class="card p-3 kpi kpi-compact">
-          <div class="label">Taxa de ativa&ccedil;&atilde;o (inscrito&rarr;atendido)</div>
+          <div class="label">Taxa de ativa&ccedil;&atilde;o (inscritos atendidos / inscritos)</div>
           <div id="kpiConv" class="value">&mdash;</div>
           <div class="flex items-center justify-between text-[11px] text-slate-600">
             <span id="kpiConvDelta" class="delta">&mdash;</span>
@@ -7412,7 +7457,7 @@
                 <span id="terrAtendDay" class="value">&mdash;</span>
               </div>
               <div class="metric">
-                <span id="terrCoverageLabel" class="label">Cobertura por UF (inscritos)</span>
+                <span id="terrCoverageLabel" class="label">Cobertura por UF (atendimentos)</span>
                 <span id="terrUfCoverage" class="value">&mdash;</span>
               </div>
             </div>
@@ -7449,7 +7494,7 @@
               </div>
               <div>
                 <div class="flex items-center justify-between">
-                  <span>Atendimentos</span>
+                  <span>Inscritos atendidos</span>
                   <span><strong id="funnelAtend">&mdash;</strong>&mdash;<span id="funnelAtendPct">&mdash;</span></span>
                 </div>
                 <div class="progress mt-1"><span id="funnelAtendBar"></span></div>

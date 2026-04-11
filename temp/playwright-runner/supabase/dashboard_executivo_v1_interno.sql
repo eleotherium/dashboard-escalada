@@ -331,15 +331,23 @@ begin
     ) x
     group by uf
   ),
+  by_uf_keys as (
+    select uf from by_uf_inscritos
+    union
+    select uf from by_uf_atend
+    union
+    select uf from by_uf_ativos
+  ),
   by_uf as (
     select
-      i.uf,
-      i.inscritos,
+      k.uf,
+      coalesce(i.inscritos, 0)::int as inscritos,
       coalesce(a.atendimentos, 0)::int as atendimentos,
       coalesce(v.ativos, 0)::int as ativos
-    from by_uf_inscritos i
-    left join by_uf_atend a on a.uf = i.uf
-    left join by_uf_ativos v on v.uf = i.uf
+    from by_uf_keys k
+    left join by_uf_inscritos i on i.uf = k.uf
+    left join by_uf_atend a on a.uf = k.uf
+    left join by_uf_ativos v on v.uf = k.uf
     order by atendimentos desc, inscritos desc
   ),
 
@@ -814,37 +822,43 @@ begin
     from cidade_acoes_tipo
     group by uf, cidade
   ),
+  by_cidade_keys as (
+    select uf, cidade from by_cidade_inscritos
+    union
+    select uf, cidade from by_cidade_atend
+    union
+    select uf, cidade from by_cidade_ativos
+  ),
   by_cidade as (
     select
-      i.uf,
-      i.cidade,
-      i.inscritos,
+      k.uf,
+      k.cidade,
+      coalesce(i.inscritos, 0)::int as inscritos,
       coalesce(a.atendimentos, 0)::int as atendimentos,
       coalesce(v.ativos, 0)::int as ativos,
       coalesce(ca.acoes, '[]'::jsonb) as acoes
-    from by_cidade_inscritos i
-    left join by_cidade_atend a on a.uf = i.uf and a.cidade = i.cidade
-    left join by_cidade_ativos v on v.uf = i.uf and v.cidade = i.cidade
-    left join cidade_acoes ca on ca.uf = i.uf and ca.cidade = i.cidade
+    from by_cidade_keys k
+    left join by_cidade_inscritos i on i.uf = k.uf and i.cidade = k.cidade
+    left join by_cidade_atend a on a.uf = k.uf and a.cidade = k.cidade
+    left join by_cidade_ativos v on v.uf = k.uf and v.cidade = k.cidade
+    left join cidade_acoes ca on ca.uf = k.uf and ca.cidade = k.cidade
     order by atendimentos desc, inscritos desc
     limit v_top_limit
   ),
   coverage_ufs as (
     select
       count(distinct upper(btrim(uf)))::int as presentes
-    from participants_period
+    from actions
     where
-      usuario_id is not null
-      and nullif(btrim(coalesce(uf, '')), '') is not null
+      nullif(btrim(coalesce(uf, '')), '') is not null
       and upper(btrim(coalesce(uf, ''))) <> 'N/A'
   ),
   coverage_cidades_uf as (
     select
       count(distinct lower(btrim(cidade)))::int as presentes
-    from participants_period
+    from actions
     where
       p_uf is not null
-      and usuario_id is not null
       and uf = p_uf
       and nullif(btrim(coalesce(cidade, '')), '') is not null
       and lower(btrim(coalesce(cidade, ''))) <> 'n/a'
@@ -1159,8 +1173,14 @@ begin
         'publico', p_publico
       ),
       'coverage', jsonb_build_object(
+        'ufs_com_atendimentos', coalesce((select presentes from coverage_ufs), 0),
         'ufs_com_inscritos', coalesce((select presentes from coverage_ufs), 0),
         'ufs_total', 27,
+        'cidades_uf_com_atendimentos',
+          case
+            when p_uf is null then null
+            else coalesce((select presentes from coverage_cidades_uf), 0)
+          end,
         'cidades_uf_com_inscritos',
           case
             when p_uf is null then null
