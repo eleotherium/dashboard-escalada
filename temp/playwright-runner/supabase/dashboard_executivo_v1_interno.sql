@@ -98,11 +98,11 @@ begin
         'convites', '[]'::jsonb
       ),
       'fontes_totais', jsonb_build_object(
-        'geral', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'usuarios', 0),
-        'eventos', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'usuarios', 0),
-        'multiplicadores', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'usuarios', 0),
-        'embaixadores', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'usuarios', 0),
-        'convites', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'usuarios', 0)
+        'geral', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'atendidos', 0, 'usuarios', 0),
+        'eventos', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'atendidos', 0, 'usuarios', 0),
+        'multiplicadores', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'atendidos', 0, 'usuarios', 0),
+        'embaixadores', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'atendidos', 0, 'usuarios', 0),
+        'convites', jsonb_build_object('itens', 0, 'inscritos', 0, 'atendimentos', 0, 'atendidos', 0, 'usuarios', 0)
       ),
       'by_cidade', '[]'::jsonb,
       'by_cep', '[]'::jsonb,
@@ -204,6 +204,19 @@ begin
     select *
     from participants_raw
     where sub_dt between p_date_from and p_date_to
+  ),
+  participants_period_join as materialized (
+    select distinct on (usuario_id)
+      usuario_id,
+      coalesce(uf, 'N/A') as uf,
+      coalesce(cidade, 'N/A') as cidade,
+      coalesce(publico, 'N/A') as publico,
+      sub_dt,
+      cep_norm,
+      raw_json
+    from participants_period
+    where usuario_id is not null
+    order by usuario_id, sub_dt desc nulls last
   ),
   inscritos_periodo as (
     select count(distinct usuario_id)::int as inscritos
@@ -389,7 +402,7 @@ begin
     select distinct
       p.usuario_id,
       nullif(btrim(item.tag_text), '') as tag_text
-    from participants_with_actions p
+    from participants_period_join p
     cross join lateral (
       select jsonb_array_elements_text(p.raw_json->'tags') as tag_text
       where jsonb_typeof(p.raw_json->'tags') = 'array'
@@ -435,7 +448,7 @@ begin
   ),
 
   -- Extracao de tags no formato "Fonte: Nome da Fonte"
-  -- Base principal: participantes deduplicados com acoes no periodo filtrado.
+  -- Base principal: participantes deduplicados inscritos no periodo filtrado.
   participantes_fonte_tags as (
     select
       p.usuario_id,
@@ -467,10 +480,19 @@ begin
     from participantes_fontes
     group by fonte
   ),
-  by_fonte_atend as (
+  by_fonte_atendimentos as (
     select
       pf.fonte,
       count(*)::int as atendimentos
+    from actions a
+    join participantes_fontes pf
+      on pf.usuario_id = a.usuario_id
+    group by pf.fonte
+  ),
+  by_fonte_atendidos as (
+    select
+      pf.fonte,
+      count(distinct a.usuario_id)::int as atendidos
     from actions a
     join participantes_fontes pf
       on pf.usuario_id = a.usuario_id
@@ -487,22 +509,22 @@ begin
   fonte_uf_counts as (
     select
       pf.fonte,
-      coalesce(pwa.uf, 'N/A') as uf,
-      count(*)::int as qtd
+      coalesce(ppj.uf, 'N/A') as uf,
+      count(distinct pf.usuario_id)::int as qtd
     from participantes_fontes pf
-    join participants_with_actions pwa
-      on pwa.usuario_id = pf.usuario_id
-    group by pf.fonte, coalesce(pwa.uf, 'N/A')
+    join participants_period_join ppj
+      on ppj.usuario_id = pf.usuario_id
+    group by pf.fonte, coalesce(ppj.uf, 'N/A')
   ),
   fonte_publico_counts as (
     select
       pf.fonte,
-      coalesce(pwa.publico, 'N/A') as publico,
-      count(*)::int as qtd
+      coalesce(ppj.publico, 'N/A') as publico,
+      count(distinct pf.usuario_id)::int as qtd
     from participantes_fontes pf
-    join participants_with_actions pwa
-      on pwa.usuario_id = pf.usuario_id
-    group by pf.fonte, coalesce(pwa.publico, 'N/A')
+    join participants_period_join ppj
+      on ppj.usuario_id = pf.usuario_id
+    group by pf.fonte, coalesce(ppj.publico, 'N/A')
   ),
   fonte_canal_counts as (
     select
@@ -564,36 +586,43 @@ begin
   ),
   by_fonte as (
     select
-      coalesce(i.fonte, a.fonte, u.fonte) as fonte,
+      coalesce(i.fonte, a.fonte, ad.fonte, u.fonte) as fonte,
       coalesce(i.inscritos, 0)::int as inscritos,
       coalesce(a.atendimentos, 0)::int as atendimentos,
+      case
+        when coalesce(i.inscritos, 0) > 0
+          then least(coalesce(ad.atendidos, 0), i.inscritos)::int
+        else coalesce(ad.atendidos, 0)::int
+      end as atendidos,
       coalesce(u.usuarios, 0)::int as usuarios,
       case
         when coalesce(i.inscritos, 0) > 0
-          then round((coalesce(a.atendimentos, 0)::numeric / i.inscritos::numeric) * 100, 2)
+          then round((least(coalesce(ad.atendidos, 0), i.inscritos)::numeric / i.inscritos::numeric) * 100, 2)
         else 0
       end as conversao_pct,
       coalesce(tu.top_ufs, '[]'::jsonb) as top_ufs,
       coalesce(tp.top_publicos, '[]'::jsonb) as top_publicos,
       coalesce(tc.top_canais, '[]'::jsonb) as top_canais
     from by_fonte_inscritos i
-    full join by_fonte_atend a
+    full join by_fonte_atendimentos a
       on a.fonte = i.fonte
+    full join by_fonte_atendidos ad
+      on ad.fonte = coalesce(i.fonte, a.fonte)
     full join by_fonte_usuarios u
-      on u.fonte = coalesce(i.fonte, a.fonte)
+      on u.fonte = coalesce(i.fonte, a.fonte, ad.fonte)
     left join fonte_top_ufs tu
-      on tu.fonte = coalesce(i.fonte, a.fonte, u.fonte)
+      on tu.fonte = coalesce(i.fonte, a.fonte, ad.fonte, u.fonte)
     left join fonte_top_publicos tp
-      on tp.fonte = coalesce(i.fonte, a.fonte, u.fonte)
+      on tp.fonte = coalesce(i.fonte, a.fonte, ad.fonte, u.fonte)
     left join fonte_top_canais tc
-      on tc.fonte = coalesce(i.fonte, a.fonte, u.fonte)
+      on tc.fonte = coalesce(i.fonte, a.fonte, ad.fonte, u.fonte)
     where
       p_uf is null
       or exists (
         select 1
         from fonte_uf_counts fuc_filter
         where
-          fuc_filter.fonte = coalesce(i.fonte, a.fonte, u.fonte)
+          fuc_filter.fonte = coalesce(i.fonte, a.fonte, ad.fonte, u.fonte)
           and fuc_filter.uf = p_uf
           and fuc_filter.qtd > 0
       )
@@ -692,11 +721,21 @@ begin
     from participantes_fontes_especializadas
     group by familia, label
   ),
-  fontes_especializadas_atend as (
+  fontes_especializadas_atendimentos as (
     select
       pfe.familia,
       pfe.label,
       count(*)::int as atendimentos
+    from actions a
+    join participantes_fontes_especializadas pfe
+      on pfe.usuario_id = a.usuario_id
+    group by pfe.familia, pfe.label
+  ),
+  fontes_especializadas_atendidos as (
+    select
+      pfe.familia,
+      pfe.label,
+      count(distinct a.usuario_id)::int as atendidos
     from actions a
     join participantes_fontes_especializadas pfe
       on pfe.usuario_id = a.usuario_id
@@ -716,6 +755,7 @@ begin
       fonte as label,
       inscritos,
       atendimentos,
+      atendidos,
       usuarios,
       conversao_pct
     from by_fonte
@@ -723,23 +763,31 @@ begin
     union all
 
     select
-      coalesce(i.familia, a.familia, u.familia) as familia,
-      coalesce(i.label, a.label, u.label) as label,
+      coalesce(i.familia, a.familia, ad.familia, u.familia) as familia,
+      coalesce(i.label, a.label, ad.label, u.label) as label,
       coalesce(i.inscritos, 0)::int as inscritos,
       coalesce(a.atendimentos, 0)::int as atendimentos,
+      case
+        when coalesce(i.inscritos, 0) > 0
+          then least(coalesce(ad.atendidos, 0), i.inscritos)::int
+        else coalesce(ad.atendidos, 0)::int
+      end as atendidos,
       coalesce(u.usuarios, 0)::int as usuarios,
       case
         when coalesce(i.inscritos, 0) > 0
-          then round((coalesce(a.atendimentos, 0)::numeric / i.inscritos::numeric) * 100, 2)
+          then round((least(coalesce(ad.atendidos, 0), i.inscritos)::numeric / i.inscritos::numeric) * 100, 2)
         else 0
       end as conversao_pct
     from fontes_especializadas_inscritos i
-    full join fontes_especializadas_atend a
+    full join fontes_especializadas_atendimentos a
       on a.familia = i.familia
      and a.label = i.label
+    full join fontes_especializadas_atendidos ad
+      on ad.familia = coalesce(i.familia, a.familia)
+     and ad.label = coalesce(i.label, a.label)
     full join fontes_especializadas_usuarios u
-      on u.familia = coalesce(i.familia, a.familia)
-     and u.label = coalesce(i.label, a.label)
+      on u.familia = coalesce(i.familia, a.familia, ad.familia)
+     and u.label = coalesce(i.label, a.label, ad.label)
   ),
   fontes_numericas_ranked as (
     select
@@ -747,6 +795,7 @@ begin
       label,
       inscritos,
       atendimentos,
+      atendidos,
       usuarios,
       conversao_pct,
       row_number() over (
@@ -762,6 +811,7 @@ begin
       label,
       inscritos,
       atendimentos,
+      atendidos,
       usuarios,
       conversao_pct
     from fontes_numericas_ranked
@@ -773,6 +823,7 @@ begin
       count(*)::int as itens,
       coalesce(sum(inscritos), 0)::int as inscritos,
       coalesce(sum(atendimentos), 0)::int as atendimentos,
+      coalesce(sum(atendidos), 0)::int as atendidos,
       coalesce(sum(usuarios), 0)::int as usuarios
     from fontes_numericas
     group by familia
@@ -983,6 +1034,7 @@ begin
             'fonte', fonte,
             'inscritos', inscritos,
             'atendimentos', atendimentos,
+            'atendidos', atendidos,
             'usuarios', usuarios,
             'conversao_pct', conversao_pct,
             'top_ufs', top_ufs,
@@ -1002,6 +1054,7 @@ begin
               'label', label,
               'inscritos', inscritos,
               'atendimentos', atendimentos,
+              'atendidos', atendidos,
               'usuarios', usuarios,
               'conversao_pct', conversao_pct
             )
@@ -1019,6 +1072,7 @@ begin
               'label', label,
               'inscritos', inscritos,
               'atendimentos', atendimentos,
+              'atendidos', atendidos,
               'usuarios', usuarios,
               'conversao_pct', conversao_pct
             )
@@ -1036,6 +1090,7 @@ begin
               'label', label,
               'inscritos', inscritos,
               'atendimentos', atendimentos,
+              'atendidos', atendidos,
               'usuarios', usuarios,
               'conversao_pct', conversao_pct
             )
@@ -1053,6 +1108,7 @@ begin
               'label', label,
               'inscritos', inscritos,
               'atendimentos', atendimentos,
+              'atendidos', atendidos,
               'usuarios', usuarios,
               'conversao_pct', conversao_pct
             )
@@ -1070,6 +1126,7 @@ begin
               'label', label,
               'inscritos', inscritos,
               'atendimentos', atendimentos,
+              'atendidos', atendidos,
               'usuarios', usuarios,
               'conversao_pct', conversao_pct
             )
@@ -1086,30 +1143,35 @@ begin
         'itens', coalesce((select itens from fontes_totais where familia = 'geral'), 0),
         'inscritos', coalesce((select inscritos from fontes_totais where familia = 'geral'), 0),
         'atendimentos', coalesce((select atendimentos from fontes_totais where familia = 'geral'), 0),
+        'atendidos', coalesce((select atendidos from fontes_totais where familia = 'geral'), 0),
         'usuarios', coalesce((select usuarios from fontes_totais where familia = 'geral'), 0)
       ),
       'eventos', jsonb_build_object(
         'itens', coalesce((select itens from fontes_totais where familia = 'eventos'), 0),
         'inscritos', coalesce((select inscritos from fontes_totais where familia = 'eventos'), 0),
         'atendimentos', coalesce((select atendimentos from fontes_totais where familia = 'eventos'), 0),
+        'atendidos', coalesce((select atendidos from fontes_totais where familia = 'eventos'), 0),
         'usuarios', coalesce((select usuarios from fontes_totais where familia = 'eventos'), 0)
       ),
       'multiplicadores', jsonb_build_object(
         'itens', coalesce((select itens from fontes_totais where familia = 'multiplicadores'), 0),
         'inscritos', coalesce((select inscritos from fontes_totais where familia = 'multiplicadores'), 0),
         'atendimentos', coalesce((select atendimentos from fontes_totais where familia = 'multiplicadores'), 0),
+        'atendidos', coalesce((select atendidos from fontes_totais where familia = 'multiplicadores'), 0),
         'usuarios', coalesce((select usuarios from fontes_totais where familia = 'multiplicadores'), 0)
       ),
       'embaixadores', jsonb_build_object(
         'itens', coalesce((select itens from fontes_totais where familia = 'embaixadores'), 0),
         'inscritos', coalesce((select inscritos from fontes_totais where familia = 'embaixadores'), 0),
         'atendimentos', coalesce((select atendimentos from fontes_totais where familia = 'embaixadores'), 0),
+        'atendidos', coalesce((select atendidos from fontes_totais where familia = 'embaixadores'), 0),
         'usuarios', coalesce((select usuarios from fontes_totais where familia = 'embaixadores'), 0)
       ),
       'convites', jsonb_build_object(
         'itens', coalesce((select itens from fontes_totais where familia = 'convites'), 0),
         'inscritos', coalesce((select inscritos from fontes_totais where familia = 'convites'), 0),
         'atendimentos', coalesce((select atendimentos from fontes_totais where familia = 'convites'), 0),
+        'atendidos', coalesce((select atendidos from fontes_totais where familia = 'convites'), 0),
         'usuarios', coalesce((select usuarios from fontes_totais where familia = 'convites'), 0)
       )
     ),

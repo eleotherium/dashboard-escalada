@@ -2239,13 +2239,22 @@
       return key === "ATENDIMENTO" || key === "ACAO";
     }
 
+    function sourceConversionRatio(inscritos, atendidos) {
+      const inscritosCount = Math.max(0, Number(inscritos || 0));
+      if (!(inscritosCount > 0)) return 0;
+      const atendidosCount = Math.max(0, Number(atendidos || 0));
+      return Math.min(atendidosCount, inscritosCount) / inscritosCount;
+    }
+
     function createSourceBucket(source) {
       return {
         source,
-        inscritos: 0,
+        inscritosFallback: 0,
         atendimentos: 0,
         eventos: 0,
         userIds: new Set(),
+        inscritoUserIds: new Set(),
+        atendidoUserIds: new Set(),
         ufCounts: new Map(),
         publicoCounts: new Map(),
         channelCounts: new Map(),
@@ -2347,6 +2356,7 @@
         totalItems: 0,
         totalInscritos: 0,
         totalAtendimentos: 0,
+        totalAtendidos: 0,
         totalEventos: 0,
         totalUsuarios: 0,
         avgConversao: 0,
@@ -2388,15 +2398,23 @@
         if (!sources.length) continue;
         taggedEvents += 1;
         const uniqSources = Array.from(new Set(sources));
+        const userId = String(event?.user_id || "").trim();
+        const isInscricao = isInscricaoEventType(event?.type);
+        const isAtendimento = isAtendimentoEventType(event?.type);
         for (const source of uniqSources) {
           if (!bySource.has(source)) bySource.set(source, createSourceBucket(source));
           const bucket = bySource.get(source);
           bucket.eventos += 1;
 
-          if (isInscricaoEventType(event?.type)) bucket.inscritos += 1;
-          if (isAtendimentoEventType(event?.type)) bucket.atendimentos += 1;
+          if (isInscricao) {
+            if (userId) bucket.inscritoUserIds.add(userId);
+            else bucket.inscritosFallback += 1;
+          }
+          if (isAtendimento) {
+            bucket.atendimentos += 1;
+            if (userId) bucket.atendidoUserIds.add(userId);
+          }
 
-          const userId = String(event?.user_id || "").trim();
           if (userId) {
             bucket.userIds.add(userId);
             taggedUsers.add(userId);
@@ -2411,16 +2429,18 @@
 
       const rows = sortSourceRows(
         Array.from(bySource.values()).map((bucket) => {
-          const inscritos = Number(bucket.inscritos || 0);
+          const inscritos = bucket.inscritoUserIds.size + Number(bucket.inscritosFallback || 0);
           const atendimentos = Number(bucket.atendimentos || 0);
+          const atendidos = countSetIntersection(bucket.inscritoUserIds, bucket.atendidoUserIds);
           const usuarios = bucket.userIds.size;
           return {
             source: bucket.source,
             inscritos,
             atendimentos,
+            atendidos,
             eventos: Number(bucket.eventos || 0),
             usuarios,
-            conversao: inscritos > 0 ? (atendimentos / inscritos) : 0,
+            conversao: sourceConversionRatio(inscritos, atendidos),
             topUfs: toSortedPairs(bucket.ufCounts, 5),
             topPublicos: toSortedPairs(bucket.publicoCounts, 5),
             topCanais: toSortedPairs(bucket.channelCounts, 5),
@@ -2431,10 +2451,9 @@
 
       const totalInscritos = rows.reduce((sum, row) => sum + Number(row.inscritos || 0), 0);
       const totalAtendimentos = rows.reduce((sum, row) => sum + Number(row.atendimentos || 0), 0);
+      const totalAtendidos = rows.reduce((sum, row) => sum + Number(row.atendidos || 0), 0);
       const totalEventos = rows.reduce((sum, row) => sum + Number(row.eventos || 0), 0);
-      const avgConversao = rows.length
-        ? rows.reduce((sum, row) => sum + Number(row.conversao || 0), 0) / rows.length
-        : 0;
+      const avgConversao = sourceConversionRatio(totalInscritos, totalAtendidos);
 
       return {
         rows,
@@ -2442,6 +2461,7 @@
         totalItems: rows.length,
         totalInscritos,
         totalAtendimentos,
+        totalAtendidos,
         totalEventos,
         totalUsuarios: taggedUsers.size,
         avgConversao,
@@ -2496,6 +2516,55 @@
       return 0;
     }
 
+    function firstFiniteNumberOrNaN(obj, keys = []) {
+      for (const key of keys) {
+        const value = toFiniteNumberOrNaN(obj?.[key]);
+        if (Number.isFinite(value)) return value;
+      }
+      return NaN;
+    }
+
+    function sourceConversionRatioFromRawValue(value) {
+      const numeric = toFiniteNumberOrNaN(value);
+      if (!Number.isFinite(numeric)) return NaN;
+      return numeric > 1 ? clamp(numeric / 100, 0, 1) : clamp(numeric, 0, 1);
+    }
+
+    function sourceAttendedCountFromRecord(record, inscritos, atendimentos = 0) {
+      const inscritosCount = Math.max(0, Number(inscritos || 0));
+      const atendimentosCount = Math.max(0, Number(atendimentos || 0));
+      const explicitAttended = firstFiniteNumberOrNaN(record, [
+        "atendidos",
+        "inscritos_atendidos",
+        "usuarios_atendidos",
+        "qtd_atendidos",
+      ]);
+      if (Number.isFinite(explicitAttended)) {
+        const normalized = Math.max(0, explicitAttended);
+        return inscritosCount > 0 ? Math.min(normalized, inscritosCount) : normalized;
+      }
+
+      const ratioFromPayload = sourceConversionRatioFromRawValue(
+        firstFiniteNumberOrNaN(record, [
+          "conversao_pct",
+          "conversion_pct",
+          "taxa_conversao_pct",
+          "conversao",
+          "conversion",
+          "conversion_rate",
+        ])
+      );
+      if (Number.isFinite(ratioFromPayload) && inscritosCount > 0) {
+        return Math.round(ratioFromPayload * inscritosCount);
+      }
+
+      if (inscritosCount > 0 && atendimentosCount > 0) {
+        return Math.min(atendimentosCount, inscritosCount);
+      }
+
+      return 0;
+    }
+
     function normalizedTopPairs(rows, labelKeys = [], countKeys = ["qtd", "count", "valor", "total"], limit = 5) {
       if (!Array.isArray(rows) || !rows.length) return [];
       return rows
@@ -2530,6 +2599,7 @@
 
         const inscritos = firstFiniteNumber(row, ["inscritos", "inscricoes", "entradas", "qtd_inscritos", "qtd_entradas"]);
         const atendimentos = firstFiniteNumber(row, ["atendimentos", "qtd_atendimentos", "acoes", "qtd_acoes"]);
+        const atendidos = sourceAttendedCountFromRecord(row, inscritos, atendimentos);
         const usuarios = firstFiniteNumber(row, ["usuarios", "usuarios_unicos", "users", "qtd_usuarios"]);
         const eventosRaw = firstFiniteNumber(row, ["eventos", "qtd", "total", "qtd_total"]);
         const eventos = eventosRaw > 0 ? eventosRaw : (inscritos + atendimentos);
@@ -2539,6 +2609,7 @@
             source,
             inscritos: 0,
             atendimentos: 0,
+            atendidos: 0,
             eventos: 0,
             usuarios: 0,
             conversao: 0,
@@ -2551,6 +2622,7 @@
         const bucket = bySource.get(source);
         bucket.inscritos += inscritos;
         bucket.atendimentos += atendimentos;
+        bucket.atendidos += atendidos;
         bucket.eventos += eventos;
         bucket.usuarios += usuarios;
         if (!bucket.topUfs.length) {
@@ -2566,24 +2638,29 @@
 
       const rows = sortSourceRows(Array.from(bySource.values()).map((row) => {
         const inscritos = Number(row.inscritos || 0);
-        const atendimentos = Number(row.atendimentos || 0);
+        const atendidos = Number(row.atendidos || 0);
         return {
           ...row,
-          conversao: inscritos > 0 ? (atendimentos / inscritos) : 0,
+          conversao: sourceConversionRatio(inscritos, atendidos),
         };
       }));
 
       const fallbackTotalInscritos = rows.reduce((sum, row) => sum + Number(row.inscritos || 0), 0);
       const fallbackTotalAtendimentos = rows.reduce((sum, row) => sum + Number(row.atendimentos || 0), 0);
+      const fallbackTotalAtendidos = rows.reduce((sum, row) => sum + Number(row.atendidos || 0), 0);
       const fallbackTotalEventos = rows.reduce((sum, row) => sum + Number(row.eventos || 0), 0);
       const fallbackTotalUsuarios = rows.reduce((sum, row) => sum + Number(row.usuarios || 0), 0);
       const totalItems = Math.max(firstFiniteNumber(totalsRaw, ["itens", "items", "qtd", "total"]), rows.length);
       const totalInscritos = firstFiniteNumber(totalsRaw, ["inscritos", "inscricoes", "entradas", "qtd_inscritos", "qtd_entradas"]) || fallbackTotalInscritos;
       const totalAtendimentos = firstFiniteNumber(totalsRaw, ["atendimentos", "qtd_atendimentos", "acoes", "qtd_acoes"]) || fallbackTotalAtendimentos;
+      const totalAtendidos = Math.max(
+        sourceAttendedCountFromRecord(totalsRaw, totalInscritos, totalAtendimentos),
+        fallbackTotalAtendidos
+      );
       const totalEventos = fallbackTotalEventos > 0 ? fallbackTotalEventos : totalAtendimentos;
       const totalUsuarios = firstFiniteNumber(totalsRaw, ["usuarios", "usuarios_unicos", "users", "qtd_usuarios"]) || fallbackTotalUsuarios;
       const avgConversao = totalInscritos > 0
-        ? (totalAtendimentos / totalInscritos)
+        ? sourceConversionRatio(totalInscritos, totalAtendidos)
         : (rows.length ? rows.reduce((sum, row) => sum + Number(row.conversao || 0), 0) / rows.length : 0);
 
       return {
@@ -2592,6 +2669,7 @@
         totalItems,
         totalInscritos,
         totalAtendimentos,
+        totalAtendidos,
         totalEventos,
         totalUsuarios,
         avgConversao,
@@ -5850,13 +5928,14 @@
       }
       state.sourceRowsByKey = byKey;
 
-      const totalItems = Number(analytics?.totalItems || rows.length || 0);
-      const totalInscritos = Number(analytics?.totalInscritos || rows.reduce((sum, row) => sum + Number(row?.inscritos || 0), 0));
-      const totalAtendimentos = Number(analytics?.totalAtendimentos || rows.reduce((sum, row) => sum + Number(row?.atendimentos || 0), 0));
-      const avgConversao = rows.length
-        ? Number(analytics?.avgConversao || rows.reduce((sum, row) => sum + Number(row?.conversao || 0), 0) / rows.length)
-        : 0;
-      const taggedEvents = Number(analytics?.taggedEvents || rows.reduce((sum, row) => sum + Number(row?.eventos || 0), 0));
+      const totalItems = Number(analytics?.totalItems ?? rows.length ?? 0);
+      const totalInscritos = Number(analytics?.totalInscritos ?? rows.reduce((sum, row) => sum + Number(row?.inscritos || 0), 0));
+      const totalAtendimentos = Number(analytics?.totalAtendimentos ?? rows.reduce((sum, row) => sum + Number(row?.atendimentos || 0), 0));
+      const totalAtendidos = Number(analytics?.totalAtendidos ?? rows.reduce((sum, row) => sum + Number(row?.atendidos || 0), 0));
+      const avgConversao = totalInscritos > 0
+        ? sourceConversionRatio(totalInscritos, totalAtendidos)
+        : Number(analytics?.avgConversao ?? (rows.length ? rows.reduce((sum, row) => sum + Number(row?.conversao || 0), 0) / rows.length : 0));
+      const taggedEvents = Number(analytics?.taggedEvents ?? rows.reduce((sum, row) => sum + Number(row?.eventos || 0), 0));
 
       setText("sourcesSectionTitle", familyMeta.chartTitle);
       setText("sourcesSectionSubtitle", familyMeta.chartSubtitle);
@@ -7566,7 +7645,7 @@
 
           <div class="col-span-12 lg:col-span-4 card p-5 sources-summary-card">
             <h2 class="section-title">Resumo de fontes</h2>
-            <div class="text-sm text-slate-600">Indicadores agregados do recorte atual.</div>
+            <div class="text-sm text-slate-600">Indicadores agregados do recorte atual. Conversao = inscritos atendidos / inscritos.</div>
             <div class="sources-summary-grid">
               <div class="metric sources-summary-metric">
                 <span class="label">Conversao media</span>
@@ -7688,7 +7767,7 @@
             <span id="sourceDetailAtendimentos" class="value">&mdash;</span>
           </div>
           <div class="metric col-span-2">
-            <span class="label">Conversao (inscritos -> atendimentos)</span>
+            <span class="label">Conversao (inscritos atendidos / inscritos)</span>
             <span id="sourceDetailConversao" class="value">&mdash;</span>
           </div>
         </div>
