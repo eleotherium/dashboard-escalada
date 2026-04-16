@@ -1821,6 +1821,7 @@
     function isValidUfValue(value) {
       const raw = String(value ?? "").trim();
       if (!raw) return false;
+      if (isPlaceholderFilterValue(raw)) return false;
       const compact = normalizeTextKey(raw).replace(/\s+/g, "");
       if (!compact) return false;
       if (compact === "[]" || compact === "[ ]" || compact === "N/A" || compact === "NULL") return false;
@@ -2776,9 +2777,23 @@
       return Array.from(new Set((arr || []).filter(Boolean))).sort();
     }
 
+    function isPlaceholderFilterValue(value) {
+      const key = normalizeTextKey(value).replace(/[^A-Z0-9]+/g, "");
+      return (
+        !key ||
+        key === "TODOS" ||
+        key === "SELECT" ||
+        key === "SELECIONE" ||
+        key === "SELECIONAR" ||
+        key === "ESCOLHA" ||
+        key === "NA" ||
+        key === "NULL"
+      );
+    }
+
     function sanitizeFilterValue(v) {
       const s = String(v ?? "").trim();
-      return !s || s === "Todos" ? null : s;
+      return isPlaceholderFilterValue(s) ? null : s;
     }
 
     function resolveUfFilterValue(v) {
