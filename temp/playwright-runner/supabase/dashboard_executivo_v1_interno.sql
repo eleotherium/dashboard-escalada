@@ -1,4 +1,15 @@
-
+create or replace function public.dashboard_executivo_v1_interno(
+  p_date_from date default null,
+  p_date_to date default null,
+  p_uf text default null,
+  p_publico text default null,
+  p_limit integer default 50
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
 declare
   v_actions_min_date date;
   v_actions_max_date date;
@@ -652,25 +663,6 @@ begin
 
     select
       p.usuario_id,
-      'multiplicadores'::text as familia,
-      nullif(
-        btrim(
-          regexp_replace(
-            p.tag_text,
-            '^multiplicador(?:es)?\s*:\s*',
-            '',
-            'i'
-          )
-        ),
-        ''
-      ) as label
-    from participants_tag_items p
-    where p.tag_text ~* '^multiplicador(?:es)?\s*:'
-
-    union all
-
-    select
-      p.usuario_id,
       'embaixadores'::text as familia,
       nullif(
         btrim(
@@ -749,6 +741,145 @@ begin
     from participantes_fontes_especializadas
     group by familia, label
   ),
+  -- Multiplicadores passam a ser derivados da tabela de convites/links.
+  multiplicadores_participantes as materialized (
+    select distinct on (p."Circle ID")
+      p."Circle ID" as usuario_id,
+      lower(btrim(coalesce(p.publico, ''))) as publico_norm,
+      coalesce(
+        nullif(btrim(to_jsonb(p)->>'nome'), ''),
+        nullif(btrim(to_jsonb(p)->>'Nome'), ''),
+        nullif(btrim(to_jsonb(p)->>'name'), ''),
+        nullif(btrim(to_jsonb(p)->>'Name'), ''),
+        nullif(btrim(to_jsonb(p)->>'display_name'), ''),
+        nullif(btrim(to_jsonb(p)->>'Display Name'), ''),
+        nullif(btrim(to_jsonb(p)->>'full_name'), ''),
+        nullif(btrim(to_jsonb(p)->>'Full Name'), ''),
+        nullif(btrim(to_jsonb(p)->>'nome_completo'), ''),
+        nullif(btrim(to_jsonb(p)->>'Nome Completo'), ''),
+        p."Circle ID"::text
+      ) as participante_nome
+    from public."Participantes Escalada" p
+    where p."Circle ID" is not null
+    order by p."Circle ID", p."SubscriptedAt" desc nulls last
+  ),
+  multiplicadores_base as materialized (
+    select distinct on (ce.id_usuario)
+      ce.id_usuario as usuario_id,
+      mp.participante_nome as label,
+      nullif(btrim(ce.tags[1]), '') as tracking_tag,
+      lower(btrim(coalesce(ce.status, ''))) as status_norm,
+      nullif(btrim(coalesce(ce.url, ce.convite_encurtado, '')), '') as link_url
+    from public.convites_escalada ce
+    join multiplicadores_participantes mp
+      on mp.usuario_id = ce.id_usuario
+    where
+      ce.id_usuario is not null
+      and coalesce(mp.publico_norm, '') not in ('estudante', 'estudantes')
+      and lower(btrim(coalesce(ce.publico, 'interno'))) <> 'externo'
+    order by
+      ce.id_usuario,
+      case
+        when lower(btrim(coalesce(ce.status, ''))) = 'produzido' then 0
+        else 1
+      end,
+      case
+        when nullif(btrim(coalesce(ce.url, ce.convite_encurtado, '')), '') is not null then 0
+        else 1
+      end,
+      ce.criado_em desc,
+      ce.id desc
+  ),
+  multiplicadores_links_produzidos as (
+    select
+      mb.usuario_id,
+      mb.label,
+      mb.tracking_tag
+    from multiplicadores_base mb
+    where
+      mb.tracking_tag is not null
+      and (
+        mb.status_norm = 'produzido'
+        or mb.link_url is not null
+      )
+  ),
+  multiplicadores_atribuicoes as materialized (
+    select distinct
+      mlp.usuario_id as multiplicador_usuario_id,
+      mlp.label,
+      pti.usuario_id as inscrito_usuario_id
+    from multiplicadores_links_produzidos mlp
+    join participants_tag_items pti
+      on lower(btrim(pti.tag_text)) = lower(btrim(mlp.tracking_tag))
+  ),
+  multiplicadores_inscritos as (
+    select
+      ma.multiplicador_usuario_id as usuario_id,
+      ma.label,
+      count(distinct ma.inscrito_usuario_id)::int as inscritos
+    from multiplicadores_atribuicoes ma
+    group by ma.multiplicador_usuario_id, ma.label
+  ),
+  multiplicadores_atendimentos as (
+    select
+      ma.multiplicador_usuario_id as usuario_id,
+      ma.label,
+      count(*)::int as atendimentos
+    from actions a
+    join multiplicadores_atribuicoes ma
+      on ma.inscrito_usuario_id = a.usuario_id
+    group by ma.multiplicador_usuario_id, ma.label
+  ),
+  multiplicadores_atendidos as (
+    select
+      ma.multiplicador_usuario_id as usuario_id,
+      ma.label,
+      count(distinct a.usuario_id)::int as atendidos
+    from actions a
+    join multiplicadores_atribuicoes ma
+      on ma.inscrito_usuario_id = a.usuario_id
+    group by ma.multiplicador_usuario_id, ma.label
+  ),
+  multiplicadores_usuarios as (
+    select
+      ma.multiplicador_usuario_id as usuario_id,
+      ma.label,
+      count(distinct ma.inscrito_usuario_id)::int as usuarios
+    from multiplicadores_atribuicoes ma
+    group by ma.multiplicador_usuario_id, ma.label
+  ),
+  multiplicadores_metricas as (
+    select
+      'multiplicadores'::text as familia,
+      mb.label,
+      coalesce(mi.inscritos, 0)::int as inscritos,
+      coalesce(mat.atendimentos, 0)::int as atendimentos,
+      case
+        when coalesce(mi.inscritos, 0) > 0
+          then least(coalesce(mad.atendidos, 0), mi.inscritos)::int
+        else coalesce(mad.atendidos, 0)::int
+      end as atendidos,
+      coalesce(mu.usuarios, 0)::int as usuarios,
+      case
+        when coalesce(mi.inscritos, 0) > 0
+          then round((least(coalesce(mad.atendidos, 0), mi.inscritos)::numeric / mi.inscritos::numeric) * 100, 2)
+        else 0
+      end as conversao_pct
+    from multiplicadores_base mb
+    left join multiplicadores_inscritos mi
+      on mi.usuario_id = mb.usuario_id
+     and mi.label = mb.label
+    left join multiplicadores_atendimentos mat
+      on mat.usuario_id = mb.usuario_id
+     and mat.label = mb.label
+    left join multiplicadores_atendidos mad
+      on mad.usuario_id = mb.usuario_id
+     and mad.label = mb.label
+    left join multiplicadores_usuarios mu
+      on mu.usuario_id = mb.usuario_id
+     and mu.label = mb.label
+    where coalesce(mb.label, '') <> ''
+  ),
   fontes_numericas as (
     select
       'geral'::text as familia,
@@ -759,6 +890,18 @@ begin
       usuarios,
       conversao_pct
     from by_fonte
+
+    union all
+
+    select
+      mm.familia,
+      mm.label,
+      mm.inscritos,
+      mm.atendimentos,
+      mm.atendidos,
+      mm.usuarios,
+      mm.conversao_pct
+    from multiplicadores_metricas mm
 
     union all
 
@@ -1258,3 +1401,4 @@ begin
 
   return v_result;
 end;
+$$;

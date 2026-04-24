@@ -2274,6 +2274,15 @@
       });
     }
 
+    function sourceRowShouldAppear(row) {
+      const atendimentos = Number(row?.atendimentos || 0);
+      return Number.isFinite(atendimentos) && atendimentos > 0;
+    }
+
+    function filterVisibleSourceRows(rows = []) {
+      return (Array.isArray(rows) ? rows : []).filter(sourceRowShouldAppear);
+    }
+
     function sourceKeyFromName(sourceName) {
       return normalizeTextKey(sourceName);
     }
@@ -2428,7 +2437,7 @@
         }
       }
 
-      const rows = sortSourceRows(
+      const rows = filterVisibleSourceRows(sortSourceRows(
         Array.from(bySource.values()).map((bucket) => {
           const inscritos = bucket.inscritoUserIds.size + Number(bucket.inscritosFallback || 0);
           const atendimentos = Number(bucket.atendimentos || 0);
@@ -2448,7 +2457,7 @@
             canOpenDetails: true,
           };
         })
-      );
+      ));
 
       const totalInscritos = rows.reduce((sum, row) => sum + Number(row.inscritos || 0), 0);
       const totalAtendimentos = rows.reduce((sum, row) => sum + Number(row.atendimentos || 0), 0);
@@ -2637,7 +2646,7 @@
         }
       }
 
-      const rows = sortSourceRows(Array.from(bySource.values()).map((row) => {
+      const rowsAll = sortSourceRows(Array.from(bySource.values()).map((row) => {
         const inscritos = Number(row.inscritos || 0);
         const atendidos = Number(row.atendidos || 0);
         return {
@@ -2645,21 +2654,34 @@
           conversao: sourceConversionRatio(inscritos, atendidos),
         };
       }));
+      const rows = filterVisibleSourceRows(rowsAll);
+      const hiddenZeroAtendimentoRows = rows.length !== rowsAll.length;
 
       const fallbackTotalInscritos = rows.reduce((sum, row) => sum + Number(row.inscritos || 0), 0);
       const fallbackTotalAtendimentos = rows.reduce((sum, row) => sum + Number(row.atendimentos || 0), 0);
       const fallbackTotalAtendidos = rows.reduce((sum, row) => sum + Number(row.atendidos || 0), 0);
       const fallbackTotalEventos = rows.reduce((sum, row) => sum + Number(row.eventos || 0), 0);
       const fallbackTotalUsuarios = rows.reduce((sum, row) => sum + Number(row.usuarios || 0), 0);
-      const totalItems = Math.max(firstFiniteNumber(totalsRaw, ["itens", "items", "qtd", "total"]), rows.length);
-      const totalInscritos = firstFiniteNumber(totalsRaw, ["inscritos", "inscricoes", "entradas", "qtd_inscritos", "qtd_entradas"]) || fallbackTotalInscritos;
-      const totalAtendimentos = firstFiniteNumber(totalsRaw, ["atendimentos", "qtd_atendimentos", "acoes", "qtd_acoes"]) || fallbackTotalAtendimentos;
-      const totalAtendidos = Math.max(
-        sourceAttendedCountFromRecord(totalsRaw, totalInscritos, totalAtendimentos),
-        fallbackTotalAtendidos
-      );
+      const canUsePayloadTotals = !hiddenZeroAtendimentoRows;
+      const totalItems = canUsePayloadTotals
+        ? Math.max(firstFiniteNumber(totalsRaw, ["itens", "items", "qtd", "total"]), rows.length)
+        : rows.length;
+      const totalInscritos = canUsePayloadTotals
+        ? (firstFiniteNumber(totalsRaw, ["inscritos", "inscricoes", "entradas", "qtd_inscritos", "qtd_entradas"]) || fallbackTotalInscritos)
+        : fallbackTotalInscritos;
+      const totalAtendimentos = canUsePayloadTotals
+        ? (firstFiniteNumber(totalsRaw, ["atendimentos", "qtd_atendimentos", "acoes", "qtd_acoes"]) || fallbackTotalAtendimentos)
+        : fallbackTotalAtendimentos;
+      const totalAtendidos = canUsePayloadTotals
+        ? Math.max(
+            sourceAttendedCountFromRecord(totalsRaw, totalInscritos, totalAtendimentos),
+            fallbackTotalAtendidos
+          )
+        : fallbackTotalAtendidos;
       const totalEventos = fallbackTotalEventos > 0 ? fallbackTotalEventos : totalAtendimentos;
-      const totalUsuarios = firstFiniteNumber(totalsRaw, ["usuarios", "usuarios_unicos", "users", "qtd_usuarios"]) || fallbackTotalUsuarios;
+      const totalUsuarios = canUsePayloadTotals
+        ? (firstFiniteNumber(totalsRaw, ["usuarios", "usuarios_unicos", "users", "qtd_usuarios"]) || fallbackTotalUsuarios)
+        : fallbackTotalUsuarios;
       const avgConversao = totalInscritos > 0
         ? sourceConversionRatio(totalInscritos, totalAtendidos)
         : (rows.length ? rows.reduce((sum, row) => sum + Number(row.conversao || 0), 0) / rows.length : 0);
@@ -4260,6 +4282,19 @@
         return `${text.slice(0, Math.max(1, max - 3)).trim()}...`;
       };
 
+      const fitTextToWidth = (text, maxWidth) => {
+        const raw = String(text || "").trim();
+        if (!raw) return "";
+        if (ctx.measureText(raw).width <= maxWidth) return raw;
+        let out = raw;
+        while (out.length > 1) {
+          const candidate = `${out.slice(0, -1).trim()}...`;
+          if (ctx.measureText(candidate).width <= maxWidth) return candidate;
+          out = out.slice(0, -1);
+        }
+        return raw.slice(0, 1);
+      };
+
       const wrapByWidth = (text, maxWidth, maxLines = 3) => {
         const words = String(text || "").trim().split(/\s+/).filter(Boolean);
         if (!words.length) return [];
@@ -4272,11 +4307,13 @@
             current = candidate;
             continue;
           }
-          if (current) lines.push(current);
-          current = word;
+          if (current) {
+            lines.push(fitTextToWidth(current, maxWidth));
+          }
+          current = fitTextToWidth(word, maxWidth);
           if (lines.length >= maxLines - 1) break;
         }
-        if (current && lines.length < maxLines) lines.push(current);
+        if (current && lines.length < maxLines) lines.push(fitTextToWidth(current, maxWidth));
         if (lines.length > maxLines) lines.length = maxLines;
         if (words.length && lines.length === maxLines) {
           const consumed = lines.join(" ").split(/\s+/).length;
@@ -5929,13 +5966,14 @@
       const familyMeta = analytics?.meta || getSourceFamilyMeta(family);
       const selectedUfRaw = sanitizeFilterValue(state?.filters?.uf);
       const selectedUfCode = resolveUfCode(selectedUfRaw);
-      const rowsRaw = Array.isArray(analytics?.rows) ? analytics.rows : [];
+      const rowsRaw = filterVisibleSourceRows(Array.isArray(analytics?.rows) ? analytics.rows : []);
       const rows = !analytics?.preFiltered && selectedUfRaw
         ? rowsRaw.filter((row) => sourceRowMatchesSelectedUf(row, selectedUfCode, selectedUfRaw))
         : rowsRaw;
+      const top10Raw = filterVisibleSourceRows(Array.isArray(analytics?.top10) ? analytics.top10 : []);
       const top10 = selectedUfRaw
         ? rows.slice(0, SOURCE_BUBBLE_LIMIT)
-        : (Array.isArray(analytics?.top10) ? analytics.top10 : rows.slice(0, SOURCE_BUBBLE_LIMIT));
+        : (top10Raw.length ? top10Raw : rows.slice(0, SOURCE_BUBBLE_LIMIT));
       const byKey = new Map();
       for (const row of rows) {
         const key = sourceKeyFromName(row?.source);
