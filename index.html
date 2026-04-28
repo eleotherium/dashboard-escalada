@@ -739,7 +739,7 @@
       height: 6px;
       border-radius: 999px;
       margin-bottom: 4px;
-      background: linear-gradient(90deg, #12309b 0%, #2a4fda 20%, #00f9ff 40%, #00d95d 62%, #ffc940 80%, #ff3b30 100%);
+      background: linear-gradient(90deg, #12309b 0%, #2a4fda 18%, #00f9ff 34%, #00d95d 50%, #9fff2f 64%, #ffc940 74%, #ff7a1a 84%, #ff3b30 100%);
     }
 
     .leaflet-heat-legend .labels {
@@ -835,6 +835,53 @@
       font-size: 0.78rem;
       font-weight: 700;
       flex-shrink: 0;
+    }
+
+    .uf-pill.uf-rank-gold {
+      border-color: #d6a300;
+      background: linear-gradient(180deg, #fff8dd 0%, #ffe8a3 100%);
+      box-shadow: 0 8px 18px rgba(181, 125, 16, 0.18);
+    }
+
+    .uf-pill.uf-rank-silver {
+      border-color: #94a3b8;
+      background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+      box-shadow: 0 8px 18px rgba(71, 85, 105, 0.14);
+    }
+
+    .uf-pill.uf-rank-bronze {
+      border-color: #c47b42;
+      background: linear-gradient(180deg, #fff4ea 0%, #ffd2aa 100%);
+      box-shadow: 0 8px 18px rgba(154, 82, 32, 0.16);
+    }
+
+    .uf-pill.uf-rank-gold span {
+      color: #6f4f00 !important;
+    }
+
+    .uf-pill.uf-rank-silver span {
+      color: #334155 !important;
+    }
+
+    .uf-pill.uf-rank-bronze span {
+      color: #7c3f12 !important;
+    }
+
+    .uf-pill.active,
+    .uf-pill.uf-rank-gold.active,
+    .uf-pill.uf-rank-silver.active,
+    .uf-pill.uf-rank-bronze.active {
+      border-color: transparent;
+      background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-primary-2) 100%);
+      color: #fff;
+      box-shadow: 0 10px 18px rgba(42, 79, 218, 0.3);
+    }
+
+    .uf-pill.active span,
+    .uf-pill.uf-rank-gold.active span,
+    .uf-pill.uf-rank-silver.active span,
+    .uf-pill.uf-rank-bronze.active span {
+      color: #fff !important;
     }
 
     .map-empty-state {
@@ -1367,6 +1414,35 @@
       SE: "Sergipe",
       TO: "Tocantins",
     };
+    const UF_CODE_TO_DISPLAY_NAME = {
+      AC: "Acre",
+      AL: "Alagoas",
+      AP: "Amap\u00e1",
+      AM: "Amazonas",
+      BA: "Bahia",
+      CE: "Cear\u00e1",
+      DF: "Distrito Federal",
+      ES: "Esp\u00edrito Santo",
+      GO: "Goi\u00e1s",
+      MA: "Maranh\u00e3o",
+      MT: "Mato Grosso",
+      MS: "Mato Grosso do Sul",
+      MG: "Minas Gerais",
+      PA: "Par\u00e1",
+      PB: "Para\u00edba",
+      PR: "Paran\u00e1",
+      PE: "Pernambuco",
+      PI: "Piau\u00ed",
+      RJ: "Rio de Janeiro",
+      RN: "Rio Grande do Norte",
+      RS: "Rio Grande do Sul",
+      RO: "Rond\u00f4nia",
+      RR: "Roraima",
+      SC: "Santa Catarina",
+      SP: "S\u00e3o Paulo",
+      SE: "Sergipe",
+      TO: "Tocantins",
+    };
     const UF_CITY_TOTALS = {
       AC: 22, AL: 102, AM: 62, AP: 16, BA: 417, CE: 184, DF: 1, ES: 78, GO: 246, MA: 217,
       MG: 853, MS: 79, MT: 141, PA: 144, PB: 223, PE: 185, PI: 224, PR: 399, RJ: 92, RN: 167,
@@ -1878,6 +1954,46 @@
       return "";
     }
 
+    function isUfCodeValue(value) {
+      const raw = String(value || "").trim().toUpperCase();
+      return Boolean(raw && UF_CENTROIDS[raw]);
+    }
+
+    function preferredUfFilterValue(current, candidate) {
+      const next = String(candidate || "").trim();
+      if (!isValidUfValue(next)) return current;
+      const nextCode = resolveUfCode(next);
+      if (!nextCode) return current || next;
+
+      const prev = String(current || "").trim();
+      if (!isValidUfValue(prev)) return next;
+      const prevCode = resolveUfCode(prev);
+      if (prevCode && prevCode !== nextCode) return prev;
+
+      if (isUfCodeValue(prev) && !isUfCodeValue(next)) return next;
+      return prev;
+    }
+
+    function ufDisplayName(value) {
+      const code = resolveUfCode(value);
+      if (code) return UF_CODE_TO_DISPLAY_NAME[code] || UF_CODE_TO_NAME[code] || code;
+      return formatUfDisplay(value);
+    }
+
+    function formatRankPosition(index) {
+      return `${Number(index) + 1}\u00b0`;
+    }
+
+    function ufRankTone(index, count = 1) {
+      if (!Number.isFinite(Number(count)) || Number(count) <= 0) return "";
+      return ["gold", "silver", "bronze"][Number(index)] || "";
+    }
+
+    function ufRankClass(index, count = 1) {
+      const tone = ufRankTone(index, count);
+      return tone ? `uf-rank-${tone}` : "";
+    }
+
     function mergeUfOptions(...lists) {
       const byCode = new Map();
       const extras = new Set();
@@ -1887,14 +2003,44 @@
           if (!isValidUfValue(uf)) continue;
           const code = resolveUfCode(uf);
           if (code) {
-            if (!byCode.has(code)) byCode.set(code, uf);
+            byCode.set(code, preferredUfFilterValue(byCode.get(code), uf));
           } else {
             extras.add(uf);
           }
         }
       }
       const merged = [...byCode.values(), ...extras.values()];
-      return uniq(merged).sort((a, b) => String(a).localeCompare(String(b), "pt-BR"));
+      return uniq(merged).sort((a, b) => ufDisplayName(a).localeCompare(ufDisplayName(b), "pt-BR"));
+    }
+
+    function sortedAggregatedUfRows(rows) {
+      const byCode = new Map();
+      for (const row of (Array.isArray(rows) ? rows : [])) {
+        const code = resolveUfCode(row?.uf);
+        if (!code || !isValidUfValue(code)) continue;
+
+        if (!byCode.has(code)) {
+          byCode.set(code, { uf: code, inscritos: 0, atendimentos: 0, ativos: 0 });
+        }
+
+        const bucket = byCode.get(code);
+        const inscritos = Number(row?.inscritos || 0);
+        const atendimentos = Number(row?.atendimentos || 0);
+        const ativos = Number(row?.ativos || 0);
+        bucket.inscritos += Number.isFinite(inscritos) ? inscritos : 0;
+        bucket.atendimentos += Number.isFinite(atendimentos) ? atendimentos : 0;
+        bucket.ativos += Number.isFinite(ativos) ? ativos : 0;
+      }
+
+      return Array.from(byCode.values()).sort((a, b) => {
+        const atendDiff = Number(b.atendimentos || 0) - Number(a.atendimentos || 0);
+        if (atendDiff !== 0) return atendDiff;
+        const inscrDiff = Number(b.inscritos || 0) - Number(a.inscritos || 0);
+        if (inscrDiff !== 0) return inscrDiff;
+        const ativosDiff = Number(b.ativos || 0) - Number(a.ativos || 0);
+        if (ativosDiff !== 0) return ativosDiff;
+        return String(a.uf || "").localeCompare(String(b.uf || ""), "pt-BR");
+      });
     }
 
     function resolveUfGeo(value) {
@@ -2098,6 +2244,71 @@
       if (city && ufCode) return `${city} (${ufCode})`;
       if (city) return city;
       return ufCode || "Local";
+    }
+
+    function isUnknownTerritoryCityLabel(value) {
+      const label = normalizeTextKey(value);
+      const unknown = normalizeTextKey(UNKNOWN_CITY_LABEL);
+      return label === unknown || label.startsWith(`${unknown} (`);
+    }
+
+    function isUnknownTerritoryCityRow(row) {
+      return isUnknownTerritoryCityLabel(resolveTerritoryCityLabel(row, { allowUnknown: true }));
+    }
+
+    function compareTerritoryCityRows(a, b) {
+      const unknownA = isUnknownTerritoryCityRow(a);
+      const unknownB = isUnknownTerritoryCityRow(b);
+      if (unknownA !== unknownB) return unknownA ? 1 : -1;
+
+      const wa = Number(a?.weight ?? a?.atendimentos ?? 0);
+      const wb = Number(b?.weight ?? b?.atendimentos ?? 0);
+      if (wb !== wa) return wb - wa;
+
+      return String(mapCityFocusLabelFromRow(a)).localeCompare(String(mapCityFocusLabelFromRow(b)), "pt-BR");
+    }
+
+    function topTerritoryCityRows(rows, limit = 10) {
+      const source = (Array.isArray(rows) ? rows : []).filter((row) => Number(row?.weight ?? row?.atendimentos ?? 0) > 0);
+      const known = source.filter((row) => !isUnknownTerritoryCityRow(row)).sort(compareTerritoryCityRows);
+      const unknown = source.filter(isUnknownTerritoryCityRow).sort(compareTerritoryCityRows);
+      const max = Math.max(0, Number(limit || 0));
+      if (!max) return [...known, ...unknown];
+
+      const result = known.slice(0, max);
+      if (unknown.length) {
+        if (result.length >= max) result.splice(max - 1, 1, unknown[0]);
+        else result.push(unknown[0]);
+      }
+      return result;
+    }
+
+    function topTerritoryCityPairs(pairs, limit = 10) {
+      const source = (Array.isArray(pairs) ? pairs : [])
+        .filter(([label, count]) => String(label || "").trim() && Number(count || 0) > 0);
+      const known = source
+        .filter(([label]) => !isUnknownTerritoryCityLabel(label))
+        .sort((a, b) => {
+          const diff = Number(b[1] || 0) - Number(a[1] || 0);
+          if (diff !== 0) return diff;
+          return String(a[0]).localeCompare(String(b[0]), "pt-BR");
+        });
+      const unknown = source
+        .filter(([label]) => isUnknownTerritoryCityLabel(label))
+        .sort((a, b) => {
+          const diff = Number(b[1] || 0) - Number(a[1] || 0);
+          if (diff !== 0) return diff;
+          return String(a[0]).localeCompare(String(b[0]), "pt-BR");
+        });
+      const max = Math.max(0, Number(limit || 0));
+      if (!max) return [...known, ...unknown];
+
+      const result = known.slice(0, max);
+      if (unknown.length) {
+        if (result.length >= max) result.splice(max - 1, 1, unknown[0]);
+        else result.push(unknown[0]);
+      }
+      return result;
     }
 
     function matchesMapCityFocus(pointKey, focusKey) {
@@ -3814,6 +4025,27 @@
       return { labels, values: labels.map(d => m.get(d)) };
     }
 
+    function trimSeriesToDataBounds(series) {
+      const labels = Array.isArray(series?.labels) ? series.labels : [];
+      const values = Array.isArray(series?.values) ? series.values.map((v) => Number(v || 0)) : [];
+      const len = Math.min(labels.length, values.length);
+      if (!len) return { labels: [], values: [] };
+
+      let first = -1;
+      let last = -1;
+      for (let i = 0; i < len; i++) {
+        if (Number(values[i] || 0) > 0) {
+          if (first < 0) first = i;
+          last = i;
+        }
+      }
+      if (first < 0 || last < first) return { labels: [], values: [] };
+      return {
+        labels: labels.slice(first, last + 1),
+        values: values.slice(first, last + 1),
+      };
+    }
+
     function topByKey(events, key, whereFn = null, limit = 10) {
       const m = new Map();
       for (const e of events) {
@@ -4554,17 +4786,22 @@
           return String(a[0]).localeCompare(String(b[0]), "pt-BR");
         });
       box.innerHTML = "";
-      for (const [code, count] of items) {
+      items.forEach(([code, count], idx) => {
+        const rankClass = ufRankClass(idx, count);
         const btn = document.createElement("button");
-        btn.className = "uf-pill" + (selectedCode && selectedCode === code ? " active" : "");
+        btn.className = [
+          "uf-pill",
+          rankClass,
+          selectedCode && selectedCode === code ? "active" : "",
+        ].filter(Boolean).join(" ");
         btn.title = code;
-        btn.innerHTML = `<span>${ufSigla(code)}</span><span class="text-slate-500">${fmtInt(count)}</span>`;
+        btn.innerHTML = `<span>${formatRankPosition(idx)} ${ufSigla(code)}</span><span class="text-slate-500">${fmtInt(count)}</span>`;
         btn.addEventListener("click", () => {
           const filterUfValue = valueByCode.get(code) || UF_CODE_TO_NAME[code] || code;
           applyFilters({ uf: filterUfValue }, { immediate: true, reason: "uf-pill" });
         });
         box.appendChild(btn);
-      }
+      });
     }
 
     function updateUfPillsSnapshot(payload) {
@@ -4579,17 +4816,17 @@
           const code = resolveUfCode(rawUf);
           if (!code) continue;
           const count = Number(row?.atendimentos ?? row?.inscritos ?? row?.ativos ?? 0);
-          counts.set(code, Number.isFinite(count) ? count : 0);
-          if (!values.has(code) && isValidUfValue(rawUf)) values.set(code, rawUf);
+          counts.set(code, Number(counts.get(code) || 0) + (Number.isFinite(count) ? count : 0));
+          values.set(code, preferredUfFilterValue(values.get(code), rawUf));
         }
       } else if (Array.isArray(payload?.events) && payload.events.length) {
-        const pairs = topByKey(payload.events, "uf", (e)=>e.type==="atendimento" && isValidUfValue(e.uf), 27);
-        for (const [rawUf, countRaw] of pairs) {
+        for (const e of payload.events) {
+          if (e?.type !== "atendimento" || !isValidUfValue(e?.uf)) continue;
+          const rawUf = String(e.uf || "").trim();
           const code = resolveUfCode(rawUf);
           if (!code) continue;
-          const count = Number(countRaw || 0);
-          counts.set(code, Number.isFinite(count) ? count : 0);
-          if (!values.has(code) && isValidUfValue(rawUf)) values.set(code, String(rawUf).trim());
+          counts.set(code, Number(counts.get(code) || 0) + 1);
+          values.set(code, preferredUfFilterValue(values.get(code), rawUf));
         }
       }
 
@@ -4597,7 +4834,7 @@
       for (const rawUf of metaUfs) {
         const code = resolveUfCode(rawUf);
         if (!code) continue;
-        if (!values.has(code) && isValidUfValue(rawUf)) values.set(code, String(rawUf).trim());
+        values.set(code, preferredUfFilterValue(values.get(code), rawUf));
       }
 
       if ((!ufFiltered || !state.ufPillsCountsByCode.size) && counts.size) {
@@ -4829,7 +5066,7 @@
             <span data-role="low">Baixo: --</span>
             <span data-role="high">Alto: --</span>
           </div>
-          <div class="meta">Intensidade por atendimentos</div>
+          <div class="meta">Escala logar\u00edtmica por atendimentos</div>
         `;
         L.DomEvent.disableClickPropagation(div);
         return div;
@@ -4866,14 +5103,78 @@
       highEl.textContent = `Alto: ${fmtHeatLegendValue(high)}`;
     }
 
+    function heatScaleBounds(items, valueFn) {
+      const values = [];
+      const readValue = typeof valueFn === "function"
+        ? valueFn
+        : ((item) => item);
+
+      for (const item of (Array.isArray(items) ? items : [])) {
+        const n = Number(readValue(item) || 0);
+        if (Number.isFinite(n) && n > 0) values.push(n);
+      }
+
+      if (!values.length) return { min: 0, baseline: 0, max: 0 };
+      values.sort((a, b) => a - b);
+      // Keep tiny outliers from making all low-volume places look warm.
+      const baselineIndex = values.length >= 5
+        ? Math.floor((values.length - 1) * 0.2)
+        : 0;
+      return {
+        min: values[0],
+        baseline: values[baselineIndex],
+        max: values[values.length - 1],
+      };
+    }
+
+    function heatLogIntensity(value, bounds, floor = 0.08) {
+      const weight = Number(value || 0);
+      const minWeight = Number(bounds?.baseline ?? bounds?.min ?? 0);
+      const maxWeight = Number(bounds?.max || 0);
+      if (!Number.isFinite(weight) || weight <= 0 || !Number.isFinite(maxWeight) || maxWeight <= 0) return 0;
+      if (maxWeight <= minWeight) return 1;
+      if (weight <= minWeight) return floor;
+
+      const logMin = Math.log1p(Math.max(0, minWeight));
+      const logMax = Math.log1p(Math.max(0, maxWeight));
+      const logWeight = Math.log1p(Math.max(0, weight));
+      const range = logMax - logMin;
+      if (!Number.isFinite(range) || range <= 0) return 1;
+
+      return clamp((logWeight - logMin) / range, floor, 1);
+    }
+
     function heatColorForIntensity(v) {
       const x = clamp(Number(v || 0), 0, 1);
-      if (x >= 0.85) return "#ff3b30";
-      if (x >= 0.65) return "#ffc940";
-      if (x >= 0.45) return "#9fff2f";
-      if (x >= 0.3) return "#00d95d";
-      if (x >= 0.15) return "#00f9ff";
+      if (x >= 0.92) return "#ff3b30";
+      if (x >= 0.78) return "#ff7a1a";
+      if (x >= 0.66) return "#ffc940";
+      if (x >= 0.52) return "#9fff2f";
+      if (x >= 0.42) return "#00d95d";
+      if (x >= 0.20) return "#00f9ff";
       return "#4d7bff";
+    }
+
+    function heatPeopleMetric(cell, isUfAggregate = false) {
+      const inscritos = Math.max(0, Number(cell?.inscritos || 0));
+      if (isUfAggregate) {
+        return { label: "Inscritos", text: fmtInt(inscritos) };
+      }
+
+      const participantes = Math.max(
+        inscritos,
+        Number(cell?.ativos || 0),
+        Number(cell?.participantes || 0)
+      );
+      if (Number.isFinite(participantes) && participantes > 0) {
+        return { label: "Pessoas", text: fmtInt(participantes) };
+      }
+
+      const atendimentos = Number(cell?.atendimentos || 0);
+      return {
+        label: "Pessoas",
+        text: Number.isFinite(atendimentos) && atendimentos > 0 ? "1+" : "0",
+      };
     }
 
     function heatTooltipHtml(cell) {
@@ -4883,12 +5184,12 @@
       const title = (noUfSelected || isUfAggregate)
         ? `UF ${ufCode || ufSigla(cell?.uf) || String(cell?.uf || "").trim() || "N/A"}`
         : (mapCityFocusLabelFromRow({ city: cell?.city, uf: cell?.uf }) || "Local");
-      const inscritos = Number(cell?.inscritos || 0);
+      const peopleMetric = heatPeopleMetric(cell, noUfSelected || isUfAggregate);
       const atendimentos = Number(cell?.atendimentos || 0);
       return `
         <div class="heat-tip-title">${escapeHtml(title)}</div>
         <div>Atendimentos: <strong>${escapeHtml(fmtInt(atendimentos))}</strong></div>
-        <div>Inscritos: <strong>${escapeHtml(fmtInt(inscritos))}</strong></div>
+        <div>${escapeHtml(peopleMetric.label)}: <strong>${escapeHtml(peopleMetric.text)}</strong></div>
       `;
     }
 
@@ -4897,11 +5198,14 @@
       ctx.fallbackHeatLayer.clearLayers();
       const renderer = ctx?.heatRenderer || null;
       let drawn = 0;
+      const focusedCells = [];
       for (const cell of heatData || []) {
         const lat = Number(cell?.lat);
         const lng = Number(cell?.lng);
         const intensity = clamp(Number(cell?.intensity || 0), 0.1, 1);
+        const isFocused = Boolean(cell?.isFocused);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+        if (isFocused) focusedCells.push({ cell, lat, lng, intensity });
 
         const baseOptions = {
           pane: "heatPane",
@@ -4920,12 +5224,12 @@
 
         const core = L.circleMarker([lat, lng], {
           ...baseOptions,
-          radius: 5 + (intensity * 12),
+          radius: (isFocused ? 8 : 5) + (intensity * (isFocused ? 14 : 12)),
           stroke: true,
-          weight: 1,
-          color: "rgba(255,255,255,0.45)",
+          weight: isFocused ? 2 : 1,
+          color: isFocused ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.45)",
           fillColor: heatColorForIntensity(intensity),
-          fillOpacity: 0.42 + (intensity * 0.44),
+          fillOpacity: isFocused ? 0.92 : 0.42 + (intensity * 0.44),
           interactive: true,
           bubblingMouseEvents: false,
         });
@@ -4939,6 +5243,25 @@
         ctx.fallbackHeatLayer.addLayer(core);
         drawn++;
       }
+
+      for (const item of focusedCells) {
+        const ringOptions = {
+          pane: "heatPane",
+          radius: 15 + (item.intensity * 19),
+          stroke: true,
+          weight: 3,
+          color: "#0f172a",
+          opacity: 0.95,
+          fill: false,
+          interactive: false,
+        };
+        if (renderer) ringOptions.renderer = renderer;
+        const ring = L.circleMarker([item.lat, item.lng], {
+          ...ringOptions,
+        });
+        ctx.fallbackHeatLayer.addLayer(ring);
+      }
+
       if (typeof ctx.fallbackHeatLayer.bringToFront === "function") {
         ctx.fallbackHeatLayer.bringToFront();
       }
@@ -5087,10 +5410,12 @@
             pane: "heatShadowPane",
             gradient: {
               0.00: "#12309b",
-              0.20: "#2a4fda",
-              0.40: "#00f9ff",
-              0.62: "#00d95d",
-              0.80: "#ffc940",
+              0.18: "#2a4fda",
+              0.34: "#00f9ff",
+              0.50: "#00d95d",
+              0.64: "#9fff2f",
+              0.74: "#ffc940",
+              0.84: "#ff7a1a",
               1.00: "#ff3b30",
             },
           }).addTo(map)
@@ -5366,6 +5691,7 @@
       let inscritos = toFiniteNumberOrNaN(row?.inscritos);
       let atendimentos = toFiniteNumberOrNaN(row?.atendimentos);
       const ativos = Number(row?.ativos || 0);
+      const userId = String(row?.user_id ?? row?.usuario_id ?? "").trim();
 
       if (!Number.isFinite(inscritos)) {
         inscritos = rowInscritosCount(row);
@@ -5375,12 +5701,13 @@
       }
 
       const weight = Math.max(Number(atendimentos || 0), 0);
-      if (!Number.isFinite(weight) || weight <= 0) return null;
+      const hasMetric = weight > 0 || Number(inscritos || 0) > 0 || Number(ativos || 0) > 0;
+      if (!Number.isFinite(weight) || !hasMetric) return null;
 
       const city = resolveTerritoryCityLabel(row, { allowUnknown: true });
       if (!city) return null;
       const focusKey = mapCityFocusKeyFromRow({ uf, city });
-      return { lat, lng, uf, weight, city, inscritos: Number(inscritos || 0), atendimentos: Number(atendimentos || 0), ativos, focusKey };
+      return { lat, lng, uf, weight, city, inscritos: Number(inscritos || 0), atendimentos: Number(atendimentos || 0), ativos, focusKey, userId };
     }
 
     function buildLeafletHeatCells(events, selectedUfCode, focusedCityKey = "", options = {}) {
@@ -5394,21 +5721,24 @@
         if (!point) continue;
         if (selectedUfCode && point.uf && point.uf !== selectedUfCode) continue;
         if (selectedUfCode && pointInSelectedUf && !pointInSelectedUf(point.lat, point.lng)) continue;
-        if (focusKey && !matchesMapCityFocus(point.focusKey, focusKey)) continue;
         const lat = Number(point.lat);
         const lng = Number(point.lng);
         const key = point.focusKey || `${point.uf || ""}|city:${normalizeTextKey(point.city || "")}`;
+        const isFocused = Boolean(focusKey && matchesMapCityFocus(point.focusKey, focusKey));
         const prev = buckets.get(key);
         if (prev) {
           prev.weight += point.weight;
           prev.inscritos += Number(point.inscritos || 0);
           prev.atendimentos += Number(point.atendimentos || 0);
           prev.ativos += Number(point.ativos || 0);
-          prev.latWeightSum += lat * Math.max(1, Number(point.weight || 0));
-          prev.lngWeightSum += lng * Math.max(1, Number(point.weight || 0));
-          prev.weightSum += Math.max(1, Number(point.weight || 0));
+          const coordWeight = Math.max(1, Number(point.weight || 0));
+          prev.latWeightSum += lat * coordWeight;
+          prev.lngWeightSum += lng * coordWeight;
+          prev.weightSum += coordWeight;
           if (!prev.city && point.city) prev.city = point.city;
           if (!prev.uf && point.uf) prev.uf = point.uf;
+          if (isFocused) prev.isFocused = true;
+          if (point.userId) prev.userIds.add(point.userId);
         } else {
           const w = Math.max(1, Number(point.weight || 0));
           buckets.set(key, {
@@ -5424,22 +5754,34 @@
             latWeightSum: lat * w,
             lngWeightSum: lng * w,
             weightSum: w,
+            isFocused,
+            userIds: point.userId ? new Set([point.userId]) : new Set(),
           });
         }
       }
 
       const cells = Array.from(buckets.values())
+        .filter((c) => Number(c.weight || 0) > 0)
         .sort((a, b) => b.weight - a.weight)
         .slice(0, MAP_MAX_POINTS);
 
       if (!cells.length) return [];
-      const maxWeight = Math.max(1, ...cells.map((c) => Number(c.weight || 0)));
-      return cells.map((c) => ({
-        ...c,
-        lat: Number(c.weightSum) > 0 ? (Number(c.latWeightSum || 0) / Number(c.weightSum || 1)) : Number(c.lat),
-        lng: Number(c.weightSum) > 0 ? (Number(c.lngWeightSum || 0) / Number(c.weightSum || 1)) : Number(c.lng),
-        intensity: clamp(Number(c.weight || 0) / maxWeight, 0.08, 1),
-      }));
+      const heatBounds = heatScaleBounds(cells, (c) => c?.weight);
+      return cells.map((c) => {
+        const participantes = Math.max(
+          Number(c.inscritos || 0),
+          Number(c.ativos || 0),
+          Number(c.userIds?.size || 0)
+        );
+        return {
+          ...c,
+          userIds: undefined,
+          participantes,
+          lat: Number(c.weightSum) > 0 ? (Number(c.latWeightSum || 0) / Number(c.weightSum || 1)) : Number(c.lat),
+          lng: Number(c.weightSum) > 0 ? (Number(c.lngWeightSum || 0) / Number(c.weightSum || 1)) : Number(c.lng),
+          intensity: heatLogIntensity(c.weight, heatBounds, 0.08),
+        };
+      });
     }
 
     function buildUfHeatCells(events) {
@@ -5454,21 +5796,21 @@
         if (!Number.isFinite(atendimentos)) {
           atendimentos = rowAtendimentosCount(row);
         }
-        if (!Number.isFinite(atendimentos) || atendimentos <= 0) continue;
 
         let inscritos = toFiniteNumberOrNaN(row?.inscritos);
         if (!Number.isFinite(inscritos)) inscritos = rowInscritosCount(row);
         if (!Number.isFinite(inscritos)) inscritos = 0;
+        if ((!Number.isFinite(atendimentos) || atendimentos <= 0) && inscritos <= 0) continue;
 
         const prev = byUf.get(code) || { inscritos: 0, atendimentos: 0 };
-        prev.inscritos += inscritos;
-        prev.atendimentos += atendimentos;
+        prev.inscritos += Math.max(0, inscritos);
+        prev.atendimentos += Math.max(0, Number(atendimentos || 0));
         byUf.set(code, prev);
       }
 
       if (!byUf.size) return [];
       const items = Array.from(byUf.entries());
-      const maxW = Math.max(1, ...items.map(([, agg]) => Number(agg?.atendimentos || 0)));
+      const heatBounds = heatScaleBounds(items, ([, agg]) => agg?.atendimentos);
 
       return items
         .map(([code, agg]) => {
@@ -5480,7 +5822,7 @@
           return {
             lat: Number(geo.lat),
             lng: Number(geo.lng),
-            intensity: clamp(atendimentos / maxW, 0.35, 1),
+            intensity: heatLogIntensity(atendimentos, heatBounds, 0.08),
             weight: atendimentos,
             city: "",
             uf: code,
@@ -6049,7 +6391,7 @@
       const raw = state.raw || {};
       const k = raw.kpis || {};
       const series = Array.isArray(raw.series_daily) ? raw.series_daily : [];
-      const byUfRows = Array.isArray(raw.by_uf) ? raw.by_uf.filter((r)=>isValidUfValue(r?.uf)) : [];
+      const byUfRows = sortedAggregatedUfRows(raw.by_uf);
       const byPubRows = Array.isArray(raw.by_publico) ? raw.by_publico : [];
       const byCityRows = Array.isArray(raw.by_cidade) ? raw.by_cidade.filter((r)=>isValidUfValue(r?.uf)) : [];
       const byCepRowsBase = Array.isArray(raw.by_cep) ? raw.by_cep.filter((r)=>normalizeCep(r?.cep)) : [];
@@ -6057,14 +6399,14 @@
       const topTiposRows = Array.isArray(raw.top_tipos) ? raw.top_tipos : [];
       const topItensRows = Array.isArray(raw.top_itens) ? raw.top_itens : [];
 
-      const sIns = {
+      const sIns = trimSeriesToDataBounds({
         labels: series.map((r)=>String(r.date || "")),
         values: series.map((r)=>Number(r.inscritos || 0))
-      };
-      const sAt = {
+      });
+      const sAt = trimSeriesToDataBounds({
         labels: series.map((r)=>String(r.date || "")),
         values: series.map((r)=>Number(r.atendimentos || 0))
-      };
+      });
 
       const byUfAt = byUfRows.map((r)=>[String(r.uf || "N/A"), Number(r.atendimentos || 0)]);
       const byPubAt = byPubRows.map((r)=>[String(r.publico || "N/A"), Number(r.atendimentos || 0)]);
@@ -6081,16 +6423,7 @@
       const topCitiesLimit = 10;
       const geoPoints = buildAggregatedTerritoryGeoPoints(byUfRows, byCityRows, byCepRows, selectedUfCode);
       const topGeoCitiesOrdered = selectedUfCode
-        ? [...geoPoints]
-            .sort((a, b) => {
-              const wa = Number(a?.weight || 0);
-              const wb = Number(b?.weight || 0);
-              if (wb !== wa) return wb - wa;
-              const la = mapCityFocusLabelFromRow(a);
-              const lb = mapCityFocusLabelFromRow(b);
-              return String(la).localeCompare(String(lb), "pt-BR");
-            })
-            .slice(0, topCitiesLimit)
+        ? topTerritoryCityRows(geoPoints, topCitiesLimit)
         : [];
       const ufCoverage = computeUfCoverageFromRows(byCityRows, state.filters.uf, {
         byUfRows,
@@ -6185,15 +6518,10 @@
 
       if (state.page === "territory") {
         const byCityAt = selectedUfCode
-          ? [...geoPoints]
-              .map((point) => [mapCityFocusLabelFromRow(point), Number(point?.atendimentos || 0)])
-              .filter(([label, count]) => String(label || "").trim() && Number(count || 0) > 0)
-              .sort((a, b) => {
-                const diff = Number(b[1] || 0) - Number(a[1] || 0);
-                if (diff !== 0) return diff;
-                return String(a[0]).localeCompare(String(b[0]), "pt-BR");
-              })
-              .slice(0, 10)
+          ? topTerritoryCityPairs(
+              geoPoints.map((point) => [mapCityFocusLabelFromRow(point), Number(point?.atendimentos || 0)]),
+              topCitiesLimit
+            )
           : [];
         const territoryPairs = selectedUfCode ? byCityAt : byUfAt.slice(0, 10);
         const territoryChartTitle = selectedUfCode
@@ -6340,14 +6668,7 @@
         ? buildLeafletHeatCells(state.filtered, selectedUfCode, "")
         : [];
       const topGeoCities = selectedUfCode
-        ? [...mapCityRows]
-            .sort((a, b) => {
-              const wa = Number(a?.weight || 0);
-              const wb = Number(b?.weight || 0);
-              if (wb !== wa) return wb - wa;
-              return String(mapCityFocusLabelFromRow(a)).localeCompare(String(mapCityFocusLabelFromRow(b)), "pt-BR");
-            })
-            .slice(0, topCitiesLimit)
+        ? topTerritoryCityRows(mapCityRows, topCitiesLimit)
         : [];
       renderTerritoryHighlightHeader(setText, selectedUfCode);
       if (selectedUfCode) {
@@ -6382,14 +6703,15 @@
 
       if (state.page === "territory") {
         const cityAtPairs = selectedUfCode
-          ? topByKey(
-              state.filtered,
-              "city",
-              (e) => e.type === "atendimento" && isValidCityValue(e.city),
-              10
+          ? topTerritoryCityPairs(
+              topByKey(
+                state.filtered,
+                "city",
+                (e) => e.type === "atendimento" && isValidCityValue(e.city),
+                120000
+              ).map(([city, count]) => [`${String(city)} (${selectedUfCode})`, Number(count || 0)]),
+              topCitiesLimit
             )
-              .filter(([label, count]) => String(label || "").trim() && Number(count || 0) > 0)
-              .map(([city, count]) => [`${String(city)} (${selectedUfCode})`, Number(count || 0)])
           : [];
         const territoryPairs = selectedUfCode ? cityAtPairs : ins.byUfAt.slice(0, 10);
         const territoryChartTitle = selectedUfCode
@@ -6441,7 +6763,9 @@
       if (isAggregatedPayload(state.raw)) {
         const raw = state.raw || {};
         const k = raw.kpis || {};
-        const byUf = (raw.by_uf || []).map((r) => [String(r.uf || "N/A"), Number(r.atendimentos || 0)]).slice(0, 5);
+        const byUf = sortedAggregatedUfRows(raw.by_uf)
+          .map((r) => [String(r.uf || "N/A"), Number(r.atendimentos || 0)])
+          .slice(0, 5);
         const byPub = (raw.by_publico || []).map((r) => [String(r.publico || "N/A"), Number(r.atendimentos || 0)]).slice(0, 5);
         const tipos = (raw.top_tipos || [])
           .map((r) => [toSentenceCase(String(r.tipo || "N/A")), Number(r.qtd || 0)])
@@ -6785,7 +7109,7 @@
       for (const uf of ufs) {
         const opt = document.createElement("option");
         opt.value = uf;
-        opt.textContent = uf;
+        opt.textContent = ufDisplayName(uf);
         ufSel.appendChild(opt);
       }
 
@@ -6867,7 +7191,7 @@
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "uf-onboarding-item";
-        btn.textContent = uf;
+        btn.textContent = ufDisplayName(uf);
         btn.addEventListener("click", () => {
           const defaultRange = getDefaultDashboardDateRange();
           const today = normalizeDateYmd(new Date().toISOString().slice(0, 10));
@@ -7470,7 +7794,7 @@
           <div class="col-span-12 card p-5 reveal">
             <div>
               <h2 class="section-title">Atendimentos por UF</h2>
-              <div class="text-sm text-slate-600">Priorize recursos onde a demanda &bull; maior.</div>
+              <div class="text-sm text-slate-600">Rank de UFs</div>
             </div>
             <div id="ufPills" class="mt-4 uf-pills"></div>
           </div>
