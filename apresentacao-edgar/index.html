@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escalada 2026 · Comunidade e professores</title>
+<meta name="description" content="Leitura da evolução recente da comunidade Escalada e dos dados iniciais de professores multiplicadores.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --verde:#00D95C;--verde-claro:#00FF85;--magenta:#FF00FF;--magenta-claro:#FF76FF;
+  --ciano:#00F9FF;--azul:#2A4FDA;--branco:#FFFFFF;--navy:#0A0F36;--navy-2:#161B4A;
+  --display:'Space Grotesk',system-ui,sans-serif;--body:'Figtree',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--body);font-weight:400;min-height:100vh;overflow-x:hidden;
+  background:linear-gradient(160deg,#0A0F36 0%,#2A4FDA 55%,#FF00FF 100%);
+  background-attachment:fixed;color:var(--branco);-webkit-font-smoothing:antialiased;
+}
+.shape-bg{
+  position:fixed;top:-180px;right:-260px;width:720px;height:720px;opacity:.16;
+  pointer-events:none;z-index:0;transform:rotate(-8deg);filter:drop-shadow(-20px 40px 80px rgba(8,11,46,.25));
+}
+.deck{position:relative;z-index:2}
+.topline{
+  position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 6vw;background:linear-gradient(to bottom,rgba(10,15,54,.80),rgba(10,15,54,0));pointer-events:none;
+}
+.brand{font-family:var(--display);font-size:19px;font-weight:800;letter-spacing:-.04em}
+.meta-top{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.72}
+.slide{min-height:100vh;display:flex;align-items:center;padding:56px 6vw;position:relative}
+.slide-inner{width:min(1120px,100%);margin:0 auto}
+.kicker{
+  font-family:var(--mono);font-weight:700;font-size:11px;letter-spacing:.20em;text-transform:uppercase;
+  color:var(--verde-claro);margin-bottom:18px;display:inline-flex;align-items:center;gap:12px;
+}
+.kicker:before{content:"";width:36px;height:1px;background:var(--verde-claro);display:inline-block}
+h1{
+  font-family:var(--display);font-weight:800;font-size:clamp(44px,6vw,86px);
+  line-height:.92;letter-spacing:-.06em;max-width:920px;margin-bottom:22px;
+}
+h2{
+  font-family:var(--display);font-weight:800;font-size:clamp(30px,4.4vw,58px);
+  line-height:.95;letter-spacing:-.05em;max-width:940px;margin-bottom:20px;
+}
+h3{font-family:var(--display);font-weight:700;letter-spacing:-.03em}
+.marker{box-shadow:inset 0 -.18em 0 0 var(--ciano);padding:0 .03em}
+.lead{
+  font-family:var(--display);font-weight:500;font-size:clamp(18px,1.9vw,25px);
+  line-height:1.28;letter-spacing:-.02em;max-width:810px;opacity:.94;margin-bottom:18px;
+}
+.body-copy{font-size:clamp(14px,1.15vw,17px);line-height:1.56;opacity:.84;max-width:880px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:28px}
+.card{
+  background:rgba(10,15,54,.52);border:1px solid rgba(255,255,255,.15);border-radius:24px;
+  padding:24px 22px;backdrop-filter:blur(14px);box-shadow:0 18px 56px rgba(10,15,54,.16);
+}
+.card.span-3{grid-column:span 3}.card.span-4{grid-column:span 4}.card.span-6{grid-column:span 6}.card.span-12{grid-column:span 12}
+.card-code{
+  font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:.20em;text-transform:uppercase;
+  color:var(--ciano);margin-bottom:12px;
+}
+.card-title{font-size:22px;line-height:1.06;margin-bottom:10px}
+.card-desc{font-size:14px;line-height:1.48;opacity:.82}
+.kpi{
+  font-family:var(--display);font-weight:800;font-size:clamp(34px,4vw,58px);
+  line-height:.92;letter-spacing:-.06em;margin-bottom:8px;
+}
+.kpi.green{color:var(--verde-claro)}.kpi.cyan{color:var(--ciano)}.kpi.magenta{color:var(--magenta-claro)}
+.big-note{
+  padding:30px 32px;border-radius:28px;background:rgba(10,15,54,.40);
+  border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(14px);max-width:960px;
+}
+.big-note p{font-family:var(--display);font-size:clamp(20px,2.5vw,34px);font-weight:700;line-height:1.08;letter-spacing:-.04em}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+.chart-card{
+  background:rgba(10,15,54,.52);border:1px solid rgba(255,255,255,.15);border-radius:24px;
+  padding:16px 18px 14px;backdrop-filter:blur(14px);
+}
+.chart-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:8px}
+.chart-head h3{font-size:18px;line-height:1.14;max-width:540px}
+.chart-sub{font-size:12px;line-height:1.45;opacity:.72;margin-top:4px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.legend span{
+  font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:6px;opacity:.88;white-space:nowrap;
+}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:999px}
+.line-chart{width:100%;height:auto;overflow:visible}
+.grid-line{stroke:rgba(255,255,255,.12);stroke-width:1}.axis-domain{stroke:rgba(255,255,255,.18);stroke-width:1.2}
+.axis-label{fill:rgba(255,255,255,.58);font-family:var(--mono);font-size:11px}
+.note-inline{font-size:13px;line-height:1.5;opacity:.80;margin-top:12px}
+.callout{
+  display:flex;gap:14px;align-items:flex-start;margin-top:16px;padding:14px 16px;border-radius:18px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+}
+.callout-badge{
+  flex:none;width:32px;height:32px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;font-weight:700;background:rgba(0,249,255,.14);color:var(--ciano);border:1px solid rgba(0,249,255,.22);
+}
+.callout strong{font-family:var(--display);display:block;font-size:17px;line-height:1.1;letter-spacing:-.03em;margin-bottom:4px}
+.callout p{font-size:13px;line-height:1.5;opacity:.83}
+.source{font-family:var(--mono);font-size:9px;letter-spacing:.11em;text-transform:uppercase;opacity:.56;margin-top:16px}
+.footer-note{position:absolute;left:6vw;bottom:18px;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.48}
+.nav{position:fixed;right:18px;bottom:18px;z-index:40;display:flex;gap:8px;align-items:center}
+.dots{display:flex;gap:6px;padding:10px 12px;border-radius:999px;background:rgba(10,15,54,.55);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(8px)}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.35)}.dot.active{background:var(--verde-claro)}
+@media(max-width:900px){
+  .slide{padding:52px 20px}.topline{padding:12px 20px}.meta-top{display:none}
+  .grid,.chart-grid{grid-template-columns:1fr}
+  .card.span-3,.card.span-4,.card.span-6,.card.span-12{grid-column:span 1}
+}
+@media print{body{background:#0A0F36}.slide{page-break-after:always;min-height:100vh}.nav{display:none}}
+</style>
+</head>
+<body>
+<svg class="shape-bg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00F9FF"/><stop offset="100%" stop-color="#FF00FF"/></linearGradient></defs>
+  <polygon points="80,260 200,200 200,140 80,200" fill="url(#grad)" opacity=".9"/>
+  <polygon points="200,200 320,140 320,80 200,140" fill="#00FF85" opacity=".85"/>
+  <polygon points="200,200 320,140 320,260 200,320" fill="#2A4FDA" opacity=".9"/>
+  <polygon points="80,260 200,320 200,260 80,200" fill="#0A0F36" opacity=".55"/>
+</svg>
+
+<header class="topline">
+  <div class="brand">Escalada</div>
+  <div class="meta-top">Escalada 2026 · período analisado até 29/04</div>
+</header>
+
+<main class="deck" id="deck">
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">Escalada 2026 · leitura inicial</div>
+      <h2>O Escalada transforma contato em vínculo, vínculo em jornada e jornada em evidência de valor.</h2>
+      <p class="body-copy">Esse é o status atual da comunidade no ciclo de 2026. A leitura começa na semana de início, quando o projeto passa a apresentar tração mais clara, e chega à fotografia mais recente com ativação alta, fator multiplicador forte e recorrência relevante.</p>
+      <div class="grid">
+        <div class="card span-4">
+          <div class="card-code">Ativação</div>
+          <div class="kpi green">89,13%</div>
+          <p class="card-desc">dos inscritos realizaram pelo menos uma ação.</p>
+        </div>
+        <div class="card span-4">
+          <div class="card-code">Fator multiplicador</div>
+          <div class="kpi cyan">8,28x</div>
+          <p class="card-desc">ações médias por usuário ativo.</p>
+        </div>
+        <div class="card span-4">
+          <div class="card-code">Recorrência</div>
+          <div class="kpi magenta">20,60%</div>
+          <p class="card-desc">dos ativos agiram em mais de um dia.</p>
+        </div>
+      </div>
+      <p class="source">Fotografia atual: 23/04 a 29/04/2026 · comunidade geral</p>
+      <div class="footer-note">Base analisada até 29/04/2026</div>
+    </div>
+  </section>
+
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">Comunidade · evolução semanal</div>
+      <h2>Desde o início efetivo do ciclo, a curva da comunidade mostra ganho de densidade.</h2>
+      <p class="body-copy">O início ainda é irregular, mas a partir de março o projeto passa a produzir mais ação por ativo e, em abril, entra em um patamar mais sólido.</p>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-head"><div><h3>Taxa de ativação</h3><div class="chart-sub">Comunidade geral · série semanal desde o início efetivo do ciclo</div></div><div class="legend"><span><i style="background:#00FF85"></i>Ativação</span></div></div>
+          <div id="chart-ativacao"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-head"><div><h3>Fator multiplicador</h3><div class="chart-sub">Ações médias por usuário ativo</div></div><div class="legend"><span><i style="background:#00F9FF"></i>Multiplicador</span></div></div>
+          <div id="chart-fator"></div>
+          
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">O que mudou na operação</div>
+      <h2>A curva não nasce sozinha: ela acompanha uma sequência de ajustes na experiência.</h2>
+      <p class="body-copy">A partir do início efetivo do ciclo, o trabalho deixou de ser apenas manter a comunidade ativa e passou a combinar produto, comunicação, jornada e presença nos canais certos.</p>
+      <div class="grid">
+        <div class="card span-4">
+          <div class="card-code">Produto</div>
+          <h3 class="card-title">Mudança de UI e revisão da jornada</h3>
+          <p class="card-desc">A experiência foi sendo reorganizada para reduzir atrito, tornar os próximos passos mais claros e reforçar o caminho de continuidade dentro da comunidade.</p>
+        </div>
+        <div class="card span-4">
+          <div class="card-code">Relacionamento</div>
+          <h3 class="card-title">Comunicação intensa e acompanhamento</h3>
+          <p class="card-desc">O esforço de comunicação deixou de ser pontual e passou a funcionar como rotina de ativação: lembrar, provocar, orientar e puxar o participante de volta.</p>
+        </div>
+        <div class="card span-4">
+          <div class="card-code">Canais</div>
+          <h3 class="card-title">Comunidades no WhatsApp</h3>
+          <p class="card-desc">A presença em canais mais próximos ajuda a criar recorrência fora da plataforma principal e sustenta o vínculo entre uma ação e outra.</p>
+        </div>
+        <div class="card span-6">
+          <div class="card-code">Jornada</div>
+          <h3 class="card-title">Páginas interativas</h3>
+          <p class="card-desc">As páginas de apoio e atividades interativas reforçam a jornada, criam pontos de entrada mais claros e ajudam a transformar conteúdo em ação.</p>
+        </div>
+        <div class="card span-6">
+          <div class="card-code">Método</div>
+          <h3 class="card-title">Reforço contínuo da jornada</h3>
+          <p class="card-desc">O avanço das métricas deve ser lido junto desse esforço: não como acaso, mas como resultado de uma operação que aprende, ajusta e acompanha.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">Professores · ponto de virada</div>
+      <h2>Você percebeu? O crescimento quase estagna no fim de março.</h2>
+      <p class="body-copy">Ao olhar de novo para as curvas da comunidade, o trecho de 26/03 chama atenção. É o ponto de virada para apresentar a hipótese dos multiplicadores: uma frente que começa a explicar a retomada de tração em abril.</p>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-head"><div><h3>Fator multiplicador · releitura</h3><div class="chart-sub">O mesmo dado da comunidade, agora com o trecho destacado</div></div><div class="legend"><span><i style="background:#00F9FF"></i>Multiplicador</span></div></div>
+          <div id="chart-fator-highlight"></div>
+          <div class="callout"><div class="callout-badge">!</div><div><strong>Sabe o que acontece aqui? Entrada dos nossos multiplicadores.</strong><p>O destaque marca a virada: a curva começa a mudar na semana de 26/03 e ganha tração em abril.</p></div></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-head"><div><h3>Retenção D7/D14 · releitura</h3><div class="chart-sub">O mesmo padrão aparece também nas curvas de retorno</div></div><div class="legend"><span><i style="background:#00FF85"></i>D7</span><span><i style="background:#00F9FF"></i>D14</span></div></div>
+          <div id="chart-ret-highlight"></div>
+          <div class="callout"><div class="callout-badge">+</div><div><strong>O efeito não é só entrada. É permanência.</strong><p>A partir de 26/03, as curvas de retorno sobem. Isso prepara a leitura da qualidade do público trazido pelos professores.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">Professores · dados iniciais</div>
+      <h2>Os convidados por professores mostram uma camada adicional de qualidade.</h2>
+      <p class="body-copy">Depois de observar a evolução geral da comunidade, os dados dos convidados por professores ajudam a enxergar uma frente de qualificação. Para facilitar a leitura, cada indicador abaixo já aparece comparado ao resultado geral da comunidade na última semana.</p>
+      <div class="grid">
+        <div class="card span-4">
+          <div class="card-code">Ativação dos convidados</div>
+          <div class="kpi green">92,14%</div>
+          <p class="card-desc">+3,01 pontos percentuais acima da comunidade geral, que está em 89,13%.</p>
+        </div>
+        <div class="card span-4">
+          <div class="card-code">Fator multiplicador</div>
+          <div class="kpi cyan">10,44x</div>
+          <p class="card-desc">+2,16 ações por ativo acima da comunidade geral, que está em 8,28x.</p>
+        </div>
+        <div class="card span-4">
+          <div class="card-code">Recorrência</div>
+          <div class="kpi magenta">22,06%</div>
+          <p class="card-desc">+1,46 ponto percentual acima da comunidade geral, que está em 20,60%.</p>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="card span-6"><div class="card-code">Leitura estratégica</div><h3 class="card-title">Qualidade de público</h3><p class="card-desc">Os números sugerem que o professor não funciona só como canal de entrada. Ele tende a trazer gente com melhor propensão a ativar e agir mais.</p></div>
+        <div class="card span-6"><div class="card-code">Sinal para aprofundar</div><h3 class="card-title">Uma frente promissora</h3><p class="card-desc">Isso ajuda a justificar um plano mais estruturado para professores, com acompanhamento, materiais e inteligência de ativação.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker">Fechamento</div>
+      <h2>O Escalada tem feito muito com pouco. O próximo ciclo pode mostrar o que acontece com mais estrutura.</h2>
+      <p class="body-copy">A leitura de 2026 é especialmente forte porque os resultados aparecem mesmo sem grandes eventos presenciais como motor principal. O que sustenta a curva até aqui é operação contínua, ajuste de jornada, comunicação, comunidade e primeiras frentes de multiplicação.</p>
+      <div class="grid">
+        <div class="card span-4">
+          <div class="card-code">Hoje</div>
+          <h3 class="card-title">Muito resultado com estrutura enxuta</h3>
+          <p class="card-desc">A comunidade chega a 89,13% de ativação, 8,28x de fator multiplicador e 20,60% de recorrência em um ciclo ainda sem grandes ativações presenciais.</p>
+        </div>
+        <div class="card span-4">
+          <div class="card-code">Aprendizado</div>
+          <h3 class="card-title">O método já mostra onde escalar</h3>
+          <p class="card-desc">As iniciativas de jornada, comunicação, WhatsApp, páginas interativas e professores começam a indicar quais alavancas merecem mais estrutura.</p>
+        </div>
+        <div class="card span-4">
+          <div class="card-code">Potencial</div>
+          <h3 class="card-title">Mais recursos podem acelerar a curva</h3>
+          <p class="card-desc">Com mais autonomia, equipe e capacidade operacional, o Escalada pode transformar esses sinais em expansão territorial, recorrência mais forte e escala qualificada.</p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card span-12">
+          <div class="card-code">O que falta?</div>
+          <h3 class="card-title">Volume de entrada para alimentar um motor que já multiplica bem.</h3>
+          <p class="card-desc">O fator multiplicador já está em torno de 8x na comunidade geral. Isso significa que, quando as pessoas entram e ativam, o projeto já consegue gerar várias ações por usuário ativo. O gargalo, agora, não parece ser só engajamento interno: é ampliar a entrada qualificada.</p>
+        </div>
+        <div class="card span-6">
+          <div class="card-code">Eventos</div>
+          <h3 class="card-title">Mais presença em ativações presenciais</h3>
+          <p class="card-desc">Com investimento em eventos, oficinas e agendas territoriais, o Escalada pode aumentar o volume de entrada e converter esses momentos em continuidade digital acompanhada.</p>
+        </div>
+        <div class="card span-6">
+          <div class="card-code">Divulgação</div>
+          <h3 class="card-title">Campanhas pagas com dedicação intensa</h3>
+          <p class="card-desc">Com campanhas pagas, testes de mensagem e operação dedicada de aquisição, o projeto pode alimentar a comunidade com mais pessoas e medir quais públicos entram, ativam e retornam melhor.</p>
+        </div>
+      </div>
+
+      <div class="big-note" style="margin-top:22px">
+        <p>Em síntese: se cada pessoa ativa já tende a multiplicar ações, o próximo salto depende de colocar mais gente qualificada dentro da jornada — com eventos, divulgação e mais autonomia operacional.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="nav"><div class="dots" id="dots" aria-hidden="true"></div></div>
+
+<script>
+const labels = ['Início','05/03','12/03','19/03','26/03','02/04','09/04','16/04','23/04','29/04'];
+const community = {
+  ativacao: [82.5,67.3,75.42,77.5,78.87,83.48,84.85,87.62,88.7,89.13],
+  fator: [2.24,7.21,4.17,4.7,4.82,6.4,8.09,8.38,8.09,8.28],
+  recorrencia: [3.03,16.82,9.75,14.15,16.56,19.19,23.42,20.07,18.07,20.6],
+  d7: [4.17,3.03,6.54,4.46,6.59,11.33,11.99,12.66,10.17,10.73],
+  d14: [4.17,4.17,3.03,2.80,2.79,5.85,9.15,9.90,8.99,8.84]
+};
+function formatNumber(v,decimals=1){return v.toFixed(decimals).replace('.',',')}
+function renderLineChart(targetId,config){
+  const target=document.getElementById(targetId);
+  if(!target) return;
+  const width=920,height=310,m={top:16,right:14,bottom:42,left:50};
+  const plotW=width-m.left-m.right,plotH=height-m.top-m.bottom;
+  const vals=config.series.flatMap(s=>s.values),yMin=config.min??Math.min(...vals),yMax=config.max??Math.max(...vals);
+  const xStep=plotW/(labels.length-1),xAt=i=>m.left+i*xStep,yAt=v=>m.top+(plotH-((v-yMin)/(yMax-yMin||1))*plotH);
+  let svg=`<svg viewBox="0 0 ${width} ${height}" class="line-chart" role="img" aria-label="${config.aria||''}">`;
+  svg+=`<rect x="0" y="0" width="${width}" height="${height}" rx="22" fill="rgba(10,15,54,.14)"/>`;
+  if(config.highlight){
+    const x0=xAt(config.highlight.from),x1=xAt(config.highlight.to);
+    svg+=`<rect x="${x0}" y="${m.top}" width="${x1-x0}" height="${plotH}" fill="${config.highlight.fill||'rgba(0,255,133,.10)'}" rx="14"/>`;
+    if(config.highlight.lineAt!=null){const xl=xAt(config.highlight.lineAt);svg+=`<line x1="${xl}" y1="${m.top}" x2="${xl}" y2="${m.top+plotH}" stroke="${config.highlight.lineColor||'#00FF85'}" stroke-width="2" stroke-dasharray="5 5" opacity=".9"/>`}
+  }
+  const ticks=config.ticks||5;
+  for(let i=0;i<ticks;i++){
+    const ratio=i/(ticks-1),value=yMax-((yMax-yMin)*ratio),y=m.top+plotH*ratio;
+    svg+=`<line x1="${m.left}" y1="${y}" x2="${m.left+plotW}" y2="${y}" class="grid-line"/>`;
+    svg+=`<text x="${m.left-10}" y="${y+4}" class="axis-label" text-anchor="end">${formatNumber(value,config.decimals??0)}${config.suffix||''}</text>`;
+  }
+  svg+=`<line x1="${m.left}" y1="${m.top+plotH}" x2="${m.left+plotW}" y2="${m.top+plotH}" class="axis-domain"/>`;
+  labels.forEach((label,idx)=>svg+=`<text x="${xAt(idx)}" y="${height-12}" class="axis-label" text-anchor="middle">${label}</text>`);
+  config.series.forEach(serie=>{
+    const points=serie.values.map((v,i)=>`${xAt(i)},${yAt(v)}`).join(' ');
+    svg+=`<polyline points="${points}" fill="none" stroke="${serie.color}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const last=serie.values.length-1;
+    svg+=`<circle cx="${xAt(last)}" cy="${yAt(serie.values[last])}" r="5.5" fill="${serie.color}" stroke="#0A0F36" stroke-width="2"/>`;
+  });
+  if(config.annotation){
+    const idx=config.annotation.index,val=config.annotation.value,x=xAt(idx),y=yAt(val),color=config.annotation.color||'#00FF85';
+    svg+=`<circle cx="${x}" cy="${y}" r="6.5" fill="${color}" stroke="#0A0F36" stroke-width="2"/>`;
+    svg+=`<line x1="${x}" y1="${y-8}" x2="${x+18}" y2="${y-30}" stroke="${color}" stroke-width="2"/>`;
+    const bx=Math.min(x+16,width-242),by=Math.max(10,y-58);
+    svg+=`<rect x="${bx}" y="${by}" width="222" height="38" rx="12" fill="rgba(10,15,54,.90)" stroke="${color}" stroke-width="1.2"/>`;
+    svg+=`<text x="${bx+12}" y="${by+24}" font-family="JetBrains Mono, monospace" font-size="10" fill="${color}" letter-spacing="1.1">${config.annotation.label}</text>`;
+  }
+  svg+=`</svg>`;
+  target.innerHTML=svg;
+}
+renderLineChart('chart-ativacao',{aria:'Taxa de ativação da comunidade',series:[{values:community.ativacao,color:'#00FF85'}],min:60,max:95,ticks:5,suffix:'%',decimals:0});
+renderLineChart('chart-fator',{aria:'Fator multiplicador da comunidade',series:[{values:community.fator,color:'#00F9FF'}],min:0,max:10,ticks:5,decimals:1});
+renderLineChart('chart-fator-highlight',{
+  aria:'Fator multiplicador com destaque em 26/03',
+  series:[{values:community.fator,color:'#00F9FF'}],min:0,max:10,ticks:5,decimals:1,
+  highlight:{from:4,to:9,fill:'rgba(0,255,133,.10)',lineAt:4,lineColor:'#00FF85'}
+});
+renderLineChart('chart-ret-highlight',{
+  aria:'Retenção com destaque em 26/03',
+  series:[{values:community.d7,color:'#00FF85'},{values:community.d14,color:'#00F9FF'}],min:0,max:16,ticks:5,suffix:'%',decimals:0,
+  highlight:{from:4,to:9,fill:'rgba(0,255,133,.10)',lineAt:4,lineColor:'#00FF85'}
+});
+const slides=Array.from(document.querySelectorAll('.slide'));
+const dots=document.getElementById('dots');
+slides.forEach((_,i)=>{const dot=document.createElement('span');dot.className='dot'+(i===0?' active':'');dots.appendChild(dot)});
+const dotEls=Array.from(document.querySelectorAll('.dot'));
+function setActiveDot(){const idx=Math.round(window.scrollY/window.innerHeight);dotEls.forEach((d,i)=>d.classList.toggle('active',i===idx))}
+window.addEventListener('scroll',setActiveDot,{passive:true});
+window.addEventListener('keydown',ev=>{
+  const idx=Math.round(window.scrollY/window.innerHeight);
+  if(ev.key==='ArrowDown'||ev.key==='PageDown'||ev.key==='ArrowRight'){ev.preventDefault();slides[Math.min(slides.length-1,idx+1)].scrollIntoView({behavior:'smooth'})}
+  if(ev.key==='ArrowUp'||ev.key==='PageUp'||ev.key==='ArrowLeft'){ev.preventDefault();slides[Math.max(0,idx-1)].scrollIntoView({behavior:'smooth'})}
+});
+</script>
+</body>
+</html>
