@@ -1,0 +1,151 @@
+​
+> Initial build environment
+context: dev
+cwd: C:\Users\gabri\OneDrive\Desktop\tnl\dashboard-escalada
+featureFlags: []
+mode: cli
+repositoryRoot: C:\Users\gabri\OneDrive\Desktop\tnl\dashboard-escalada
+​
+> UI build settings
+baseRelDir: true
+​
+> Resolved build environment
+branch: review/identidade-dashboard
+buildDir: C:\Users\gabri\OneDrive\Desktop\tnl\dashboard-escalada
+context: dev
+env:
+  - DEPLOY_ID
+  - BUILD_ID
+  - NETLIFY_LOCAL
+  - HEAD
+  - COMMIT_REF
+  - CACHED_COMMIT_REF
+  - PULL_REQUEST
+  - LANG
+  - LANGUAGE
+  - LC_ALL
+  - GATSBY_TELEMETRY_DISABLED
+  - NEXT_TELEMETRY_DISABLED
+​
+> Resolved config
+build:
+  publish: C:\Users\gabri\OneDrive\Desktop\tnl\dashboard-escalada
+  publishOrigin: default
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "x-powered-by" to true
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "etag" to 'weak'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "etag fn" to [Function: generateETag]
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "env" to 'development'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "query parser" to 'extended'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "query parser fn" to [Function: parseExtendedQueryString]
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "subdomain offset" to 2
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "trust proxy" to false
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "trust proxy fn" to [Function: trustNone]
+Thu, 30 Apr 2026 18:46:30 GMT express:application booting in development mode
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "view" to [Function: View]
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "views" to 'C:\\Users\\gabri\\OneDrive\\Desktop\\tnl\\dashboard-escalada\\views'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "jsonp callback name" to 'callback'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "query parser" to 'simple'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "query parser fn" to [Function: parse]
+Thu, 30 Apr 2026 18:46:30 GMT express:router use '/' query
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router use '/' expressInit
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router use '/' textParser
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router use '/' rawParser
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router use '/' formSubmissionHandler
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router use '/' loggingMiddleware
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route new '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route acl '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route bind '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route checkout '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route connect '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route copy '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route delete '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route get '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route head '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route link '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route lock '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route m-search '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route merge '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route mkactivity '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route mkcalendar '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route mkcol '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route move '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route notify '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route options '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route patch '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route post '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route propfind '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route proppatch '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route purge '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route put '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route query '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route rebind '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route report '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route search '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route source '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route subscribe '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route trace '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route unbind '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route unlink '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route unlock '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:route unsubscribe '*'
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "x-powered-by" to true
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "etag" to 'weak'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "etag fn" to [Function: generateETag]
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "env" to 'development'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "query parser" to 'extended'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "query parser fn" to [Function: parseExtendedQueryString]
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "subdomain offset" to 2
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "trust proxy" to false
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "trust proxy fn" to [Function: trustNone]
+Thu, 30 Apr 2026 18:46:30 GMT express:application booting in development mode
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "view" to [Function: View]
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "views" to 'C:\\Users\\gabri\\OneDrive\\Desktop\\tnl\\dashboard-escalada\\views'
+Thu, 30 Apr 2026 18:46:30 GMT express:application set "jsonp callback name" to 'callback'
+Thu, 30 Apr 2026 18:46:30 GMT express:router use '/' query
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router use '/' expressInit
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/'
+Thu, 30 Apr 2026 18:46:30 GMT express:router use '/.netlify/images' <anonymous>
+Thu, 30 Apr 2026 18:46:30 GMT express:router:layer new '/.netlify/images'
