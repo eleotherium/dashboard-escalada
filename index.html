@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700;800&display=swap"
     rel="stylesheet"
   />
   <script src="./env.js"></script>
@@ -110,22 +110,26 @@
       --sidenav-collapsed: 76px;
       --sidebar-toggle-size: 38px;
       --sidebar-toggle-gap: 16px;
-      --ink-strong: #0c1735;
-      --ink: #1f2b46;
-      --ink-soft: #52607f;
-      --line: #d9e1f1;
-      --surface: #ffffff;
-      --surface-soft: #f6f8ff;
-      --surface-muted: #eef2ff;
-      --brand-deep: #122f9b;
+      --sidenav-offset: 0px;
+      --body-font: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --display-font: "Space Grotesk", "Figtree", system-ui, sans-serif;
+      --mono-font: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      --ink-strong: #ffffff;
+      --ink: rgba(242, 246, 255, 0.94);
+      --ink-soft: rgba(226, 233, 255, 0.74);
+      --line: rgba(255, 255, 255, 0.14);
+      --surface: rgba(10, 15, 54, 0.52);
+      --surface-soft: rgba(10, 15, 54, 0.42);
+      --surface-muted: rgba(255, 255, 255, 0.08);
+      --brand-deep: #0a0f36;
       --brand-primary: #2a4fda;
-      --brand-primary-2: #605be5;
+      --brand-primary-2: #161b4a;
       --brand-green: #00d95d;
       --brand-green-2: #00ff85;
       --brand-magenta: #ff00ff;
       --brand-cyan: #00f9ff;
-      --shadow-soft: 0 10px 30px rgba(18, 47, 155, 0.08);
-      --shadow: 0 16px 44px rgba(18, 47, 155, 0.14);
+      --shadow-soft: 0 18px 56px rgba(8, 11, 46, 0.18);
+      --shadow: 0 28px 88px rgba(8, 11, 46, 0.3);
       --ring: 0 0 0 3px rgba(0, 217, 93, 0.25);
     }
 
@@ -141,22 +145,51 @@
 
     body {
       min-height: 100vh;
-      font-family: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-family: var(--body-font);
       color: var(--ink);
-      background: #f3f6fc;
+      background: linear-gradient(160deg, #0a0f36 0%, #2a4fda 55%, #ff00ff 100%);
       background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+      overflow-x: hidden;
     }
 
     body.modal-open {
       overflow: hidden;
     }
 
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(12px);
+      opacity: 0.55;
+    }
+
+    body::before {
+      top: -120px;
+      right: -180px;
+      width: 520px;
+      height: 520px;
+      background: radial-gradient(circle, rgba(0, 249, 255, 0.26) 0%, rgba(0, 249, 255, 0) 68%);
+    }
+
+    body::after {
+      left: -220px;
+      bottom: -180px;
+      width: 520px;
+      height: 520px;
+      background: radial-gradient(circle, rgba(0, 255, 133, 0.2) 0%, rgba(0, 255, 133, 0) 70%);
+    }
+
     h1,
     h2,
     h3,
     .font-display {
-      font-family: "Space Grotesk", "Inter Tight", system-ui, sans-serif;
-      letter-spacing: -0.02em;
+      font-family: var(--display-font);
+      letter-spacing: -0.04em;
       color: var(--ink-strong);
     }
 
@@ -169,9 +202,11 @@
       margin: 0;
       overflow: visible;
       box-shadow: none;
+      z-index: 2;
     }
 
     .content-wrap {
+      position: relative;
       padding-left: var(--sidenav-width);
       transition: padding-left 0.2s ease;
     }
@@ -195,12 +230,13 @@
     .sidebar {
       display: flex;
       flex-direction: column;
+      height: 100%;
       padding: 14px;
       background:
-        radial-gradient(circle at 100% 0%, rgba(0, 249, 255, 0.25), transparent 40%),
-        radial-gradient(circle at 0% 100%, rgba(0, 255, 133, 0.26), transparent 40%),
-        linear-gradient(180deg, #2a4fda 0%, #122f9b 100%);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+        radial-gradient(circle at 100% 0%, rgba(0, 249, 255, 0.22), transparent 44%),
+        radial-gradient(circle at 0% 100%, rgba(0, 255, 133, 0.2), transparent 40%),
+        linear-gradient(180deg, rgba(10, 15, 54, 0.96) 0%, rgba(22, 27, 74, 1) 100%);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .sidebar-toggle {
@@ -211,9 +247,10 @@
       width: var(--sidebar-toggle-size);
       height: var(--sidebar-toggle-size);
       border-radius: 12px;
-      border: 1px solid var(--line);
-      background: #fff;
-      color: var(--ink-strong);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(10, 15, 54, 0.78);
+      color: #ffffff;
+      backdrop-filter: blur(12px);
       display: grid;
       place-items: center;
       cursor: pointer;
@@ -238,7 +275,7 @@
 
     .sidebar-toggle:hover {
       transform: translateY(-1px);
-      box-shadow: var(--shadow);
+      box-shadow: 0 20px 42px rgba(8, 11, 46, 0.34);
     }
 
     .sidebar-content {
@@ -250,11 +287,12 @@
 
     .sidebar-section-label {
       font-size: 0.67rem;
-      font-weight: 600;
+      font-weight: 700;
+      font-family: var(--mono-font);
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.18em;
       color: rgba(255, 255, 255, 0.72);
-      margin: 10px 8px 8px;
+      margin: 14px 8px 8px;
     }
 
     .sidebar-nav {
@@ -267,11 +305,11 @@
       display: flex;
       align-items: center;
       gap: 9px;
-      border-radius: 12px;
-      padding: 9px 10px;
+      border-radius: 16px;
+      padding: 10px 12px;
       color: rgba(255, 255, 255, 0.92);
       text-decoration: none;
-      border: 1px solid transparent;
+      border: 1px solid rgba(255, 255, 255, 0.02);
       transition: transform 0.15s ease, background 0.15s ease, border 0.15s ease;
       font-size: 0.88rem;
       font-weight: 600;
@@ -279,15 +317,15 @@
 
     .sidebar-nav a:hover {
       transform: translateX(2px);
-      border-color: rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .sidebar-nav a.nav-active {
       color: #0f222f;
       background: linear-gradient(90deg, var(--brand-green) 0%, var(--brand-green-2) 100%);
       border-color: transparent;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.24);
+      box-shadow: 0 16px 28px rgba(0, 0, 0, 0.24);
     }
 
     .sidebar-sources-root {
@@ -311,7 +349,7 @@
     .sidebar-subnav {
       margin: 2px 0 2px 18px;
       padding: 6px 0 0 12px;
-      border-left: 1px solid rgba(255, 255, 255, 0.18);
+      border-left: 1px solid rgba(255, 255, 255, 0.14);
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -334,8 +372,8 @@
     .sidebar-subnav a:hover {
       transform: translateX(2px);
       color: rgba(255, 255, 255, 0.96);
-      border-color: rgba(255, 255, 255, 0.22);
-      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .sidebar-subnav a.is-active {
@@ -346,38 +384,43 @@
     }
 
     .section-band {
-      border: 1px solid rgba(18, 47, 155, 0.15);
-      border-radius: 20px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 28px;
       background:
-        radial-gradient(circle at 0% 0%, rgba(0, 249, 255, 0.18), transparent 33%),
-        radial-gradient(circle at 100% 0%, rgba(255, 0, 255, 0.14), transparent 33%),
-        #f7f9ff;
-      box-shadow: var(--shadow-soft);
+        radial-gradient(circle at 0% 0%, rgba(0, 249, 255, 0.16), transparent 34%),
+        radial-gradient(circle at 100% 0%, rgba(255, 0, 255, 0.16), transparent 34%),
+        rgba(10, 15, 54, 0.36);
+      backdrop-filter: blur(14px);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+        var(--shadow-soft);
     }
 
     .wrap-hero {
-      border: 1px solid transparent;
-      background: transparent;
+      border-color: rgba(255, 255, 255, 0.12);
+      background:
+        radial-gradient(circle at 100% 0%, rgba(0, 255, 133, 0.12), transparent 30%),
+        radial-gradient(circle at 0% 100%, rgba(0, 249, 255, 0.12), transparent 32%),
+        rgba(10, 15, 54, 0.32);
     }
 
     .wrap-soft {
-      border: 1px solid rgba(18, 47, 155, 0.08);
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.68);
-    }
-
-    .wrap-atmosphere {
-      border: 1px solid rgba(18, 47, 155, 0.12);
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.75);
-      box-shadow: var(--shadow-soft);
+      position: relative;
+      border: none;
+      border-radius: 0;
+      background: transparent;
     }
 
     .card {
-      border-radius: 18px;
+      border-radius: 24px;
       border: 1px solid var(--line);
       background: var(--surface);
-      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(14px);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+        0 18px 56px rgba(8, 11, 46, 0.16);
       overflow: hidden;
     }
 
@@ -385,22 +428,57 @@
       background: var(--surface-soft);
     }
 
+    .shape-bg {
+      position: fixed;
+      top: -180px;
+      right: -260px;
+      width: 720px;
+      height: 720px;
+      opacity: 0.16;
+      pointer-events: none;
+      z-index: 1;
+      transform: rotate(-8deg);
+      filter: drop-shadow(-20px 40px 80px rgba(8, 11, 46, 0.25));
+    }
+
+    .dashboard-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .dashboard-hero-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wrap-accent-blue,
+    .wrap-accent-green,
+    .wrap-accent-magenta {
+      background: transparent;
+    }
+
     .chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       border-radius: 999px;
-      padding: 7px 12px;
-      font-size: 0.74rem;
+      padding: 8px 13px;
+      font-size: 0.72rem;
+      font-family: var(--mono-font);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       border: 1px solid var(--line);
-      background: #fff;
-      color: var(--ink-soft);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(236, 241, 255, 0.84);
       line-height: 1;
       white-space: nowrap;
     }
 
     .chip.soft {
-      background: var(--surface-soft);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .badge {
@@ -408,11 +486,11 @@
       align-items: center;
       gap: 6px;
       border-radius: 999px;
-      padding: 5px 10px;
+      padding: 6px 10px;
       font-size: 0.7rem;
       border: 1px solid var(--line);
-      background: #fff;
-      color: var(--ink-soft);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(236, 241, 255, 0.82);
       white-space: nowrap;
     }
 
@@ -445,38 +523,39 @@
     }
 
     .btn-primary {
-      color: #fff;
-      background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-primary-2) 100%);
-      box-shadow: 0 10px 20px rgba(42, 79, 218, 0.25);
+      color: #0a0f36;
+      background: linear-gradient(90deg, var(--brand-green) 0%, var(--brand-green-2) 100%);
+      box-shadow: 0 14px 26px rgba(0, 217, 93, 0.24);
     }
 
     .btn-primary:hover {
       transform: translateY(-1px);
-      box-shadow: 0 14px 24px rgba(42, 79, 218, 0.32);
+      box-shadow: 0 18px 32px rgba(0, 217, 93, 0.28);
     }
 
     .btn-outline {
       border: 1px solid var(--line);
-      background: #fff;
-      color: var(--ink-strong);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--ink);
+      backdrop-filter: blur(10px);
     }
 
     .btn-outline:hover {
       transform: translateY(-1px);
       box-shadow: var(--shadow-soft);
-      background: var(--surface-soft);
+      background: rgba(255, 255, 255, 0.12);
     }
 
     .btn-ghost {
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--ink-soft);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(242, 246, 255, 0.84);
       padding: 9px 10px;
     }
 
     .btn-ghost:hover {
       border-color: var(--line);
-      background: #fff;
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .btn.is-active,
@@ -497,36 +576,49 @@
       border-radius: 12px;
       padding: 9px 11px;
       font-size: 0.85rem;
-      background: #fff;
-      color: var(--ink-strong);
+      background: rgba(10, 15, 54, 0.92);
+      color: var(--ink);
+      backdrop-filter: blur(10px);
+    }
+
+    select option {
+      background: #0a0f36;
+      color: rgba(242, 246, 255, 0.94);
     }
 
     .label {
-      font-size: 0.73rem;
-      font-weight: 600;
-      color: var(--ink-soft);
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: var(--mono-font);
+      color: rgba(235, 241, 255, 0.7);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.14em;
     }
 
     .kpi {
       display: flex;
       flex-direction: column;
       gap: 4px;
+      height: 100%;
     }
 
     .kpi .value {
-      font-family: "Space Grotesk", "Inter Tight", sans-serif;
-      font-size: 1.35rem;
-      font-weight: 700;
+      font-family: var(--display-font);
+      font-size: clamp(1.95rem, 3vw, 2.9rem);
+      font-weight: 800;
       color: var(--ink-strong);
       line-height: 1;
+      letter-spacing: -0.06em;
+      margin-bottom: auto;
     }
 
     .kpi .delta {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--ink-soft);
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: var(--mono-font);
+      color: rgba(230, 237, 255, 0.74);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .kpi .delta.positive {
@@ -537,11 +629,27 @@
       color: #d11470;
     }
 
+    #kpiAtend {
+      color: var(--brand-green-2);
+    }
+
+    #kpiAtivos {
+      color: var(--brand-cyan);
+    }
+
+    #kpiConv {
+      color: #ff9dff;
+    }
+
+    #kpiRec {
+      color: #ffd76a;
+    }
+
     .kpi-compact .label {
-      color: var(--ink-soft);
+      color: rgba(235, 241, 255, 0.7);
       text-transform: uppercase;
-      letter-spacing: 0.07em;
-      font-size: 0.67rem;
+      letter-spacing: 0.14em;
+      font-size: 0.63rem;
       font-weight: 700;
     }
 
@@ -549,7 +657,7 @@
       margin-top: 8px;
       width: 100%;
       height: 6px;
-      background: rgba(42, 79, 218, 0.15);
+      background: rgba(255, 255, 255, 0.08);
       border-radius: 999px;
       overflow: hidden;
     }
@@ -565,23 +673,105 @@
 
     .metric {
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px;
-      background: #fff;
+      border-radius: 18px;
+      padding: 12px 12px 11px;
+      background: rgba(255, 255, 255, 0.05);
       display: flex;
       flex-direction: column;
       gap: 3px;
     }
 
+    .metric.has-help {
+      position: relative;
+      overflow: visible;
+      padding-right: 40px;
+    }
+
+    .metric-help {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 3;
+    }
+
+    .metric-help summary {
+      list-style: none;
+    }
+
+    .metric-help summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .metric-help-trigger {
+      width: 18px;
+      height: 18px;
+      border: 1px solid rgba(0, 249, 255, 0.34);
+      border-radius: 999px;
+      background: rgba(8, 14, 34, 0.82);
+      color: rgba(242, 246, 255, 0.92);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono-font);
+      font-size: 0.68rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .metric-help-trigger:hover,
+    .metric-help[open] .metric-help-trigger {
+      border-color: rgba(0, 249, 255, 0.92);
+      background: rgba(15, 23, 42, 0.96);
+      box-shadow: 0 0 0 3px rgba(0, 249, 255, 0.14), 0 0 12px rgba(0, 249, 255, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .metric-help-trigger:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 249, 255, 0.18), 0 0 0 1px rgba(0, 249, 255, 0.96);
+    }
+
+    .metric-help-popover {
+      position: absolute;
+      top: 24px;
+      right: 0;
+      width: min(280px, 72vw);
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 249, 255, 0.24);
+      background: rgba(7, 15, 36, 0.96);
+      color: rgba(226, 233, 255, 0.84);
+      font-size: 0.72rem;
+      line-height: 1.45;
+      text-align: left;
+      box-shadow: 0 18px 34px rgba(2, 6, 23, 0.4);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(6px);
+      transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+      pointer-events: none;
+    }
+
+    .metric-help:hover .metric-help-popover,
+    .metric-help[open] .metric-help-popover {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
     .metric .label {
-      color: var(--ink-soft);
-      font-size: 0.67rem;
+      color: rgba(235, 241, 255, 0.68);
+      font-size: 0.63rem;
     }
 
     .metric .value {
-      font-size: 1.02rem;
+      font-size: 1.05rem;
       font-weight: 700;
-      color: var(--ink-strong);
+      color: var(--ink);
     }
 
     .sources-summary-card {
@@ -589,43 +779,81 @@
       flex-direction: column;
       justify-content: center;
       text-align: center;
+      height: 100%;
     }
 
     .sources-summary-grid {
       width: 100%;
-      max-width: 320px;
-      margin: 20px auto 0;
+      max-width: none;
+      margin: 14px 0 0;
       display: grid;
-      gap: 12px;
-      justify-items: center;
+      gap: 10px;
+      justify-items: stretch;
       align-content: center;
+      flex: 1;
     }
 
     .sources-summary-metric {
       width: 100%;
-      min-height: 110px;
-      padding: 16px 14px;
+      min-height: 88px;
+      padding: 12px;
       align-items: center;
       justify-content: center;
       text-align: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .sources-summary-metric .label {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
     }
 
     .sources-summary-metric .value {
-      font-size: 1.45rem;
+      font-size: 1.22rem;
       line-height: 1.1;
     }
 
+    .sources-page {
+      gap: 12px;
+    }
+
+    .sources-page .section-title {
+      font-size: 0.96rem;
+    }
+
+    .sources-page .chip {
+      padding: 7px 11px;
+      font-size: 0.68rem;
+    }
+
+    .sources-page .sources-chart-card,
+    .sources-page .sources-list-card,
+    .sources-page .sources-summary-card {
+      padding: 16px;
+    }
+
+    .sources-page .sources-bubble-wrap {
+      margin-top: 12px;
+      min-height: 18rem;
+    }
+
+    .sources-page .sources-list {
+      margin-top: 12px;
+      gap: 8px;
+    }
+
+    @media (min-width: 1024px) {
+      .sources-page .sources-bubble-wrap {
+        min-height: 22rem;
+      }
+    }
+
     .section-title {
-      font-size: 0.95rem;
+      font-size: 1.02rem;
       font-weight: 700;
       margin: 0;
       color: var(--ink-strong);
-      line-height: 1.2;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
     }
 
     .insight-list {
@@ -638,12 +866,12 @@
 
     .insight-list li {
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 8px 10px;
+      border-radius: 18px;
+      padding: 10px 12px;
       font-size: 0.78rem;
-      color: var(--ink-soft);
-      background: #fff;
-      line-height: 1.35;
+      color: rgba(236, 241, 255, 0.82);
+      background: rgba(255, 255, 255, 0.05);
+      line-height: 1.45;
     }
 
     .uf-pills {
@@ -651,15 +879,15 @@
       flex-wrap: nowrap;
       gap: 8px;
       overflow-x: auto;
-      padding-bottom: 4px;
+      padding: 6px 0 10px;
       scrollbar-width: thin;
     }
 
     .uf-pill {
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fff;
-      color: var(--ink-strong);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--ink);
       padding: 9px 10px;
       display: flex;
       align-items: center;
@@ -674,14 +902,18 @@
 
     .uf-pill:hover {
       transform: translateY(-1px);
-      border-color: rgba(42, 79, 218, 0.44);
+      border-color: rgba(0, 249, 255, 0.34);
     }
 
     .uf-pill.active {
-      border-color: transparent;
+      border-color: rgba(0, 249, 255, 0.92);
       background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-primary-2) 100%);
       color: #fff;
-      box-shadow: 0 10px 18px rgba(42, 79, 218, 0.3);
+      box-shadow:
+        0 0 0 1px rgba(0, 249, 255, 0.96),
+        0 0 0 4px rgba(0, 249, 255, 0.16),
+        0 0 18px rgba(0, 249, 255, 0.28),
+        0 10px 18px rgba(42, 79, 218, 0.3);
     }
 
     .leaflet-map-host {
@@ -698,7 +930,7 @@
       width: 100%;
       height: 100%;
       background: transparent;
-      font-family: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-family: var(--body-font);
     }
 
     .leaflet-map-host .leaflet-control-zoom a {
@@ -789,9 +1021,9 @@
     .city-focus-btn {
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 12px;
+      border-radius: 18px;
       padding: 9px 10px;
-      background: #fff;
+      background: rgba(255, 255, 255, 0.05);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -808,14 +1040,18 @@
 
     .city-focus-btn:hover {
       transform: translateY(-1px);
-      border-color: rgba(42, 79, 218, 0.42);
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+      border-color: rgba(0, 249, 255, 0.26);
+      box-shadow: 0 12px 22px rgba(8, 11, 46, 0.18);
     }
 
     .city-focus-btn.active {
-      border-color: transparent;
+      border-color: rgba(0, 249, 255, 0.92);
       background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-primary-2) 100%);
-      box-shadow: 0 12px 22px rgba(42, 79, 218, 0.26);
+      box-shadow:
+        0 0 0 1px rgba(0, 249, 255, 0.96),
+        0 0 0 4px rgba(0, 249, 255, 0.14),
+        0 0 18px rgba(0, 249, 255, 0.24),
+        0 12px 22px rgba(42, 79, 218, 0.26);
     }
 
     .city-focus-btn.active .city-focus-label,
@@ -824,14 +1060,14 @@
     }
 
     .city-focus-label {
-      color: #1e293b;
+      color: rgba(242, 246, 255, 0.92);
       font-size: 0.86rem;
       font-weight: 600;
       line-height: 1.2;
     }
 
     .city-focus-value {
-      color: #64748b;
+      color: rgba(226, 233, 255, 0.66);
       font-size: 0.78rem;
       font-weight: 700;
       flex-shrink: 0;
@@ -871,10 +1107,14 @@
     .uf-pill.uf-rank-gold.active,
     .uf-pill.uf-rank-silver.active,
     .uf-pill.uf-rank-bronze.active {
-      border-color: transparent;
+      border-color: rgba(0, 249, 255, 0.92);
       background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-primary-2) 100%);
       color: #fff;
-      box-shadow: 0 10px 18px rgba(42, 79, 218, 0.3);
+      box-shadow:
+        0 0 0 1px rgba(0, 249, 255, 0.96),
+        0 0 0 4px rgba(0, 249, 255, 0.16),
+        0 0 18px rgba(0, 249, 255, 0.28),
+        0 10px 18px rgba(42, 79, 218, 0.3);
     }
 
     .uf-pill.active span,
@@ -929,9 +1169,12 @@
 
     .modal-card {
       width: min(560px, 92vw);
-      border-radius: 18px;
+      border-radius: 24px;
       border: 1px solid var(--line);
-      background: #fff;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(0, 249, 255, 0.08), transparent 30%),
+        rgba(10, 15, 54, 0.88);
+      backdrop-filter: blur(16px);
       box-shadow: var(--shadow);
       padding: 16px;
     }
@@ -954,8 +1197,8 @@
       align-items: center;
       padding: 6px 10px;
       border-radius: 999px;
-      background: rgba(255, 0, 102, 0.08);
-      color: #a5164b;
+      background: rgba(255, 0, 255, 0.14);
+      color: #ffd7ff;
       font-size: 0.72rem;
       font-weight: 800;
       letter-spacing: 0.08em;
@@ -970,7 +1213,7 @@
 
     .alert-disclaimer-body p {
       margin: 0;
-      color: #334155;
+      color: rgba(242, 246, 255, 0.82);
       font-size: 0.95rem;
       line-height: 1.68;
     }
@@ -993,9 +1236,9 @@
     .uf-onboarding-item {
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fff;
-      color: var(--ink-strong);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--ink);
       text-align: left;
       padding: 10px 12px;
       font-size: 0.85rem;
@@ -1006,8 +1249,8 @@
 
     .uf-onboarding-item:hover {
       transform: translateY(-1px);
-      border-color: rgba(42, 79, 218, 0.5);
-      background: #f8fbff;
+      border-color: rgba(0, 249, 255, 0.34);
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .auth-gate {
@@ -1027,9 +1270,10 @@
 
     .auth-card {
       width: min(520px, 94vw);
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.28);
-      background: rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(10, 15, 54, 0.88);
+      backdrop-filter: blur(16px);
       padding: 20px;
       box-shadow: var(--shadow);
     }
@@ -1051,9 +1295,10 @@
 
     .boot-loading-card {
       width: min(520px, 94vw);
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.28);
-      background: rgba(255, 255, 255, 0.96);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(10, 15, 54, 0.9);
+      backdrop-filter: blur(16px);
       padding: 22px;
       box-shadow: var(--shadow);
     }
@@ -1062,8 +1307,8 @@
       width: 34px;
       height: 34px;
       border-radius: 999px;
-      border: 3px solid rgba(42, 79, 218, 0.22);
-      border-top-color: #2a4fda;
+      border: 3px solid rgba(255, 255, 255, 0.14);
+      border-top-color: var(--brand-green-2);
       animation: spin 0.85s linear infinite;
       flex-shrink: 0;
     }
@@ -1074,10 +1319,45 @@
     }
 
     .skeleton {
-      background: linear-gradient(90deg, rgba(18, 47, 155, 0.08), rgba(18, 47, 155, 0.02), rgba(18, 47, 155, 0.08));
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.08));
       background-size: 200% 100%;
       animation: shimmer 1.15s infinite linear;
       border-radius: 14px;
+    }
+
+    .app-shell .text-slate-600,
+    .modal-card .text-slate-600,
+    .auth-card .text-slate-600,
+    .boot-loading-card .text-slate-600 {
+      color: rgba(230, 237, 255, 0.72) !important;
+    }
+
+    .app-shell .text-slate-500,
+    .modal-card .text-slate-500,
+    .auth-card .text-slate-500,
+    .boot-loading-card .text-slate-500 {
+      color: rgba(230, 237, 255, 0.56) !important;
+    }
+
+    .app-shell .text-slate-700,
+    .modal-card .text-slate-700,
+    .auth-card .text-slate-700,
+    .boot-loading-card .text-slate-700 {
+      color: rgba(230, 237, 255, 0.78) !important;
+    }
+
+    .app-shell .text-slate-800,
+    .modal-card .text-slate-800,
+    .auth-card .text-slate-800,
+    .boot-loading-card .text-slate-800 {
+      color: rgba(242, 246, 255, 0.92) !important;
+    }
+
+    .app-shell .text-slate-900,
+    .modal-card .text-slate-900,
+    .auth-card .text-slate-900,
+    .boot-loading-card .text-slate-900 {
+      color: var(--ink-strong) !important;
     }
 
     @keyframes shimmer {
@@ -1157,6 +1437,7 @@
       .content-wrap,
       .sidenav-closed .content-wrap {
         padding-left: 0;
+        padding-top: 72px;
       }
 
       body:not(.sidenav-closed) .sidebar-toggle {
@@ -1166,7 +1447,7 @@
 
     @media print {
       body {
-        background: #ffffff !important;
+        background: #0a0f36 !important;
       }
 
       #sidebar,
@@ -1213,6 +1494,18 @@
     function fmtPct(p) {
       const x = Number(p || 0);
       return (x * 100).toFixed(1).replace(".", ",") + "%";
+    }
+    function normalizeRatioValue(value) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return null;
+      return numeric > 1 ? clamp(numeric / 100, 0, 1) : clamp(numeric, 0, 1);
+    }
+    function readRatioFromKeys(obj, keys = []) {
+      for (const key of keys) {
+        const ratio = normalizeRatioValue(obj?.[key]);
+        if (ratio !== null) return ratio;
+      }
+      return null;
     }
     function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
     function escapeHtml(value) {
@@ -1452,7 +1745,8 @@
       atendimentos: 500000,
       inscricoes: 45000,
       inscritos: 45000,
-      conversaoAtendimento: 0.70
+      conversaoAtendimento: 0.70,
+      recorrenciaProfessores: 1
     };
 
     function deriveChannel(e) {
@@ -1477,6 +1771,11 @@
         .replace(/[\u0300-\u036f]/g, "")
         .trim()
         .toUpperCase();
+    }
+
+    function isProfessorPublicValue(value) {
+      const key = normalizeTextKey(value);
+      return key === "PROFESSOR" || key === "PROFESSORES";
     }
 
     function normalizeLooseLabel(value) {
@@ -2475,12 +2774,10 @@
 
     function sortSourceRows(rows) {
       return [...rows].sort((a, b) => {
-        const byIns = Number(b.inscritos || 0) - Number(a.inscritos || 0);
-        if (byIns !== 0) return byIns;
         const byAt = Number(b.atendimentos || 0) - Number(a.atendimentos || 0);
         if (byAt !== 0) return byAt;
-        const byUsers = Number(b.usuarios || 0) - Number(a.usuarios || 0);
-        if (byUsers !== 0) return byUsers;
+        const byIns = Number(b.inscritos || 0) - Number(a.inscritos || 0);
+        if (byIns !== 0) return byIns;
         return String(a.source || "").localeCompare(String(b.source || ""), "pt-BR");
       });
     }
@@ -2504,7 +2801,6 @@
       geral: {
         label: "Geral",
         chartTitle: `Top ${SOURCE_BUBBLE_LIMIT} fontes de entrada`,
-        chartSubtitle: "Leitura consolidada das fontes legadas no recorte atual.",
         listTitle: "Ranking geral",
         listHint: "Clique em uma linha para abrir detalhes.",
         totalLabel: "Itens ativos",
@@ -2514,7 +2810,6 @@
       eventos: {
         label: "Eventos",
         chartTitle: `Top ${SOURCE_BUBBLE_LIMIT} eventos`,
-        chartSubtitle: "Tags do tipo Evento: ... no recorte atual.",
         listTitle: "Ranking de eventos",
         listHint: "Clique em uma linha para abrir detalhes.",
         totalLabel: "Eventos ativos",
@@ -2524,7 +2819,6 @@
       multiplicadores: {
         label: "Multiplicadores",
         chartTitle: `Top ${SOURCE_BUBBLE_LIMIT} multiplicadores`,
-        chartSubtitle: "Tags do tipo Multiplicador: ... no recorte atual.",
         listTitle: "Ranking de multiplicadores",
         listHint: "Clique em uma linha para abrir detalhes.",
         totalLabel: "Multiplicadores ativos",
@@ -2534,7 +2828,6 @@
       embaixadores: {
         label: "Embaixadores",
         chartTitle: `Top ${SOURCE_BUBBLE_LIMIT} embaixadores`,
-        chartSubtitle: "Tags do tipo Embaixadores: ... no recorte atual.",
         listTitle: "Ranking de embaixadores",
         listHint: "Clique em uma linha para abrir detalhes.",
         totalLabel: "Embaixadores ativos",
@@ -2544,7 +2837,6 @@
       convites: {
         label: "Convites",
         chartTitle: `Top ${SOURCE_BUBBLE_LIMIT} convites`,
-        chartSubtitle: "Tags do tipo Convite: ... no recorte atual.",
         listTitle: "Ranking de convites",
         listHint: "Clique em uma linha para abrir detalhes.",
         totalLabel: "Convites ativos",
@@ -2917,6 +3209,15 @@
     function getSourceAnalytics(options = {}) {
       const preferAggregated = Boolean(options?.preferAggregated);
       const family = normalizeSourceFamily(options?.family || state?.sourceFamily || "geral");
+      const sourcesPayload = getCurrentSourcesPayload();
+      if (sourcesPayload) {
+        const aggregatedRows = getSourceRowsFromAggregatedPayload(sourcesPayload, family);
+        const aggregatedTotals = getSourceTotalsFromAggregatedPayload(sourcesPayload, family);
+        if (aggregatedRows.length || aggregatedTotals) {
+          return buildSourceAnalyticsFromAggregatedPayload(sourcesPayload, { family });
+        }
+      }
+
       const payload = state.raw || {};
       if (preferAggregated || isAggregatedPayload(payload)) {
         const aggregatedRows = getSourceRowsFromAggregatedPayload(payload, family);
@@ -2967,7 +3268,8 @@
         document.querySelector('meta[name="supabase-anon-key"]')?.content ||
         ""
       ).trim(),
-      rpcName: (window.__DASHBOARD_RPC_NAME__ || ENV.DASHBOARD_RPC_NAME || "dashboard_executivo_v1_interno").trim(),
+      rpcName: (window.__DASHBOARD_RPC_NAME__ || ENV.DASHBOARD_RPC_NAME || "dashboard_executivo_v2_interno").trim(),
+      sourcesRpcName: (window.__DASHBOARD_SOURCES_RPC_NAME__ || ENV.DASHBOARD_SOURCES_RPC_NAME || "dashboard_fontes_v2_interno").trim(),
       authMode: String(window.__DASHBOARD_AUTH_MODE__ || ENV.DASHBOARD_AUTH_MODE || "internal").toLowerCase(),
       oauthProvider: String(window.__SUPABASE_OAUTH_PROVIDER__ || ENV.SUPABASE_OAUTH_PROVIDER || "google").toLowerCase(),
       rpcLimit: clamp(Number(window.__RPC_LIMIT__ || ENV.RPC_LIMIT || MAX_RPC_LIMIT), 1, MAX_RPC_LIMIT),
@@ -3027,6 +3329,79 @@
     function sanitizeFilterValue(v) {
       const s = String(v ?? "").trim();
       return isPlaceholderFilterValue(s) ? null : s;
+    }
+
+    function isProfessorFilterSelected(value) {
+      const raw = sanitizeFilterValue(value);
+      return Boolean(raw && isProfessorPublicValue(raw));
+    }
+
+    function computeProfessorRecurrenceFromEvents(events = []) {
+      const actionsByUser = new Map();
+      for (const event of (events || [])) {
+        if (!isProfessorPublicValue(event?.publico)) continue;
+        const userId = String(event?.user_id || "").trim();
+        if (!userId) continue;
+        actionsByUser.set(userId, Number(actionsByUser.get(userId) || 0) + 1);
+      }
+
+      let activated = 0;
+      let recurring = 0;
+      for (const actions of actionsByUser.values()) {
+        if (actions >= 1) activated += 1;
+        if (actions >= 2) recurring += 1;
+      }
+
+      return {
+        activated,
+        recurring,
+        ratio: activated > 0 ? recurring / activated : null,
+      };
+    }
+
+    function resolveProfessorRecurrenceFromPayload(kpis = {}) {
+      const activated = Math.max(0, Number(
+        kpis?.professores_ativados ??
+        kpis?.professores_ativados_1mais ??
+        kpis?.professores_ativados_1_mais ??
+        kpis?.professores_com_1_mais_acao ??
+        kpis?.professores_com_1mais_acao ??
+        0
+      ));
+      const recurring = Math.max(0, Number(
+        kpis?.professores_recorrentes ??
+        kpis?.professores_ativadores ??
+        kpis?.professores_com_2_mais_acoes ??
+        kpis?.professores_com_2mais_acoes ??
+        0
+      ));
+      const explicitRatio = readRatioFromKeys(kpis, [
+        "recorrenciaProfessores",
+        "recorrenciaProfessoresPct",
+        "recorrencia_professores",
+        "recorrencia_professores_pct",
+        "recorrencia",
+        "recorrencia_pct",
+      ]);
+
+      let ratio = null;
+      if (activated > 0) {
+        ratio = clamp(recurring / activated, 0, 1);
+      } else if (recurring > 0 && explicitRatio !== null) {
+        ratio = explicitRatio;
+      } else if (explicitRatio !== null && explicitRatio > 0) {
+        ratio = explicitRatio;
+      }
+
+      return { activated, recurring, ratio };
+    }
+
+    function getProfessorRecurrenceMetrics(raw = state.raw, events = state.filtered) {
+      const fromPayload = resolveProfessorRecurrenceFromPayload(raw?.kpis || {});
+      if (fromPayload.activated > 0 || fromPayload.recurring > 0 || fromPayload.ratio !== null) {
+        return fromPayload;
+      }
+      return computeProfessorRecurrenceFromEvents(events);
     }
 
     function resolveUfFilterValue(v) {
@@ -3231,6 +3606,38 @@
       if (!Array.isArray(payload.events)) {
         throw new Error("Payload invalido: esperado 'events[]' ou payload agregado (kpis/series_daily/by_uf/by_publico).");
       }
+    }
+
+    function validateSourcesPayloadShape(payload) {
+      if (!payload || typeof payload !== "object") {
+        throw new Error("Payload de fontes invalido: esperado objeto.");
+      }
+      if (!payload.generated_at) {
+        throw new Error("Payload de fontes invalido: campo 'generated_at' ausente.");
+      }
+    }
+
+    function normalizeSourcesPayload(payload) {
+      const metaRaw = (payload && typeof payload.meta === "object" && payload.meta) ? payload.meta : {};
+      return {
+        generated_at: payload?.generated_at || new Date().toISOString(),
+        by_fonte: Array.isArray(payload?.by_fonte) ? payload.by_fonte : [],
+        fontes: payload?.fontes && typeof payload.fontes === "object" && !Array.isArray(payload.fontes)
+          ? payload.fontes
+          : {},
+        fontes_totais: payload?.fontes_totais && typeof payload.fontes_totais === "object" && !Array.isArray(payload.fontes_totais)
+          ? payload.fontes_totais
+          : {},
+        meta: {
+          ...metaRaw,
+          full_range: metaRaw?.full_range && typeof metaRaw.full_range === "object"
+            ? {
+                from: String(metaRaw.full_range.from || ""),
+                to: String(metaRaw.full_range.to || ""),
+              }
+            : { from: "", to: "" },
+        }
+      };
     }
 
     let mockDatasetCache = null;
@@ -3475,7 +3882,7 @@
       return true;
     }
 
-    async function callDashboardRpc(params) {
+    async function callDashboardRpc(params, rpcName = SUPABASE_RPC.rpcName) {
       if (!sbClient) throw new Error("Cliente Supabase indisponivel.");
       const controller = new AbortController();
       const timeoutError = new Error(`RPC timeout (${SUPABASE_RPC.timeoutMs}ms)`);
@@ -3490,7 +3897,7 @@
       });
 
       const rpcOperation = (async () => {
-        let req = sbClient.rpc(SUPABASE_RPC.rpcName, params);
+        let req = sbClient.rpc(rpcName, params);
         if (req && typeof req.abortSignal === "function") {
           req = req.abortSignal(controller.signal);
         }
@@ -3506,15 +3913,15 @@
       }
     }
 
-    async function callDashboardRpcWithRetry(params) {
+    async function callDashboardRpcWithRetry(params, rpcName = SUPABASE_RPC.rpcName) {
       let attempt = 0;
       while (attempt <= RPC_RETRY_ATTEMPTS) {
         try {
-          return await callDashboardRpc(params);
+          return await callDashboardRpc(params, rpcName);
         } catch (e) {
           attempt += 1;
           if (attempt > RPC_RETRY_ATTEMPTS || !isRetryableError(e)) throw e;
-          console.warn("[UI] [data] rpc retry", { attempt, err: errorToLog(e) });
+          console.warn("[UI] [data] rpc retry", { rpc: rpcName, attempt, err: errorToLog(e) });
           await wait(350 * attempt);
         }
       }
@@ -3564,7 +3971,7 @@
 
       console.debug("[UI] [data] rpc:request", { rpc: SUPABASE_RPC.rpcName, params });
       try {
-        const result = await callDashboardRpcWithRetry(params);
+        const result = await callDashboardRpcWithRetry(params, SUPABASE_RPC.rpcName);
         const payload = Array.isArray(result) ? result[0] : result;
         validatePayloadShape(payload);
         const normalized = ensurePayloadMeta(payload, { limit: params.p_limit });
@@ -3585,6 +3992,162 @@
         state.lastLoadSource = "mock";
         return getMockPayloadForFilters(state.filters);
       }
+    }
+
+    function pageNeedsSources(page = state.page) {
+      return page === "engagement" || page === "sources";
+    }
+
+    function getSourcesRequestKey(filters = state.filters) {
+      const params = getRpcParams(filters);
+      return JSON.stringify({
+        p_date_from: params.p_date_from || "",
+        p_date_to: params.p_date_to || "",
+        p_uf: params.p_uf || "",
+        p_publico: params.p_publico || "",
+      });
+    }
+
+    function clearSourcesPayloadState() {
+      state.sourcesRaw = null;
+      state.sourcesDataKey = "";
+      state.sourcesPendingKey = "";
+      state.sourcesStatus = "idle";
+      state.sourcesError = "";
+      state.sourcesPromise = null;
+      state.sourceRowsByKey = new Map();
+      if (state.page === "sources") {
+        closeSourceDetailModal();
+      } else {
+        state.selectedSourceKey = "";
+      }
+    }
+
+    function syncSourcesPayloadState(filters = state.filters) {
+      const nextKey = getSourcesRequestKey(filters);
+      if (
+        (state.sourcesDataKey && state.sourcesDataKey !== nextKey) ||
+        (state.sourcesPendingKey && state.sourcesPendingKey !== nextKey)
+      ) {
+        clearSourcesPayloadState();
+      }
+      return nextKey;
+    }
+
+    function getCurrentSourcesPayload() {
+      const key = getSourcesRequestKey(state.filters);
+      if (
+        state.sourcesDataKey === key &&
+        state.sourcesRaw &&
+        typeof state.sourcesRaw === "object"
+      ) {
+        return state.sourcesRaw;
+      }
+      return null;
+    }
+
+    function mainPayloadAlreadyContainsSources() {
+      const payload = state.raw || {};
+      const rows = getSourceRowsFromAggregatedPayload(payload, "geral");
+      const totals = getSourceTotalsFromAggregatedPayload(payload, "geral");
+      return Boolean(rows.length || totals);
+    }
+
+    async function loadSourcesData(filters = state.filters) {
+      const params = getRpcParams(filters);
+      const t0 = performance.now();
+      console.debug("[UI] [sources] load:start", {
+        rpc: SUPABASE_RPC.sourcesRpcName,
+        filters: { ...filters },
+        params
+      });
+
+      const result = await callDashboardRpcWithRetry(params, SUPABASE_RPC.sourcesRpcName);
+      const payload = Array.isArray(result) ? result[0] : result;
+      validateSourcesPayloadShape(payload);
+      const normalized = normalizeSourcesPayload(payload);
+      console.info("[UI] [sources] rpc:ok", {
+        rpc: SUPABASE_RPC.sourcesRpcName,
+        ms: Math.round(performance.now() - t0),
+        generated_at: normalized.generated_at
+      });
+      return normalized;
+    }
+
+    async function ensureSourcesData(options = {}) {
+      const page = PAGES.has(options?.page) ? options.page : state.page;
+      if (!pageNeedsSources(page)) return null;
+      if (!isAggregatedPayload(state.raw)) return null;
+      if (mainPayloadAlreadyContainsSources()) return state.raw;
+
+      const filtersSnapshot = { ...state.filters };
+      const requestKey = getSourcesRequestKey(filtersSnapshot);
+      if (!options.force && state.sourcesDataKey === requestKey && state.sourcesRaw) {
+        return state.sourcesRaw;
+      }
+      if (
+        !options.force &&
+        state.sourcesPendingKey === requestKey &&
+        state.sourcesStatus === "loading" &&
+        state.sourcesPromise
+      ) {
+        return state.sourcesPromise;
+      }
+
+      state.sourcesStatus = "loading";
+      state.sourcesError = "";
+      state.sourcesPendingKey = requestKey;
+      if (state.sourcesDataKey !== requestKey) {
+        state.sourcesRaw = null;
+      }
+      if (state.page === "engagement" || state.page === "sources") {
+        render();
+      }
+
+      const pending = loadSourcesData(filtersSnapshot)
+        .then((payload) => {
+          if (requestKey !== getSourcesRequestKey(state.filters)) {
+            return payload;
+          }
+          state.sourcesRaw = payload;
+          state.sourcesDataKey = requestKey;
+          state.sourcesPendingKey = "";
+          state.sourcesStatus = "ready";
+          state.sourcesError = "";
+          if (state.page === "engagement" || state.page === "sources") {
+            render();
+          }
+          return payload;
+        })
+        .catch((err) => {
+          console.error("[UI] [sources] rpc:fail", {
+            rpc: SUPABASE_RPC.sourcesRpcName,
+            err: errorToLog(err),
+            filters: filtersSnapshot
+          });
+          if (requestKey === getSourcesRequestKey(state.filters)) {
+            state.sourcesPendingKey = "";
+            state.sourcesStatus = "error";
+            state.sourcesError = String(err?.message || err || "Falha ao carregar fontes.");
+            if (state.page === "engagement" || state.page === "sources") {
+              render();
+            }
+          }
+          throw err;
+        })
+        .finally(() => {
+          if (state.sourcesPromise === pending) {
+            state.sourcesPromise = null;
+          }
+        });
+
+      state.sourcesPromise = pending;
+      return pending;
+    }
+
+    function hydrateSourcesForCurrentPage(options = {}) {
+      if (!pageNeedsSources(state.page)) return;
+      ensureSourcesData(options).catch(() => {});
     }
 
     // =========================================================
@@ -3613,6 +4176,12 @@
       sourceRowsByKey: new Map(),
       selectedSourceKey: "",
       sourceFamily: "geral",
+      sourcesRaw: null,
+      sourcesDataKey: "",
+      sourcesPendingKey: "",
+      sourcesStatus: "idle",
+      sourcesError: "",
+      sourcesPromise: null,
       modalDraftFilters: null,
       filters: {
         dateFrom: DEFAULT_DASHBOARD_RANGE.from,
@@ -3682,6 +4251,7 @@
       syncSourceFamilyControls();
       syncSidebarSourcesGroup();
       renderIconsNow();
+      hydrateSourcesForCurrentPage({ page: "sources" });
     }
 
     function setSourceFamily(nextFamily) {
@@ -3703,6 +4273,7 @@
       syncSourceFamilyControls();
       syncSidebarSourcesGroup();
       render();
+      hydrateSourcesForCurrentPage({ page: "sources" });
     }
     window.__setSourceFamily = setSourceFamily;
 
@@ -3841,6 +4412,8 @@
         "btnOpenFilters",
         "btnApplyFilters",
         "btnResetFilters",
+        "btnPreset7",
+        "btnPresetPrevWeek",
         "btnPreset2026",
         "btnPreset30",
         "btnPreset90",
@@ -3899,6 +4472,7 @@
         state.raw = payload;
         state.filtered = Array.isArray(payload.events) ? payload.events : [];
         state.mapCityFocus = null;
+        syncSourcesPayloadState(state.filters);
         ensureDerivedFields(state.filtered);
         applyMetaFromPayload(payload);
         updateUfPillsSnapshot(payload);
@@ -3917,6 +4491,7 @@
           console.error("[UI] [render] failed after refresh", { requestId, reason, err: String(renderErr) });
           updateBootError("Dados carregados, mas houve falha ao renderizar parte do painel.");
         }
+        hydrateSourcesForCurrentPage({ force: true, page: state.page });
         console.info("[UI] [data] refresh:done", {
           requestId,
           reason,
@@ -3959,6 +4534,7 @@
       if (nextFilters && Object.keys(nextFilters).length) {
         state.mapCityFocus = null;
       }
+      if (nextFilters.dateFrom || nextFilters.dateTo) _pubCache = { key: "", data: null };
       state.filters = { ...state.filters, ...nextFilters };
       syncFilterForm();
       console.debug("[UI] [filters] updated", {
@@ -4004,6 +4580,7 @@
 
       const inscritosAtendidos = countSetIntersection(usersInscritos, usersAtendidos);
       const conv = usersInscritos.size ? (inscritosAtendidos / usersInscritos.size) : 0;
+      const professorRecurrence = computeProfessorRecurrenceFromEvents(events);
 
       return {
         atendimentos: atend,
@@ -4011,7 +4588,10 @@
         usersAny: usersAny.size,
         inscritos: usersInscritos.size,
         atendidos: inscritosAtendidos,
-        conversaoAtendimento: conv
+        conversaoAtendimento: conv,
+        professoresAtivados: professorRecurrence.activated,
+        professoresRecorrentes: professorRecurrence.recurring,
+        recorrenciaProfessores: professorRecurrence.ratio
       };
     }
 
@@ -4209,6 +4789,7 @@
     function computePreviousKpis() {
       const prev = state.raw?.meta?.previous_kpis;
       if (!prev || typeof prev !== "object") return null;
+      const prevProfessorRecurrence = resolveProfessorRecurrenceFromPayload(prev);
       return {
         range: state.raw?.meta?.previous_range || null,
         kpis: {
@@ -4216,13 +4797,16 @@
           inscricoes: Number(prev.inscricoes || 0),
           inscritos: Number(prev.inscritos || 0),
           conversaoAtendimento: Number(prev.conversaoAtendimento || 0),
+          recorrenciaProfessores: prevProfessorRecurrence.ratio,
         }
       };
     }
 
     function formatDelta(current, previous) {
-      if (!previous || previous <= 0) return { text: "—", cls: "" };
-      const delta = (current - previous) / previous;
+      const currentValue = Number(current);
+      const previousValue = Number(previous);
+      if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue) || previousValue <= 0) return { text: "—", cls: "" };
+      const delta = (currentValue - previousValue) / previousValue;
       const sign = delta >= 0 ? "+" : "";
       return {
         text: `${sign}${fmtPct(delta)} vs periodo anterior`,
@@ -4247,7 +4831,7 @@
     }
 
     function setKpiTargetMode(showTargets) {
-      for (const prefix of ["kpiAtend", "kpiAtivos", "kpiConv"]) {
+      for (const prefix of ["kpiAtend", "kpiAtivos", "kpiConv", "kpiRec"]) {
         const targetEl = document.getElementById(`${prefix}Target`);
         const targetWrap = targetEl?.closest("span");
         if (targetWrap) targetWrap.classList.toggle("hidden", !showTargets);
@@ -4259,19 +4843,47 @@
       }
     }
 
+    function syncProfessorRecurrenceKpi(options = {}) {
+      const {
+        visible = false,
+        ratio = null,
+        previousRatio = null,
+      } = options;
+      const card = document.getElementById("kpiRecCard");
+      if (!card) return;
+
+      card.classList.toggle("hidden", !visible);
+      const valueEl = document.getElementById("kpiRec");
+      const targetEl = document.getElementById("kpiRecTarget");
+      if (targetEl) targetEl.textContent = fmtPct(KPI_TARGETS.recorrenciaProfessores);
+
+      if (!visible) {
+        if (valueEl) valueEl.textContent = "—";
+        updateDeltaEl("kpiRecDelta", NaN, NaN);
+        updateProgress("kpiRecBar", 0, KPI_TARGETS.recorrenciaProfessores);
+        return;
+      }
+
+      const normalizedRatio = Number.isFinite(Number(ratio)) ? clamp(Number(ratio), 0, 1) : null;
+      if (valueEl) valueEl.textContent = normalizedRatio === null ? "Nula" : fmtPct(normalizedRatio);
+      updateDeltaEl("kpiRecDelta", normalizedRatio, previousRatio);
+      updateProgress("kpiRecBar", normalizedRatio === null ? 0 : normalizedRatio, KPI_TARGETS.recorrenciaProfessores);
+    }
+
     // =========================================================
     // UI: charts + map
     // =========================================================
-    const chartPalette = ["#2A4FDA", "#00D95D", "#FF00FF", "#00F9FF", "#122F9B", "#605BE5"];
+    const chartPalette = ["#00F9FF", "#00FF85", "#FF76FF", "#2A4FDA", "#00D95D", "#605BE5"];
     const charts = {};
     const maps = new Map();
     const mapRenderRetryTimers = new Map();
 
     function configureCharts() {
       if (!window.Chart || configureCharts.done) return;
-      Chart.defaults.font.family = "\"Inter Tight\", system-ui, -apple-system, \"Segoe UI\", sans-serif";
-      Chart.defaults.color = "#52607f";
-      Chart.defaults.borderColor = "rgba(42, 79, 218, 0.12)";
+      const rootStyle = window.getComputedStyle(document.documentElement);
+      Chart.defaults.font.family = rootStyle.getPropertyValue("--body-font").trim() || "\"Figtree\", system-ui, sans-serif";
+      Chart.defaults.color = rootStyle.getPropertyValue("--ink-soft").trim() || "rgba(226, 233, 255, 0.74)";
+      Chart.defaults.borderColor = "rgba(255, 255, 255, 0.12)";
       Chart.defaults.plugins.tooltip.backgroundColor = "rgba(15, 23, 42, 0.9)";
       Chart.defaults.plugins.tooltip.titleColor = "#fff";
       Chart.defaults.plugins.tooltip.bodyColor = "#e2e8f0";
@@ -4301,6 +4913,8 @@
           data: values,
           tension: 0.35,
           pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: chartPalette[0],
           borderWidth: 2,
           borderColor: chartPalette[0],
           backgroundColor: "transparent",
@@ -4309,10 +4923,11 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
           plugins: { legend: { display: false }, title: { display: false } },
           scales: {
             x: { ticks: { maxTicksLimit: 8 }, grid: { display: false } },
-            y: { grid: { color: "rgba(11, 31, 51, 0.08)" }, ticks: { maxTicksLimit: 5 } }
+            y: { grid: { color: "rgba(255, 255, 255, 0.1)" }, ticks: { maxTicksLimit: 5 } }
           }
         }
       });
@@ -4333,7 +4948,7 @@
       const topBarLabelRotationDeg = Number(options?.topBarLabelRotationDeg ?? -40);
       const topBarLabelOffset = Number(options?.topBarLabelOffset ?? 10);
       const topBarLabelFontSize = Number(options?.topBarLabelFontSize ?? 10);
-      const topBarLabelColor = String(options?.topBarLabelColor || "#334155");
+      const topBarLabelColor = String(options?.topBarLabelColor || "rgba(242, 246, 255, 0.72)");
 
       charts[canvasId] = new Chart(ctx, {
         type: "bar",
@@ -4384,7 +4999,7 @@
                 : { autoSkip: false, maxRotation: 0, minRotation: 0 },
               grid: { display: false }
             },
-            y: { grid: { color: "rgba(11, 31, 51, 0.08)" } }
+            y: { grid: { color: "rgba(255, 255, 255, 0.1)" } }
           }
         }
       });
@@ -4486,8 +5101,8 @@
 
       if (!safeRows.length) {
         ctx.save();
-        ctx.fillStyle = "#64748b";
-        ctx.font = `600 13px "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif`;
+        ctx.fillStyle = "rgba(230, 237, 255, 0.68)";
+        ctx.font = `600 13px "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText("Sem fontes no recorte atual.", width / 2, height / 2);
@@ -4560,14 +5175,14 @@
         const subFont = clamp(radius * 0.16, 9, 13);
         const lineHeight = Math.round(mainFont * 1.15);
 
-        ctx.font = `700 ${mainFont}px "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif`;
+        ctx.font = `700 ${mainFont}px "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif`;
         const maxLabelWidth = Math.max(42, (radius * 2) - (textGap * 2));
         const lines = wrapByWidth(sourceLabel, maxLabelWidth, 2);
         const maxLineWidth = lines.length
           ? Math.max(...lines.map((line) => ctx.measureText(line).width))
           : 0;
 
-        ctx.font = `700 ${subFont}px "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif`;
+        ctx.font = `700 ${subFont}px "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif`;
         const countWidth = ctx.measureText(atendLabel).width;
 
         const textBlockH = (lines.length * lineHeight) + subFont + 4;
@@ -4714,12 +5329,12 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillStyle = "rgba(255,255,255,0.96)";
-        ctx.font = `700 ${mainFont}px "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif`;
+        ctx.font = `700 ${mainFont}px "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif`;
         for (const line of lines) {
           ctx.fillText(line, node.x, y);
           y += lineHeight;
         }
-        ctx.font = `700 ${subFont}px "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif`;
+        ctx.font = `700 ${subFont}px "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif`;
         ctx.fillText(countLabel, node.x, y + 2);
         ctx.restore();
       }
@@ -4788,15 +5403,21 @@
       box.innerHTML = "";
       items.forEach(([code, count], idx) => {
         const rankClass = ufRankClass(idx, count);
+        const isActive = Boolean(selectedCode && selectedCode === code);
         const btn = document.createElement("button");
         btn.className = [
           "uf-pill",
           rankClass,
-          selectedCode && selectedCode === code ? "active" : "",
+          isActive ? "active" : "",
         ].filter(Boolean).join(" ");
-        btn.title = code;
+        btn.title = isActive ? `Clique para limpar o filtro de UF ${code}` : `Clique para filtrar pela UF ${code}`;
+        btn.setAttribute("aria-pressed", isActive ? "true" : "false");
         btn.innerHTML = `<span>${formatRankPosition(idx)} ${ufSigla(code)}</span><span class="text-slate-500">${fmtInt(count)}</span>`;
         btn.addEventListener("click", () => {
+          if (isActive) {
+            applyFilters({ uf: "Todos" }, { immediate: true, reason: "uf-pill-toggle-off" });
+            return;
+          }
           const filterUfValue = valueByCode.get(code) || UF_CODE_TO_NAME[code] || code;
           applyFilters({ uf: filterUfValue }, { immediate: true, reason: "uf-pill" });
         });
@@ -6017,6 +6638,7 @@
       state.page = page;
       syncSourceFamilyUrl({ page });
       render();
+      hydrateSourcesForCurrentPage({ page });
     }
 
     const PAGES = new Set(["overview", "territory", "engagement", "content", "sources"]);
@@ -6092,6 +6714,8 @@
     }
 
     function syncPresetButtons() {
+      const btn7 = document.getElementById("btnPreset7");
+      const btnPrevWeek = document.getElementById("btnPresetPrevWeek");
       const btn2026 = document.getElementById("btnPreset2026");
       const btn30 = document.getElementById("btnPreset30");
       const btn90 = document.getElementById("btnPreset90");
@@ -6107,23 +6731,33 @@
         return;
       }
 
+      const today = new Date().toISOString().slice(0, 10);
       const defaultRange = getDefaultDashboardDateRange();
+      let d7 = shiftDate(today, -6);
+      let dPrevWeekFrom = shiftDate(today, -13);
+      let dPrevWeekTo = shiftDate(today, -7);
       let d30 = shiftDate(state.fullRange.to, -29);
       let d90 = shiftDate(state.fullRange.to, -89);
+      if (d7 < state.fullRange.from) d7 = state.fullRange.from;
+      if (dPrevWeekFrom < state.fullRange.from) dPrevWeekFrom = state.fullRange.from;
       if (d30 < state.fullRange.from) d30 = state.fullRange.from;
       if (d90 < state.fullRange.from) d90 = state.fullRange.from;
 
+      const is7 = state.filters.dateFrom === d7 && state.filters.dateTo === today;
+      const isPrevWeek = state.filters.dateFrom === dPrevWeekFrom && state.filters.dateTo === dPrevWeekTo;
       const is2026 = state.filters.dateFrom === defaultRange.from && state.filters.dateTo === defaultRange.to;
       const is30 = state.filters.dateFrom === d30 && state.filters.dateTo === state.fullRange.to;
       const is90 = state.filters.dateFrom === d90 && state.filters.dateTo === state.fullRange.to;
       const isAll = !is2026 && state.filters.dateFrom === state.fullRange.from && state.filters.dateTo === state.fullRange.to;
 
+      if (btn7) btn7.classList.toggle("is-active", is7);
+      if (btnPrevWeek) btnPrevWeek.classList.toggle("is-active", isPrevWeek);
       if (btn2026) btn2026.classList.toggle("is-active", is2026);
       if (btn30) btn30.classList.toggle("is-active", is30);
       if (btn90) btn90.classList.toggle("is-active", is90);
       if (btnAll) btnAll.classList.toggle("is-active", isAll);
 
-      const hasCustomRange = Boolean(state.filters.dateFrom && state.filters.dateTo && !is2026 && !is30 && !is90 && !isAll);
+      const hasCustomRange = Boolean(state.filters.dateFrom && state.filters.dateTo && !is7 && !isPrevWeek && !is2026 && !is30 && !is90 && !isAll);
       if (customRangeChip) {
         if (hasCustomRange) {
           const label = `${fmtDateBr(state.filters.dateFrom)} -> ${fmtDateBr(state.filters.dateTo)}`;
@@ -6199,19 +6833,23 @@
 
     function renderTerritoryCityButtons(setHtml, rows = []) {
       const html = (rows || []).length
-        ? rows.map((p, idx) => `
+        ? rows.map((p, idx) => {
+            const isActive = state.mapCityFocus?.key === mapCityFocusKeyFromRow(p);
+            return `
           <button
             type="button"
-            class="city-focus-btn ${state.mapCityFocus?.key === mapCityFocusKeyFromRow(p) ? "active" : ""}"
+            class="city-focus-btn ${isActive ? "active" : ""}"
+            aria-pressed="${isActive ? "true" : "false"}"
             data-map-city-focus-key="${escapeHtml(mapCityFocusKeyFromRow(p))}"
             data-map-city-focus-label="${escapeHtml(mapCityFocusLabelFromRow(p))}"
             data-map-city-focus-uf="${escapeHtml(resolveUfCode(p.uf) || "")}"
-            title="Clique para destacar esta cidade no mapa"
+            title="${isActive ? "Clique para remover o destaque desta cidade no mapa" : "Clique para destacar esta cidade no mapa"}"
           >
             <span class="city-focus-label">${idx + 1}. ${escapeHtml(mapCityFocusLabelFromRow(p))}</span>
             <span class="city-focus-value">${fmtInt(p.weight)}</span>
           </button>
-        `).join("")
+        `;
+          }).join("")
         : `<div class="text-sm text-slate-500">Sem dados de cidades para o recorte atual.</div>`;
       setHtml("topCitiesList", html);
     }
@@ -6303,9 +6941,173 @@
       syncModalBackdropState();
     }
 
+    // =========================================================
+    // Publicações / Comunidade
+    // =========================================================
+    let _pubCache = { key: "", data: null };
+
+    async function fetchPublicacoesData(dateFrom, dateTo) {
+      const cacheKey = `${dateFrom}|${dateTo}`;
+      if (_pubCache.key === cacheKey && _pubCache.data) return _pubCache.data;
+      try {
+        const client = initSupabaseClient();
+        const { data: rpc, error } = await client.rpc("comunidade_metricas_v2", {
+          p_date_from: dateFrom,
+          p_date_to: dateTo
+        });
+        if (error) throw error;
+        const d = rpc || {};
+        const tp = d.top_post || null;
+        const result = {
+          totalPosts: d.total_posts || 0,
+          totalComments: d.total_comentarios || 0,
+          totalMissions: d.total_missoes || 0,
+          topPost: tp ? {
+            nome: tp.nome,
+            created_at: tp.created_at,
+            conteudo: tp.conteudo,
+            curtidas: tp.curtidas,
+            likesCount: tp.curtidas || 0,
+            commentsCount: tp.comentarios || 0,
+            lista_comentarios: tp.lista_comentarios || []
+          } : null
+        };
+        _pubCache = { key: cacheKey, data: result };
+        return result;
+      } catch (err) {
+        console.warn("[UI] comunidade_metricas_v2 error:", err);
+        return { totalPosts: 0, totalComments: 0, totalMissions: 0, topPost: null };
+      }
+    }
+
+    function renderEngTopSources(setHtml) {
+      const analytics = getSourceAnalytics({ family: "geral" });
+      const top5 = sortSourceRows(analytics.rows || []).slice(0, 5);
+      if (!top5.length) {
+        const message = state.sourcesStatus === "loading"
+          ? "Carregando fontes..."
+          : (state.sourcesStatus === "error" ? "Falha ao carregar fontes." : "Sem fontes no recorte atual.");
+        setHtml("engTopSourcesList", `<div class="text-sm" style="color:rgba(226,233,255,.56)">${escapeHtml(message)}</div>`);
+        return;
+      }
+      const maxVal = Math.max(...top5.map(r => Number(r.atendimentos || 0)), 1);
+      const html = top5.map((row, i) => {
+        const atend = Number(row.atendimentos || 0);
+        const inscr = Number(row.inscritos || 0);
+        const pct = Math.round((atend / maxVal) * 100);
+        return `
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-bold shrink-0 w-5 text-right" style="color:rgba(226,233,255,.44)">${i + 1}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-sm font-semibold truncate" style="color:rgba(242,246,255,.94)">${escapeHtml(String(row.source || "Fonte"))}</span>
+                <span class="text-xs font-bold shrink-0 ml-2" style="color:rgba(226,233,255,.72)">${fmtInt(atend)} <span style="color:rgba(226,233,255,.44)">atend.</span></span>
+              </div>
+              <div class="w-full h-2 rounded-full" style="background:rgba(255,255,255,.08)">
+                <div class="h-full rounded-full transition-all" style="width:${pct}%;background:linear-gradient(90deg,var(--brand-green),var(--brand-green-2))"></div>
+              </div>
+              <div class="text-[10px] mt-1 font-semibold" style="color:rgba(226,233,255,.44)">${fmtInt(inscr)} inscritos</div>
+            </div>
+          </div>`;
+      }).join("");
+      setHtml("engTopSourcesList", html);
+    }
+
+    async function renderPublicacoesMetrics(setText, setHtml) {
+      const dateFrom = state.filters?.dateFrom;
+      const dateTo = state.filters?.dateTo;
+      if (!dateFrom || !dateTo) return;
+      const data = await fetchPublicacoesData(dateFrom, dateTo);
+      setText("pubMetricPosts", fmtInt(data.totalPosts));
+      setText("pubMetricComments", fmtInt(data.totalComments));
+      setText("pubMetricMissions", fmtInt(data.totalMissions));
+
+      const card = document.getElementById("engTopPostCard");
+      if (!card) return;
+      if (!data.topPost) { card.classList.add("hidden"); return; }
+      card.classList.remove("hidden");
+
+      const post = data.topPost;
+      const preview = post.conteudo?.text_preview || post.conteudo?.blocks?.filter(b => b.type === "text").map(b => b.value).join(" ").slice(0, 200) || "";
+      const author = post.nome || "Participante";
+      const imgBlock = post.conteudo?.blocks?.find(b => b.type === "image");
+
+      const thumbEl = document.getElementById("engTopPostThumb");
+      if (thumbEl) {
+        if (imgBlock?.url) {
+          thumbEl.style.display = "";
+          thumbEl.innerHTML = `<img src="${escapeHtml(imgBlock.url)}" alt="" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.style.display='none'" />`;
+        } else {
+          thumbEl.style.display = "none";
+        }
+      }
+      setText("engTopPostAuthor", author);
+      setText("engTopPostPreview", preview);
+      setText("engTopPostLikes", `${fmtInt(post.likesCount)} curtidas`);
+      setText("engTopPostComments", `${fmtInt(post.commentsCount)} comentarios`);
+
+      state._topPostData = post;
+    }
+
+    function renderPostDetailModal(post) {
+      const modal = document.getElementById("postDetailModal");
+      if (!modal || !post) return;
+      const _set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      const blocks = post.conteudo?.blocks || [];
+      const author = post.nome || "Participante";
+      const date = post.created_at ? fmtDateBr(post.created_at.slice(0, 10)) : "";
+
+      _set("postDetailAuthor", author);
+      _set("postDetailDate", date);
+
+      const bodyHtml = blocks.map(b => {
+        if (b.type === "image" && b.url) {
+          return `<img src="${escapeHtml(b.url)}" alt="" class="w-full rounded-xl my-2" loading="lazy" onerror="this.style.display='none'" />`;
+        }
+        if (b.type === "text" && b.value) {
+          return `<p class="text-sm leading-relaxed my-1.5" style="color:rgba(242,246,255,.88)">${escapeHtml(b.value)}</p>`;
+        }
+        return "";
+      }).join("");
+      const bodyEl = document.getElementById("postDetailBody");
+      if (bodyEl) bodyEl.innerHTML = bodyHtml;
+
+      const likesCount = typeof post.likesCount === "number" ? post.likesCount : (Array.isArray(post.curtidas) ? post.curtidas.length : Number(post.curtidas) || 0);
+      _set("postDetailLikes", `${fmtInt(likesCount)} curtidas`);
+
+      const commentsEl = document.getElementById("postDetailComments");
+      if (commentsEl) {
+        const comments = post.lista_comentarios || [];
+        if (comments.length) {
+          commentsEl.innerHTML = `<div class="text-xs font-semibold mb-2" style="color:rgba(226,233,255,.56)">${comments.length} comentário${comments.length > 1 ? "s" : ""}</div>` +
+            comments.map(c => {
+              const cDate = c.created_at ? fmtDateBr(c.created_at.slice(0, 10)) : "";
+              const cText = c.conteudo?.blocks?.filter(b => b.type === "text").map(b => b.value).join(" ") || c.conteudo?.text_preview || "";
+              return `<div class="py-2 border-t border-white/5"><div class="flex items-center gap-2 mb-1"><span class="text-xs font-semibold" style="color:rgba(165,180,252,.9)">${escapeHtml(c.autor)}</span><span class="text-[10px]" style="color:rgba(226,233,255,.4)">${cDate}</span></div><p class="text-xs leading-relaxed" style="color:rgba(242,246,255,.78)">${escapeHtml(cText)}</p></div>`;
+            }).join("");
+        } else {
+          commentsEl.innerHTML = "";
+        }
+      }
+
+      modal.classList.remove("hidden");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+    }
+
+    function closePostDetailModal() {
+      const modal = document.getElementById("postDetailModal");
+      if (!modal) return;
+      modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+    }
+
     function renderSourcesPage(setText, setHtml, analytics) {
       const family = normalizeSourceFamily(analytics?.family || state.sourceFamily);
       const familyMeta = analytics?.meta || getSourceFamilyMeta(family);
+      const sourcesLoading = state.sourcesStatus === "loading";
+      const sourcesError = state.sourcesStatus === "error";
       const selectedUfRaw = sanitizeFilterValue(state?.filters?.uf);
       const selectedUfCode = resolveUfCode(selectedUfRaw);
       const rowsRaw = filterVisibleSourceRows(Array.isArray(analytics?.rows) ? analytics.rows : []);
@@ -6323,14 +7125,12 @@
       }
       state.sourceRowsByKey = byKey;
 
-      const totalItems = Number(analytics?.totalItems ?? rows.length ?? 0);
       const totalInscritos = Number(analytics?.totalInscritos ?? rows.reduce((sum, row) => sum + Number(row?.inscritos || 0), 0));
       const totalAtendimentos = Number(analytics?.totalAtendimentos ?? rows.reduce((sum, row) => sum + Number(row?.atendimentos || 0), 0));
       const totalAtendidos = Number(analytics?.totalAtendidos ?? rows.reduce((sum, row) => sum + Number(row?.atendidos || 0), 0));
       const avgConversao = totalInscritos > 0
         ? sourceConversionRatio(totalInscritos, totalAtendidos)
         : Number(analytics?.avgConversao ?? (rows.length ? rows.reduce((sum, row) => sum + Number(row?.conversao || 0), 0) / rows.length : 0));
-      const taggedEvents = Number(analytics?.taggedEvents ?? rows.reduce((sum, row) => sum + Number(row?.eventos || 0), 0));
 
       setText("sourcesSectionTitle", familyMeta.chartTitle);
       setText("sourcesSectionSubtitle", familyMeta.chartSubtitle);
@@ -6339,13 +7139,6 @@
       setText("sourcesInscritosTotal", fmtInt(totalInscritos));
       setText("sourcesAtendTotal", fmtInt(totalAtendimentos));
       setText("sourcesAvgConv", totalInscritos > 0 || rows.length ? fmtPct(avgConversao) : "--");
-      setText(
-        "sourcesCoverageHint",
-        rows.length || totalItems
-          ? familyMeta.coverage(totalItems, totalInscritos, totalAtendimentos, taggedEvents)
-          : familyMeta.emptyMessage
-      );
-
       renderSourcesBubbleChart("chartSourcesBubble", top10, {
         onPointClick: (row) => openSourceDetailModal(row),
       });
@@ -6358,23 +7151,26 @@
             return `
               <button
                 type="button"
-                class="w-full text-left rounded-xl border border-slate-200 bg-white/90 px-3 py-3 hover:border-blue-300 hover:shadow-sm transition"
+                class="w-full text-left rounded-lg border border-white/14 bg-white/6 px-3 py-2.5 hover:border-cyan-400/30 hover:bg-white/10 transition"
                 data-source-key="${escapeHtml(key)}"
                 title="Ver detalhes da fonte"
               >
                 <div class="flex items-center justify-between gap-2">
-                  <span class="text-sm font-semibold text-slate-800">${idx + 1}. ${escapeHtml(source)}</span>
-                  <span class="text-xs text-slate-500">Conv. ${fmtPct(Number(row.conversao || 0))}</span>
+                  <span class="text-[13px] font-semibold" style="color:rgba(242,246,255,.94)">${idx + 1}. ${escapeHtml(source)}</span>
+                  <span class="text-xs" style="color:rgba(226,233,255,.56)">Conv. ${fmtPct(Number(row.conversao || 0))}</span>
                 </div>
-                <div class="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-600">
-                  <span>Inscritos <strong>${fmtInt(Number(row.inscritos || 0))}</strong></span>
+                <div class="mt-1.5 flex flex-wrap items-center gap-2.5 text-xs" style="color:rgba(226,233,255,.72)">
                   <span>Atendimentos <strong>${fmtInt(Number(row.atendimentos || 0))}</strong></span>
-                  <span>Usuarios <strong>${fmtInt(Number(row.usuarios || 0))}</strong></span>
+                  <span>Inscritos <strong>${fmtInt(Number(row.inscritos || 0))}</strong></span>
                 </div>
               </button>
             `;
           }).join("")
-        : `<div class="text-sm text-slate-500">${escapeHtml(familyMeta.emptyMessage)}</div>`;
+        : `<div class="text-sm" style="color:rgba(226,233,255,.56)">${escapeHtml(
+            sourcesLoading
+              ? "Carregando fontes..."
+              : (sourcesError ? "Falha ao carregar fontes." : familyMeta.emptyMessage)
+          )}</div>`;
       setHtml("sourcesTopList", listHtml);
 
       if (state.selectedSourceKey) {
@@ -6438,6 +7234,9 @@
       const membrosAtivos = Number(selectedUfMetrics?.ativos ?? k.membros_ativos ?? 0);
       const convRatio = Number(k.conversao_pct || 0) / 100;
       const atendidos = Number(k.atendidos || 0);
+      const professorFilterActive = isProfessorFilterSelected(state.filters.publico);
+      const professorRecurrence = professorFilterActive ? getProfessorRecurrenceMetrics(raw, state.filtered) : null;
+      const prevKpis = computePreviousKpis();
 
       setKpiTargetMode(!hasUfFilter);
       setText("kpiAtend", fmtInt(atendimentos));
@@ -6454,6 +7253,11 @@
       updateDeltaEl("kpiAtendDelta", atendimentos, 0);
       updateDeltaEl("kpiAtivosDelta", inscritos, 0);
       updateDeltaEl("kpiConvDelta", convRatio, 0);
+      syncProfessorRecurrenceKpi({
+        visible: professorFilterActive,
+        ratio: professorRecurrence?.ratio ?? null,
+        previousRatio: prevKpis?.kpis?.recorrenciaProfessores ?? null,
+      });
 
       const insStats = seriesStats(sIns.labels, sIns.values);
       const atStats = seriesStats(sAt.labels, sAt.values);
@@ -6543,8 +7347,13 @@
 
       if (state.page === "engagement") {
         renderLineChart("chartAtendLine", sAt.labels, sAt.values, "Atendimentos");
-        renderDoughnut("chartPublico", byPubAt, "Publico");
-        renderDoughnut("chartChannels", [], "Canais");
+        const filteredPub = byPubAt.filter(([k]) => {
+          const v = String(k || "").trim().toLowerCase();
+          return v !== "other" && v !== "outros" && v !== "" && v !== "n/a";
+        });
+        renderDoughnut("chartPublico", filteredPub, "Publico");
+        renderEngTopSources(setHtml);
+        renderPublicacoesMetrics(setText, setHtml);
       }
 
       if (state.page === "content") {
@@ -6585,6 +7394,10 @@
       });
       const topKpiWrap = document.getElementById("topKpiWrap");
       if (topKpiWrap) topKpiWrap.classList.toggle("hidden", state.page === "sources");
+      const professorFilterActive = isProfessorFilterSelected(state.filters.publico);
+      if (!professorFilterActive) {
+        syncProfessorRecurrenceKpi({ visible: false });
+      }
       syncCompetencyModeControls();
       syncSourceFamilyControls();
 
@@ -6629,6 +7442,11 @@
       updateDeltaEl("kpiAtendDelta", ins.kpis.atendimentos, prev?.kpis.atendimentos || 0);
       updateDeltaEl("kpiAtivosDelta", ins.kpis.inscritos, prev?.kpis.inscritos || 0);
       updateDeltaEl("kpiConvDelta", ins.kpis.conversaoAtendimento, prev?.kpis.conversaoAtendimento || 0);
+      syncProfessorRecurrenceKpi({
+        visible: professorFilterActive,
+        ratio: ins.kpis.recorrenciaProfessores,
+        previousRatio: prev?.kpis?.recorrenciaProfessores ?? null,
+      });
 
       const sIns = seriesByDate(state.filtered, "inscricao");
       const sAt = seriesByDate(state.filtered, "atendimento");
@@ -6734,10 +7552,13 @@
 
       if (state.page === "engagement") {
         renderLineChart("chartAtendLine", sAt.labels, sAt.values, "Atendimentos");
-        const topPub = topByKey(state.filtered, "publico", null, 10);
+        const topPub = topByKey(state.filtered, "publico", (e) => {
+          const v = String(e.publico || "").trim().toLowerCase();
+          return v !== "other" && v !== "outros" && v !== "";
+        }, 10);
         renderDoughnut("chartPublico", topPub, "Publico");
-        const topChannel = topByKey(state.filtered, "channel", null, 10);
-        renderDoughnut("chartChannels", topChannel, "Canais");
+        renderEngTopSources(setHtml);
+        renderPublicacoesMetrics(setText, setHtml);
       }
 
       if (state.page === "content") {
@@ -6889,7 +7710,7 @@
       };
 
       const baseOptions = {
-        backgroundColor: "#f4f7ff",
+        backgroundColor: "#0a0f36",
         logging: false,
         scale,
         width: root.scrollWidth,
@@ -7138,7 +7959,8 @@
       const filterModal = document.getElementById("filterModal");
       const ufModal = document.getElementById("ufWelcomeModal");
       const sourceModal = document.getElementById("sourceDetailModal");
-      const hasOpenModal = [alertModal, filterModal, ufModal, sourceModal].some((el) => el && !el.classList.contains("hidden"));
+      const postModal = document.getElementById("postDetailModal");
+      const hasOpenModal = [alertModal, filterModal, ufModal, sourceModal, postModal].some((el) => el && !el.classList.contains("hidden"));
       document.body.classList.toggle("modal-open", hasOpenModal);
     }
 
@@ -7397,6 +8219,7 @@
       const applyPreset = (preset) => {
         if (!state.fullRange.from || !state.fullRange.to) return;
         const patch = {};
+        const today = new Date().toISOString().slice(0, 10);
         if (preset === "all") {
           patch.dateFrom = state.fullRange.from;
           patch.dateTo = state.fullRange.to;
@@ -7404,6 +8227,16 @@
           const defaultRange = getDefaultDashboardDateRange();
           patch.dateFrom = defaultRange.from;
           patch.dateTo = defaultRange.to;
+        } else if (preset === "prev-week") {
+          let from = shiftDate(today, -13);
+          if (from < state.fullRange.from) from = state.fullRange.from;
+          patch.dateFrom = from;
+          patch.dateTo = shiftDate(today, -7);
+        } else if (preset === 7) {
+          let from = shiftDate(today, -6);
+          if (from < state.fullRange.from) from = state.fullRange.from;
+          patch.dateFrom = from;
+          patch.dateTo = today;
         } else {
           let from = shiftDate(state.fullRange.to, -preset + 1);
           if (from < state.fullRange.from) from = state.fullRange.from;
@@ -7413,11 +8246,15 @@
         applyFilters(patch, { immediate: true, reason: `preset-${preset}` });
       };
 
+      const btnPreset7 = document.getElementById("btnPreset7");
+      const btnPresetPrevWeek = document.getElementById("btnPresetPrevWeek");
       const btnPreset2026 = document.getElementById("btnPreset2026");
       const btnPreset30 = document.getElementById("btnPreset30");
       const btnPreset90 = document.getElementById("btnPreset90");
       const btnPresetAll = document.getElementById("btnPresetAll");
       const btnClearUf = document.getElementById("btnClearUf");
+      if (btnPreset7) btnPreset7.addEventListener("click", () => applyPreset(7));
+      if (btnPresetPrevWeek) btnPresetPrevWeek.addEventListener("click", () => applyPreset("prev-week"));
       if (btnPreset2026) btnPreset2026.addEventListener("click", () => applyPreset("2026"));
       if (btnPreset30) btnPreset30.addEventListener("click", () => applyPreset(30));
       if (btnPreset90) btnPreset90.addEventListener("click", () => applyPreset(90));
@@ -7506,11 +8343,26 @@
           if (e.target === sourceDetailModal) closeSourceDetailModal();
         });
       }
+      const postDetailModalEl = document.getElementById("postDetailModal");
+      const btnClosePostDetail = document.getElementById("btnClosePostDetail");
+      const engTopPostBtn = document.getElementById("engTopPostBtn");
+      if (btnClosePostDetail) btnClosePostDetail.addEventListener("click", closePostDetailModal);
+      if (postDetailModalEl) {
+        postDetailModalEl.addEventListener("click", (e) => {
+          if (e.target === postDetailModalEl) closePostDetailModal();
+        });
+      }
+      if (engTopPostBtn) {
+        engTopPostBtn.addEventListener("click", () => {
+          if (state._topPostData) renderPostDetailModal(state._topPostData);
+        });
+      }
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") closeAlertDisclaimerModal();
         if (e.key === "Escape") closeModal();
         if (e.key === "Escape") closeUfWelcomeModal();
         if (e.key === "Escape") closeSourceDetailModal();
+        if (e.key === "Escape") closePostDetailModal();
       });
 
       const sidebarToggle = document.getElementById("sidebarToggle");
@@ -7548,11 +8400,13 @@
         state.sourceFamily = currentSourceFamilyFromUrl();
         syncSourceFamilyControls();
         render();
+        hydrateSourcesForCurrentPage({ page: state.page });
       });
       window.addEventListener("popstate", ()=>{
         state.page = currentHashPage();
         state.sourceFamily = currentSourceFamilyFromUrl();
         render();
+        hydrateSourcesForCurrentPage({ page: state.page });
       });
       window.addEventListener("resize", () => {
         refreshResponsiveLayout();
@@ -7657,6 +8511,18 @@
   </div>
 
   <!-- App -->
+  <svg class="shape-bg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="dashboardIdentityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#00F9FF" />
+        <stop offset="100%" stop-color="#FF00FF" />
+      </linearGradient>
+    </defs>
+    <polygon points="80,260 200,200 200,140 80,200" fill="url(#dashboardIdentityGradient)" opacity=".9" />
+    <polygon points="200,200 320,140 320,80 200,140" fill="#00FF85" opacity=".85" />
+    <polygon points="200,200 320,140 320,260 200,320" fill="#2A4FDA" opacity=".9" />
+    <polygon points="80,260 200,320 200,260 80,200" fill="#0A0F36" opacity=".55" />
+  </svg>
   <div id="app" class="hidden app-shell">
     <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Alternar menu lateral" aria-expanded="false">&#9776;</button>
     <aside id="sidebar" class="sidebar sidenav">
@@ -7718,14 +8584,14 @@
 
     </aside>
     <div class="content-wrap">
-      <div class="max-w-[1680px] mx-auto px-4 md:px-6 pb-12 pt-6">
+      <div class="dashboard-content max-w-[1680px] mx-auto px-4 md:px-6 pb-12 pt-4">
         <div id="bootError" class="hidden mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900">
           Falha ao inicializar o painel. Alguns gr&aacute;ficos podem n&atilde;o carregar; verifique a conex&atilde;o com CDN/dados.
         </div>
-      <header class="mb-4 section-band rounded-2xl p-3 wrap-hero blur-target">
+      <header class="mb-4 section-band p-4 wrap-hero blur-target">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-white flex items-center justify-center border border-slate-200 shadow-sm">
+          <div class="w-9 h-9 rounded-xl bg-white/95 flex items-center justify-center border border-white/20 shadow-md shrink-0">
             <img
               src="./data/bandeira_escalada.svg"
               alt="Escalada"
@@ -7735,7 +8601,7 @@
           </div>
           <div>
             <h1 class="text-xl md:text-2xl font-display">Escalada &bull; Dashboard Executivo</h1>
-            <div class="text-xs text-slate-600 mt-1">Coletando inteligêncial, gerando engajamento e impactanto a sociedade</div>
+            <div class="text-xs text-slate-600 mt-1">Coletando intelig&ecirc;ncia, gerando engajamento e impactando a sociedade</div>
           </div>
         </div>
 
@@ -7744,21 +8610,23 @@
             <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
             Filtros
           </button>
+          <button id="btnClearUf" class="btn btn-ghost btn-sm" type="button">Limpar UF</button>
         </div>
       </div>
 
-      <div class="mt-3 flex flex-wrap items-center gap-2">
+      <div class="dashboard-hero-controls mt-3">
         <span id="dataCapLabel" class="chip hidden"></span>
         <span id="customDateRangeChip" class="chip soft hidden"></span>
-        <button id="btnPreset2026" class="btn btn-ghost btn-sm" type="button">2026</button>
+        <button id="btnPreset7" class="btn btn-ghost btn-sm" type="button">&Uacute;ltima semana</button>
+        <button id="btnPresetPrevWeek" class="btn btn-ghost btn-sm" type="button">Semana passada</button>
         <button id="btnPreset30" class="btn btn-ghost btn-sm" type="button">30 dias</button>
         <button id="btnPreset90" class="btn btn-ghost btn-sm" type="button">90 dias</button>
+        <button id="btnPreset2026" class="btn btn-ghost btn-sm" type="button">2026</button>
         <button id="btnPresetAll" class="btn btn-ghost btn-sm" type="button">Per&iacute;odo completo</button>
-        <button id="btnClearUf" class="btn btn-ghost btn-sm" type="button">Limpar UF</button>
       </div>
 
-      <div id="topKpiWrap" class="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
-        <div class="card p-3 kpi kpi-compact">
+      <div id="topKpiWrap" class="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div class="card p-4 kpi kpi-compact">
           <div class="label">Atendimentos acumulados</div>
           <div id="kpiAtend" class="value">&mdash;</div>
           <div class="flex items-center justify-between text-[11px] text-slate-600">
@@ -7767,7 +8635,7 @@
           </div>
           <div class="progress mt-2"><span id="kpiAtendBar"></span></div>
         </div>
-        <div class="card p-3 kpi kpi-compact">
+        <div class="card p-4 kpi kpi-compact">
           <div class="label">Inscritos</div>
           <div id="kpiAtivos" class="value">&mdash;</div>
           <div class="flex items-center justify-between text-[11px] text-slate-600">
@@ -7776,7 +8644,7 @@
           </div>
           <div class="progress mt-2"><span id="kpiAtivosBar"></span></div>
         </div>
-        <div class="card p-3 kpi kpi-compact">
+        <div class="card p-4 kpi kpi-compact">
           <div class="label">Taxa de ativa&ccedil;&atilde;o (inscritos atendidos / inscritos)</div>
           <div id="kpiConv" class="value">&mdash;</div>
           <div class="flex items-center justify-between text-[11px] text-slate-600">
@@ -7785,12 +8653,21 @@
           </div>
           <div class="progress mt-2"><span id="kpiConvBar"></span></div>
         </div>
+        <div id="kpiRecCard" class="card p-4 kpi kpi-compact hidden">
+          <div class="label">Recorr&ecirc;ncia</div>
+          <div id="kpiRec" class="value">&mdash;</div>
+          <div class="flex items-center justify-between text-[11px] text-slate-600">
+            <span id="kpiRecDelta" class="delta">&mdash;</span>
+            <span>Meta <strong id="kpiRecTarget">&mdash;</strong></span>
+          </div>
+          <div class="progress mt-2"><span id="kpiRecBar"></span></div>
+        </div>
       </div>
       </header>
 
-    <main class="grid gap-4 main wrap-atmosphere p-3 blur-target">
+    <main class="grid gap-4 main blur-target">
         <!-- PAGES -->
-        <section data-page="overview" class="grid grid-cols-12 gap-4 wrap-accent-blue wrap-soft p-4">
+        <section data-page="overview" class="grid grid-cols-12 gap-4 wrap-accent-blue wrap-soft p-5">
           <div class="col-span-12 card p-5 reveal">
             <div>
               <h2 class="section-title">Atendimentos por UF</h2>
@@ -7885,7 +8762,7 @@
           </div>
         </section>
 
-        <section data-page="territory" class="hidden grid grid-cols-12 gap-4 wrap-accent-green wrap-soft p-4">
+        <section data-page="territory" class="hidden grid grid-cols-12 gap-4 wrap-accent-green wrap-soft p-5">
           <div class="col-span-12 card p-5">
             <h2 id="terrHighlightTitle" class="section-title">Cidades em destaque</h2>
             <div id="terrHighlightSubtitle" class="text-sm text-slate-600">Concentra&ccedil;&atilde;o urbana e oportunidades regionais.</div>
@@ -7931,7 +8808,7 @@
           </div>
         </section>
 
-        <section data-page="engagement" class="hidden grid grid-cols-12 gap-4 wrap-accent-magenta wrap-soft p-4">
+        <section data-page="engagement" class="hidden grid grid-cols-12 gap-4 wrap-accent-magenta wrap-soft p-5">
           <div class="col-span-12 lg:col-span-7 card p-5">
             <h2 class="section-title">Atendimentos ao longo do tempo</h2>
             <div class="text-sm text-slate-600">Picos podem indicar eventos regionais ou gargalos.</div>
@@ -7941,20 +8818,43 @@
             <div class="mt-4 h-64"><canvas id="chartAtendLine"></canvas></div>
           </div>
           <div class="col-span-12 lg:col-span-5 card p-5">
-            <h2 class="section-title">Funil de engajamento</h2>
-            <div class="text-sm text-slate-600">Convers&otilde;es entre etapas da jornada.</div>
-            <div class="grid gap-3 mt-4 text-sm">
-              <div class="flex items-center justify-between">
-                <span>Inscritos</span>
-                <strong id="funnelInscr">&mdash;</strong>
+            <h2 class="section-title">Atividade na comunidade</h2>
+            <div class="text-sm text-slate-600">O que anda acontecendo na comunidade Escalada?</div>
+            <div class="grid grid-cols-3 gap-3 mt-4">
+              <div class="metric text-center" style="padding:16px 12px">
+                <span class="label">Publica&ccedil;&otilde;es</span>
+                <span id="pubMetricPosts" class="value" style="font-size:clamp(1.6rem,2.5vw,2.4rem)">&mdash;</span>
               </div>
-              <div>
-                <div class="flex items-center justify-between">
-                  <span>Inscritos atendidos</span>
-                  <span><strong id="funnelAtend">&mdash;</strong>&mdash;<span id="funnelAtendPct">&mdash;</span></span>
+              <div class="metric text-center" style="padding:16px 12px">
+                <span class="label">Coment&aacute;rios</span>
+                <span id="pubMetricComments" class="value" style="font-size:clamp(1.6rem,2.5vw,2.4rem)">&mdash;</span>
+              </div>
+              <div class="metric has-help text-center" style="padding:16px 12px">
+                <details class="metric-help">
+                  <summary class="metric-help-trigger" aria-label="Explicar o que são missões">?</summary>
+                  <div class="metric-help-popover">
+                    Miss&otilde;es passadas pela central de engajamento aos membros. Divimos o p&uacute;blico por rank em diferentes comunidades que recebem diferentes desafios, como compartilhar publica&ccedil;&otilde;es nos espa&ccedil;os da plataforma sobre t&oacute;picos surpresa
+                  </div>
+                </details>
+                <span class="label">Miss&otilde;es</span>
+                <span id="pubMetricMissions" class="value" style="font-size:clamp(1.6rem,2.5vw,2.4rem)">&mdash;</span>
+              </div>
+            </div>
+            <div id="engTopPostCard" class="mt-4 hidden">
+              <div class="text-xs text-slate-600 mb-2 uppercase tracking-wide font-semibold" style="color:rgba(235,241,255,.7)">Post mais engajado</div>
+              <button id="engTopPostBtn" type="button" class="w-full min-h-[11rem] text-left rounded-2xl border border-white/14 bg-white/6 p-4 hover:border-cyan-400/30 hover:bg-white/10 transition cursor-pointer">
+                <div class="flex items-start gap-4 h-full">
+                  <div id="engTopPostThumb" class="w-20 h-20 rounded-2xl bg-white/10 shrink-0 overflow-hidden" style="display:none"></div>
+                  <div class="min-w-0 flex-1 flex flex-col min-h-[8rem]">
+                    <div id="engTopPostAuthor" class="text-xs font-semibold truncate" style="color:rgba(242,246,255,.94)"></div>
+                    <div id="engTopPostPreview" class="text-sm mt-2 leading-relaxed line-clamp-4 flex-1" style="color:rgba(226,233,255,.72)"></div>
+                    <div class="flex gap-3 mt-3 text-[11px] font-semibold" style="color:rgba(226,233,255,.56)">
+                      <span id="engTopPostLikes"></span>
+                      <span id="engTopPostComments"></span>
+                    </div>
+                  </div>
                 </div>
-                <div class="progress mt-1"><span id="funnelAtendBar"></span></div>
-              </div>
+              </button>
             </div>
           </div>
 
@@ -7964,14 +8864,14 @@
             <div class="mt-4 h-64"><canvas id="chartPublico"></canvas></div>
           </div>
           <div class="col-span-12 md:col-span-6 card p-5">
-            <h2 class="section-title">Canais de entrada</h2>
-            <div class="text-sm text-slate-600">Origem dos atendimentos e capilaridade.</div>
-            <div class="mt-4 h-64"><canvas id="chartChannels"></canvas></div>
+            <h2 class="section-title">Top fontes de entrada</h2>
+            <div class="text-sm text-slate-600">Micro vis&atilde;o das 5 maiores fontes no recorte.</div>
+            <div id="engTopSourcesList" class="mt-4 flex flex-col gap-4"></div>
           </div>
 
         </section>
 
-        <section data-page="content" class="hidden grid grid-cols-12 gap-4 wrap-soft p-4">
+        <section data-page="content" class="hidden grid grid-cols-12 gap-4 wrap-soft p-5">
           <div class="col-span-12 card p-5">
             <h2 class="section-title">Macrotemas</h2>
             <div class="text-sm text-slate-600">Base para planejamento de portf&oacute;lio.</div>
@@ -7992,8 +8892,8 @@
 
         </section>
 
-        <section data-page="sources" class="hidden grid grid-cols-12 gap-4 wrap-accent-blue wrap-soft p-4">
-          <div class="col-span-12 card p-4">
+        <section data-page="sources" class="sources-page hidden grid grid-cols-12 gap-3 wrap-accent-blue wrap-soft p-3 md:p-4">
+          <div class="col-span-12 card p-3">
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Subdivisões</span>
               <a href="?source_family=geral#sources:geral" class="btn btn-sm btn-ghost is-active" data-source-family="geral" aria-pressed="true">Geral</a>
@@ -8004,7 +8904,7 @@
             </div>
           </div>
 
-          <div class="col-span-12 lg:col-span-8 card p-5">
+          <div class="col-span-12 lg:col-span-8 card sources-chart-card flex flex-col min-h-[22rem] lg:min-h-[26rem]">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
                 <h2 id="sourcesSectionTitle" class="section-title">Top 15 fontes de entrada</h2>
@@ -8014,15 +8914,14 @@
               </div>
               <span class="chip soft">Bubble chart</span>
             </div>
-            <div class="mt-4 h-72">
+            <div class="sources-bubble-wrap flex-1">
               <canvas id="chartSourcesBubble" class="w-full h-full"></canvas>
             </div>
-            <div id="sourcesCoverageHint" class="text-xs text-slate-500 mt-3">Aguardando dados de fontes...</div>
           </div>
 
-          <div class="col-span-12 lg:col-span-4 card p-5 sources-summary-card">
+          <div class="col-span-12 lg:col-span-4 card sources-summary-card">
             <h2 class="section-title">Resumo de fontes</h2>
-            <div class="text-sm text-slate-600">Indicadores agregados do recorte atual. Conversao = inscritos atendidos / inscritos.</div>
+            <div class="text-sm text-slate-600">Indicadores agregados do recorte atual.</div>
             <div class="sources-summary-grid">
               <div class="metric sources-summary-metric">
                 <span class="label">Conversao media</span>
@@ -8039,12 +8938,12 @@
             </div>
           </div>
 
-          <div class="col-span-12 card p-5">
+          <div class="col-span-12 card sources-list-card">
             <div class="flex items-center justify-between">
               <h2 id="sourcesListTitle" class="section-title">Ranking de fontes</h2>
               <span id="sourcesListHint" class="text-xs text-slate-500">Clique em uma linha para abrir detalhes.</span>
             </div>
-            <div id="sourcesTopList" class="mt-4 grid gap-2"></div>
+            <div id="sourcesTopList" class="sources-list grid"></div>
           </div>
         </section>
 
@@ -8133,7 +9032,7 @@
       </div>
 
       <div class="mt-3">
-        <div id="sourceDetailName" class="text-base font-semibold text-slate-800">Fonte</div>
+        <div id="sourceDetailName" class="text-base font-semibold" style="color:rgba(242,246,255,.94)">Fonte</div>
         <div class="grid grid-cols-2 gap-3 mt-3">
           <div class="metric">
             <span class="label">Inscritos</span>
@@ -8152,14 +9051,33 @@
 
       <div id="sourceDetailInsightsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
         <div id="sourceDetailUfBlock">
-          <h3 class="text-sm font-semibold text-slate-800">Top UFs</h3>
+          <h3 class="text-sm font-semibold" style="color:rgba(242,246,255,.94)">Top UFs</h3>
           <ul id="sourceDetailUfList" class="insight-list mt-2"></ul>
         </div>
         <div id="sourceDetailPublicoBlock">
-          <h3 class="text-sm font-semibold text-slate-800">Top publicos</h3>
+          <h3 class="text-sm font-semibold" style="color:rgba(242,246,255,.94)">Top publicos</h3>
           <ul id="sourceDetailPublicoList" class="insight-list mt-2"></ul>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="postDetailModal" class="modal-backdrop hidden" aria-hidden="true" aria-modal="true" role="dialog">
+    <div class="modal-card" style="width:min(620px,94vw);max-height:80vh;overflow-y:auto">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div id="postDetailAuthor" class="text-sm font-semibold" style="color:rgba(242,246,255,.94)"></div>
+          <div id="postDetailDate" class="text-xs mt-0.5" style="color:rgba(226,233,255,.56)"></div>
+        </div>
+        <button id="btnClosePostDetail" class="btn btn-ghost btn-sm" title="Fechar">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div id="postDetailBody" class="mb-3"></div>
+      <div class="flex gap-3 text-xs font-semibold pt-2 border-t border-white/10" style="color:rgba(226,233,255,.56)">
+        <span id="postDetailLikes"></span>
+      </div>
+      <div id="postDetailComments" class="mt-3"></div>
     </div>
   </div>
 
@@ -8215,7 +9133,7 @@
       </div>
     </div>
   </div>
-  <div id="toast" class="hidden fixed right-5 bottom-5 z-[95] rounded-xl border border-slate-300 bg-white/95 px-4 py-2 text-sm font-semibold text-slate-800 shadow-lg"></div>
+  <div id="toast" class="hidden fixed right-5 bottom-5 z-[95] rounded-xl border border-white/14 bg-[rgba(10,15,54,0.88)] backdrop-blur-md px-4 py-2 text-sm font-semibold shadow-lg" style="color:rgba(242,246,255,.94)"></div>
   <!-- padrao solicitado: clearInterval(poller) quando detectar window.circleUser.email (mesmo se aqui nao usar) -->
   <script>
     (function () {

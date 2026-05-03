@@ -1,0 +1,91 @@
+[project.ts]: detectFrameworks
+[project.ts]: detectBuildSystem
+[project.ts]: detectWorkspaces
+[project.ts]: detectPackageManager
+[project.ts]: detectFrameworksInPath - undefined
+winston:create-logger: Define prototype method for "error"
+winston:create-logger: Define prototype method for "warn"
+winston:create-logger: Define prototype method for "info"
+winston:create-logger: Define prototype method for "http"
+winston:create-logger: Define prototype method for "verbose"
+winston:create-logger: Define prototype method for "debug"
+winston:create-logger: Define prototype method for "silly"
+winston:create-logger: Define prototype method for "error"
+winston:create-logger: Define prototype method for "warn"
+winston:create-logger: Define prototype method for "info"
+winston:create-logger: Define prototype method for "http"
+winston:create-logger: Define prototype method for "verbose"
+winston:create-logger: Define prototype method for "debug"
+winston:create-logger: Define prototype method for "silly"
+⬥ Using simple static server because '--dir' flag was specified
+⬥ Running static server from "dashboard-escalada"
+⬥ Setting up local dev server
+​
+Netlify Build                                                 
+────────────────────────────────────────────────────────────────
+​
+> Version
+  @netlify/build 35.5.9
+​
+> Flags
+  cwd: C:\Users\gabri\OneDrive\Desktop\tnl\dashboard-escalada
+  debug: true
+  edgeFunctionsBootstrapURL: https://v2-17-1--edge.netlify.com/bootstrap/index-combined.ts
+  mode: cli
+  offline: true
+  quiet: false
+​
+> Current directory
+  C:\Users\gabri\OneDrive\Desktop\tnl\dashboard-escalada
+​
+> Config file
+  No config file was defined: using default values.
+​
+> Resolved config
+  build:
+    publish: C:\Users\gabri\OneDrive\Desktop\tnl\dashboard-escalada
+    publishOrigin: default
+​
+> Context
+  dev
+{"outputFlusher":{"flushed":false}} Cleaned up .netlify\functions-internal.
+
+⬥ Static server listening to 3999
+Build step duration: dev.command completed in 21ms
+⬥ Functions server is listening on 57943
+
+   ╭─────────────────────── ⬥  ────────────────────────╮
+   │                                                   │
+   │   Local dev server ready: http://localhost:8888   │
+   │                                                   │
+   ╰───────────────────────────────────────────────────╯
+
+getBinaryVersion failed Error: Command failed with exit code 1: deno --version
+'deno' n�o � reconhecido como um comando interno
+ou externo, um programa oper�vel ou um arquivo em lotes.
+    at makeError (file:///C:/Users/gabri/AppData/Roaming/npm/node_modules/netlify-cli/node_modules/@netlify/edge-bundler/node_modules/execa/lib/error.js:60:11)
+    at handlePromise (file:///C:/Users/gabri/AppData/Roaming/npm/node_modules/netlify-cli/node_modules/@netlify/edge-bundler/node_modules/execa/index.js:124:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async DenoBridge.getBinaryVersion (file:///C:/Users/gabri/AppData/Roaming/npm/node_modules/netlify-cli/node_modules/@netlify/edge-bundler/dist/node/bridge.js:68:32)
+    at async DenoBridge.getGlobalBinary (file:///C:/Users/gabri/AppData/Roaming/npm/node_modules/netlify-cli/node_modules/@netlify/edge-bundler/dist/node/bridge.js:103:24)
+    at async DenoBridge.getBinaryPath (file:///C:/Users/gabri/AppData/Roaming/npm/node_modules/netlify-cli/node_modules/@netlify/edge-bundler/dist/node/bridge.js:141:28)
+    at async Module.serve (file:///C:/Users/gabri/AppData/Roaming/npm/node_modules/netlify-cli/node_modules/@netlify/edge-bundler/dist/node/server/server.js:194:5)
+    at async prepareServer (file:///C:/Users/gabri/AppData/Roaming/npm/node_modules/netlify-cli/dist/lib/edge-functions/proxy.js:118:28) {
+  shortMessage: 'Command failed with exit code 1: deno --version',
+  command: 'deno --version',
+  escapedCommand: 'deno --version',
+  exitCode: 1,
+  signal: undefined,
+  signalDescription: undefined,
+  stdout: '',
+  stderr: "'deno' n�o � reconhecido como um comando interno\r\n" +
+    'ou externo, um programa oper�vel ou um arquivo em lotes.',
+  cwd: 'C:\\Users\\gabri\\OneDrive\\Desktop\\tnl\\dashboard-escalada',
+  failed: true,
+  timedOut: false,
+  isCanceled: false,
+  killed: false
+}
+No globalVersion or semver not satisfied. globalVersion: undefined, versionRange: ^2.4.2
+Using cached Deno CLI from C:\Users\gabri\AppData\Roaming\netlify\Config\deno-cli\deno.exe
+Local version of types is up-to-date: 69ea7663762a1800080069da
