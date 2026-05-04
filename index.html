@@ -446,11 +446,43 @@
       z-index: 2;
     }
 
+    .dashboard-header {
+      position: relative;
+    }
+
+    .dashboard-header-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .dashboard-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .dashboard-header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
     .dashboard-hero-controls {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
       gap: 10px;
+    }
+
+    .dashboard-mobile-metrics-toggle {
+      display: none;
     }
 
     .wrap-accent-blue,
@@ -816,6 +848,31 @@
       gap: 12px;
     }
 
+    .sources-family-switcher {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .sources-family-title {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .sources-family-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+
     .sources-page .section-title {
       font-size: 0.96rem;
     }
@@ -923,7 +980,7 @@
 
     #map,
     #mapTerritory {
-      min-height: 220px;
+      min-height: 300px;
     }
 
     .leaflet-map-host .leaflet-container {
@@ -1177,6 +1234,111 @@
       backdrop-filter: blur(16px);
       box-shadow: var(--shadow);
       padding: 16px;
+    }
+
+    .post-detail-shell {
+      display: grid;
+      gap: 14px;
+    }
+
+    .post-detail-meta {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .post-detail-section {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 14px;
+    }
+
+    .post-detail-section-title {
+      margin: 0 0 10px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(226, 233, 255, 0.56);
+    }
+
+    .post-detail-copy {
+      display: grid;
+      gap: 8px;
+    }
+
+    .post-detail-copy p {
+      margin: 0;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: rgba(242, 246, 255, 0.88);
+    }
+
+    .post-detail-media-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .post-detail-media-grid img {
+      width: 100%;
+      border-radius: 18px;
+      object-fit: cover;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .post-detail-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: rgba(226, 233, 255, 0.7);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .post-detail-comment-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .post-detail-comment-card {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      background: rgba(7, 15, 36, 0.42);
+      padding: 12px;
+    }
+
+    .post-detail-comment-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .post-detail-comment-author {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: rgba(165, 180, 252, 0.96);
+    }
+
+    .post-detail-comment-date {
+      font-size: 0.66rem;
+      color: rgba(226, 233, 255, 0.44);
+    }
+
+    .post-detail-comment-card p {
+      margin: 0;
+      font-size: 0.78rem;
+      line-height: 1.55;
+      color: rgba(242, 246, 255, 0.82);
+    }
+
+    .post-detail-empty {
+      font-size: 0.8rem;
+      color: rgba(226, 233, 255, 0.56);
     }
 
     .alert-disclaimer-backdrop {
@@ -1438,6 +1600,30 @@
       .sidenav-closed .content-wrap {
         padding-left: 0;
         padding-top: 72px;
+      }
+
+      .dashboard-header {
+        margin-top: 56px;
+      }
+
+      .dashboard-header-actions {
+        position: absolute;
+        top: -56px;
+        right: 0;
+        width: calc(100% - 56px);
+        justify-content: flex-end;
+      }
+
+      .dashboard-mobile-metrics-toggle {
+        display: inline-flex;
+      }
+
+      .mobile-kpis-collapsed {
+        display: none !important;
+      }
+
+      .top-cities-pills .city-focus-btn {
+        min-width: min(220px, 84vw);
       }
 
       body:not(.sidenav-closed) .sidebar-toggle {
@@ -4182,6 +4368,10 @@
       sourcesStatus: "idle",
       sourcesError: "",
       sourcesPromise: null,
+      topMetricsExpanded: true,
+      openSidebar: null,
+      closeSidebar: null,
+      toggleSidebar: null,
       modalDraftFilters: null,
       filters: {
         dateFrom: DEFAULT_DASHBOARD_RANGE.from,
@@ -4190,6 +4380,48 @@
         publico: "Todos",
       }
     };
+
+    const MOBILE_BREAKPOINT_PX = 1024;
+
+    function isMobileViewport() {
+      return window.innerWidth <= MOBILE_BREAKPOINT_PX;
+    }
+
+    function syncTopMetricsVisibility() {
+      const topKpiWrap = document.getElementById("topKpiWrap");
+      const toggleBtn = document.getElementById("btnToggleTopMetrics");
+      const toggleLabel = document.getElementById("topMetricsToggleLabel");
+      const shouldShowToggle = isMobileViewport() && state.page !== "sources";
+      if (topKpiWrap) {
+        topKpiWrap.classList.toggle("mobile-kpis-collapsed", shouldShowToggle && !state.topMetricsExpanded);
+        topKpiWrap.setAttribute("aria-hidden", shouldShowToggle && !state.topMetricsExpanded ? "true" : "false");
+      }
+      if (toggleBtn) {
+        toggleBtn.classList.toggle("hidden", !shouldShowToggle);
+        toggleBtn.setAttribute("aria-expanded", state.topMetricsExpanded ? "true" : "false");
+      }
+      if (toggleLabel) {
+        toggleLabel.textContent = state.topMetricsExpanded
+          ? "Retrair Métricas Principais"
+          : "Revelar Métricas Principais";
+      }
+    }
+
+    function setTopMetricsExpanded(nextExpanded, options = {}) {
+      state.topMetricsExpanded = Boolean(nextExpanded);
+      syncTopMetricsVisibility();
+      if (!options.skipLayoutRefresh) {
+        scheduleResponsiveLayoutRefresh();
+      }
+    }
+
+    function handlePageTransitionUi(nextPage, previousPage) {
+      if (nextPage === previousPage) return;
+      setTopMetricsExpanded(false, { skipLayoutRefresh: true });
+      if (isMobileViewport() && typeof state.closeSidebar === "function") {
+        state.closeSidebar();
+      }
+    }
 
     function syncSourceFamilyControls() {
       document.querySelectorAll("[data-source-family]").forEach((btn) => {
@@ -4211,6 +4443,7 @@
     }
 
     function refreshResponsiveLayout() {
+      syncTopMetricsVisibility();
       maps.forEach((ctx) => {
         if (ctx?.map && isRenderableMapHost(ctx?.host)) {
           ctx.map.invalidateSize({ pan: false, animate: false });
@@ -4257,6 +4490,7 @@
     function setSourceFamily(nextFamily) {
       const normalized = normalizeSourceFamily(nextFamily);
       const shouldNavigate = state.page !== "sources";
+      const previousPage = state.page;
       if (state.sourceFamily === normalized && !shouldNavigate) {
         syncSourceFamilyControls();
         syncSidebarSourcesGroup();
@@ -4264,6 +4498,7 @@
       }
       state.sourceFamily = normalized;
       state.page = "sources";
+      handlePageTransitionUi("sources", previousPage);
       syncSourceFamilyUrl({ family: normalized, page: "sources" });
       closeSourceDetailModal();
       if (!shouldNavigate) {
@@ -6635,10 +6870,13 @@
     // Render (paginas)
     // =========================================================
     function setPage(page) {
-      state.page = page;
-      syncSourceFamilyUrl({ page });
+      const nextPage = PAGES.has(page) ? page : "overview";
+      const previousPage = state.page;
+      state.page = nextPage;
+      handlePageTransitionUi(nextPage, previousPage);
+      syncSourceFamilyUrl({ page: nextPage });
       render();
-      hydrateSourcesForCurrentPage({ page });
+      hydrateSourcesForCurrentPage({ page: nextPage });
     }
 
     const PAGES = new Set(["overview", "territory", "engagement", "content", "sources"]);
@@ -6811,7 +7049,7 @@
 
     function renderTerritoryUfButtons(setHtml, ufPairs = []) {
       const html = (ufPairs || []).length
-        ? ufPairs.map(([ufLabel, count], idx) => {
+        ? ufPairs.map(([ufLabel, count]) => {
             const ufCode = resolveUfCode(ufLabel);
             const ufFilterValue = String(ufLabel || "").trim();
             const label = ufCode || ufFilterValue || "UF";
@@ -6822,7 +7060,7 @@
                 data-terr-uf-filter="${escapeHtml(ufFilterValue)}"
                 title="Clique para filtrar esta UF"
               >
-                <span class="city-focus-label">${idx + 1}. ${escapeHtml(label)}</span>
+                <span class="city-focus-label">${escapeHtml(label)}</span>
                 <span class="city-focus-value">${fmtInt(count)}</span>
               </button>
             `;
@@ -6833,7 +7071,7 @@
 
     function renderTerritoryCityButtons(setHtml, rows = []) {
       const html = (rows || []).length
-        ? rows.map((p, idx) => {
+        ? rows.map((p) => {
             const isActive = state.mapCityFocus?.key === mapCityFocusKeyFromRow(p);
             return `
           <button
@@ -6845,7 +7083,7 @@
             data-map-city-focus-uf="${escapeHtml(resolveUfCode(p.uf) || "")}"
             title="${isActive ? "Clique para remover o destaque desta cidade no mapa" : "Clique para destacar esta cidade no mapa"}"
           >
-            <span class="city-focus-label">${idx + 1}. ${escapeHtml(mapCityFocusLabelFromRow(p))}</span>
+            <span class="city-focus-label">${escapeHtml(mapCityFocusLabelFromRow(p))}</span>
             <span class="city-focus-value">${fmtInt(p.weight)}</span>
           </button>
         `;
@@ -7049,31 +7287,47 @@
       state._topPostData = post;
     }
 
-    function renderPostDetailModal(post) {
+    function renderPostDetailModalLegacy(post) {
       const modal = document.getElementById("postDetailModal");
       if (!modal || !post) return;
       const _set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
       const blocks = post.conteudo?.blocks || [];
       const author = post.nome || "Participante";
       const date = post.created_at ? fmtDateBr(post.created_at.slice(0, 10)) : "";
+      const imageBlocks = blocks.filter((b) => b.type === "image" && b.url);
+      const textBlocks = blocks.filter((b) => b.type === "text" && b.value);
+      const previewText = post.conteudo?.text_preview || "";
 
       _set("postDetailAuthor", author);
       _set("postDetailDate", date);
 
-      const bodyHtml = blocks.map(b => {
-        if (b.type === "image" && b.url) {
-          return `<img src="${escapeHtml(b.url)}" alt="" class="w-full rounded-xl my-2" loading="lazy" onerror="this.style.display='none'" />`;
+      const mediaSection = document.getElementById("postDetailMediaSection");
+      const mediaEl = document.getElementById("postDetailMedia");
+      if (mediaSection && mediaEl) {
+        if (imageBlocks.length) {
+          mediaSection.classList.remove("hidden");
+          mediaEl.innerHTML = `
+            <div class="post-detail-media-grid">
+              ${imageBlocks.map((b) => `<img src="${escapeHtml(b.url)}" alt="" loading="lazy" onerror="this.style.display='none'" />`).join("")}
+            </div>
+          `;
+        } else {
+          mediaSection.classList.add("hidden");
+          mediaEl.innerHTML = "";
         }
-        if (b.type === "text" && b.value) {
-          return `<p class="text-sm leading-relaxed my-1.5" style="color:rgba(242,246,255,.88)">${escapeHtml(b.value)}</p>`;
-        }
-        return "";
-      }).join("");
+      }
+
       const bodyEl = document.getElementById("postDetailBody");
-      if (bodyEl) bodyEl.innerHTML = bodyHtml;
+      if (bodyEl) {
+        const textHtml = textBlocks.length
+          ? textBlocks.map((b) => `<p>${escapeHtml(b.value)}</p>`).join("")
+          : (previewText ? `<p>${escapeHtml(previewText)}</p>` : `<div class="post-detail-empty">Sem texto adicional nesta postagem.</div>`);
+        bodyEl.innerHTML = `<div class="post-detail-copy">${textHtml}</div>`;
+      }
 
       const likesCount = typeof post.likesCount === "number" ? post.likesCount : (Array.isArray(post.curtidas) ? post.curtidas.length : Number(post.curtidas) || 0);
       _set("postDetailLikes", `${fmtInt(likesCount)} curtidas`);
+      _set("postDetailCommentsCount", `${fmtInt(post.commentsCount || 0)} comentarios`);
 
       const commentsEl = document.getElementById("postDetailComments");
       if (commentsEl) {
@@ -7087,6 +7341,80 @@
             }).join("");
         } else {
           commentsEl.innerHTML = "";
+        }
+      }
+
+      modal.classList.remove("hidden");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+    }
+
+    function renderPostDetailModal(post) {
+      const modal = document.getElementById("postDetailModal");
+      if (!modal || !post) return;
+      const _set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      const blocks = post.conteudo?.blocks || [];
+      const author = post.nome || "Participante";
+      const date = post.created_at ? fmtDateBr(post.created_at.slice(0, 10)) : "";
+      const imageBlocks = blocks.filter((b) => b.type === "image" && b.url);
+      const textBlocks = blocks.filter((b) => b.type === "text" && b.value);
+      const previewText = post.conteudo?.text_preview || "";
+
+      _set("postDetailAuthor", author);
+      _set("postDetailDate", date);
+
+      const mediaSection = document.getElementById("postDetailMediaSection");
+      const mediaEl = document.getElementById("postDetailMedia");
+      if (mediaSection && mediaEl) {
+        if (imageBlocks.length) {
+          mediaSection.classList.remove("hidden");
+          mediaEl.innerHTML = `
+            <div class="post-detail-media-grid">
+              ${imageBlocks.map((b) => `<img src="${escapeHtml(b.url)}" alt="" loading="lazy" onerror="this.style.display='none'" />`).join("")}
+            </div>
+          `;
+        } else {
+          mediaSection.classList.add("hidden");
+          mediaEl.innerHTML = "";
+        }
+      }
+
+      const bodyEl = document.getElementById("postDetailBody");
+      if (bodyEl) {
+        const textHtml = textBlocks.length
+          ? textBlocks.map((b) => `<p>${escapeHtml(b.value)}</p>`).join("")
+          : (previewText ? `<p>${escapeHtml(previewText)}</p>` : `<div class="post-detail-empty">Sem texto adicional nesta postagem.</div>`);
+        bodyEl.innerHTML = `<div class="post-detail-copy">${textHtml}</div>`;
+      }
+
+      const likesCount = typeof post.likesCount === "number" ? post.likesCount : (Array.isArray(post.curtidas) ? post.curtidas.length : Number(post.curtidas) || 0);
+      const commentsCount = typeof post.commentsCount === "number" ? post.commentsCount : (Array.isArray(post.lista_comentarios) ? post.lista_comentarios.length : 0);
+      _set("postDetailLikes", `${fmtInt(likesCount)} curtidas`);
+      _set("postDetailCommentsCount", `${fmtInt(commentsCount)} comentarios`);
+
+      const commentsEl = document.getElementById("postDetailComments");
+      if (commentsEl) {
+        const comments = Array.isArray(post.lista_comentarios) ? post.lista_comentarios : [];
+        if (comments.length) {
+          commentsEl.innerHTML = `
+            <div class="post-detail-comment-list">
+              ${comments.map((c) => {
+                const cDate = c.created_at ? fmtDateBr(c.created_at.slice(0, 10)) : "";
+                const cText = c.conteudo?.blocks?.filter((b) => b.type === "text").map((b) => b.value).join(" ") || c.conteudo?.text_preview || "";
+                return `
+                  <article class="post-detail-comment-card">
+                    <div class="post-detail-comment-meta">
+                      <span class="post-detail-comment-author">${escapeHtml(c.autor || "Participante")}</span>
+                      <span class="post-detail-comment-date">${cDate}</span>
+                    </div>
+                    <p>${escapeHtml(cText || "Sem texto neste comentario.")}</p>
+                  </article>
+                `;
+              }).join("")}
+            </div>
+          `;
+        } else {
+          commentsEl.innerHTML = `<div class="post-detail-empty">Sem comentarios nesta conversa.</div>`;
         }
       }
 
@@ -7279,7 +7607,7 @@
 
       const summary = [
         `Volume do periodo: ${fmtInt(atendimentos)} atendimentos e ${fmtInt(inscritos)} inscritos.`,
-        `Inscritos atendidos: ${fmtInt(atendidos)}. Membros ativos: ${fmtInt(membrosAtivos)}.`,
+        `Membros ativos: ${fmtInt(membrosAtivos)}.`,
         `Taxa de ativacao em ${fmtPct(convRatio)} no recorte atual.`
       ];
       setHtml("summaryList", summary.map((line)=>`<li>${line}</li>`).join(""));
@@ -7394,6 +7722,7 @@
       });
       const topKpiWrap = document.getElementById("topKpiWrap");
       if (topKpiWrap) topKpiWrap.classList.toggle("hidden", state.page === "sources");
+      syncTopMetricsVisibility();
       const professorFilterActive = isProfessorFilterSelected(state.filters.publico);
       if (!professorFilterActive) {
         syncProfessorRecurrenceKpi({ visible: false });
@@ -8253,6 +8582,7 @@
       const btnPreset90 = document.getElementById("btnPreset90");
       const btnPresetAll = document.getElementById("btnPresetAll");
       const btnClearUf = document.getElementById("btnClearUf");
+      const btnToggleTopMetrics = document.getElementById("btnToggleTopMetrics");
       if (btnPreset7) btnPreset7.addEventListener("click", () => applyPreset(7));
       if (btnPresetPrevWeek) btnPresetPrevWeek.addEventListener("click", () => applyPreset("prev-week"));
       if (btnPreset2026) btnPreset2026.addEventListener("click", () => applyPreset("2026"));
@@ -8262,6 +8592,13 @@
       if (btnClearUf) btnClearUf.addEventListener("click", () => {
         applyFilters({ uf: "Todos" }, { immediate: true, reason: "clear-uf" });
       });
+      if (btnToggleTopMetrics && btnToggleTopMetrics.dataset.boundClick !== "1") {
+        btnToggleTopMetrics.dataset.boundClick = "1";
+        btnToggleTopMetrics.addEventListener("click", () => {
+          setTopMetricsExpanded(!state.topMetricsExpanded);
+        });
+      }
+      syncTopMetricsVisibility();
 
       const modal = document.getElementById("filterModal");
       const btnOpen = document.getElementById("btnOpenFilters");
@@ -8387,6 +8724,9 @@
           closeSidebar();
         }
       };
+      state.openSidebar = openSidebar;
+      state.closeSidebar = closeSidebar;
+      state.toggleSidebar = toggleSidebar;
       if (sidebarToggle) sidebarToggle.addEventListener("click", toggleSidebar);
       document.addEventListener("keydown", (e) => {
         if (e.key.toLowerCase() === "m") toggleSidebar();
@@ -8396,15 +8736,19 @@
       syncSidebarAria();
 
       window.addEventListener("hashchange", ()=>{
+        const previousPage = state.page;
         state.page = currentHashPage();
         state.sourceFamily = currentSourceFamilyFromUrl();
+        handlePageTransitionUi(state.page, previousPage);
         syncSourceFamilyControls();
         render();
         hydrateSourcesForCurrentPage({ page: state.page });
       });
       window.addEventListener("popstate", ()=>{
+        const previousPage = state.page;
         state.page = currentHashPage();
         state.sourceFamily = currentSourceFamilyFromUrl();
+        handlePageTransitionUi(state.page, previousPage);
         render();
         hydrateSourcesForCurrentPage({ page: state.page });
       });
@@ -8588,9 +8932,9 @@
         <div id="bootError" class="hidden mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900">
           Falha ao inicializar o painel. Alguns gr&aacute;ficos podem n&atilde;o carregar; verifique a conex&atilde;o com CDN/dados.
         </div>
-      <header class="mb-4 section-band p-4 wrap-hero blur-target">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
+      <header class="dashboard-header mb-4 section-band p-4 wrap-hero blur-target">
+      <div class="dashboard-header-top">
+        <div class="dashboard-header-brand">
           <div class="w-9 h-9 rounded-xl bg-white/95 flex items-center justify-center border border-white/20 shadow-md shrink-0">
             <img
               src="./data/bandeira_escalada.svg"
@@ -8605,7 +8949,7 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="dashboard-header-actions">
           <button id="btnOpenFilters" class="btn btn-outline btn-sm" title="Filtros">
             <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
             Filtros
@@ -8624,6 +8968,10 @@
         <button id="btnPreset2026" class="btn btn-ghost btn-sm" type="button">2026</button>
         <button id="btnPresetAll" class="btn btn-ghost btn-sm" type="button">Per&iacute;odo completo</button>
       </div>
+
+      <button id="btnToggleTopMetrics" class="btn btn-ghost btn-sm dashboard-mobile-metrics-toggle hidden" type="button" aria-expanded="true">
+        <span id="topMetricsToggleLabel">Retrair M&eacute;tricas Principais</span>
+      </button>
 
       <div id="topKpiWrap" class="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <div class="card p-4 kpi kpi-compact">
@@ -8705,7 +9053,7 @@
                 <i data-lucide="map" class="w-4 h-4"></i>Territ&oacute;rio
               </button>
             </div>
-            <div id="map" style="height:280px;min-height:280px;" class="mt-4 h-[280px] rounded-2xl overflow-hidden"></div>
+            <div id="map" style="height:340px;min-height:340px;" class="mt-4 h-[340px] rounded-2xl overflow-hidden"></div>
           </div>
 
           <div class="col-span-12 lg:col-span-6 card p-5 reveal delay-2">
@@ -8799,7 +9147,7 @@
           <div class="col-span-12 lg:col-span-6 card p-5">
             <h2 class="section-title">Mapa de densidade</h2>
             <div class="text-sm text-slate-600">Distribui&ccedil;&atilde;o territorial dos registros.</div>
-            <div id="mapTerritory" style="height:220px;min-height:220px;" class="mt-4 h-[220px] rounded-2xl overflow-hidden"></div>
+            <div id="mapTerritory" style="height:320px;min-height:320px;" class="mt-4 h-[320px] rounded-2xl overflow-hidden"></div>
           </div>
 
           <div class="col-span-12 card p-5">
@@ -8894,13 +9242,15 @@
 
         <section data-page="sources" class="sources-page hidden grid grid-cols-12 gap-3 wrap-accent-blue wrap-soft p-3 md:p-4">
           <div class="col-span-12 card p-3">
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="sources-family-switcher">
               <span class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Subdivisões</span>
+              <div class="sources-family-actions">
               <a href="?source_family=geral#sources:geral" class="btn btn-sm btn-ghost is-active" data-source-family="geral" aria-pressed="true">Geral</a>
               <a href="?source_family=eventos#sources:eventos" class="btn btn-sm btn-ghost" data-source-family="eventos" aria-pressed="false">Eventos</a>
               <a href="?source_family=multiplicadores#sources:multiplicadores" class="btn btn-sm btn-ghost" data-source-family="multiplicadores" aria-pressed="false">Multiplicadores</a>
               <a href="?source_family=embaixadores#sources:embaixadores" class="btn btn-sm btn-ghost" data-source-family="embaixadores" aria-pressed="false">Embaixadores</a>
               <a href="?source_family=convites#sources:convites" class="btn btn-sm btn-ghost" data-source-family="convites" aria-pressed="false">Convites</a>
+              </div>
             </div>
           </div>
 
@@ -9064,20 +9414,36 @@
 
   <div id="postDetailModal" class="modal-backdrop hidden" aria-hidden="true" aria-modal="true" role="dialog">
     <div class="modal-card" style="width:min(620px,94vw);max-height:80vh;overflow-y:auto">
-      <div class="flex items-center justify-between mb-3">
-        <div>
-          <div id="postDetailAuthor" class="text-sm font-semibold" style="color:rgba(242,246,255,.94)"></div>
-          <div id="postDetailDate" class="text-xs mt-0.5" style="color:rgba(226,233,255,.56)"></div>
+      <div class="post-detail-shell">
+        <div class="post-detail-meta">
+          <div>
+            <div id="postDetailAuthor" class="text-sm font-semibold" style="color:rgba(242,246,255,.94)"></div>
+            <div id="postDetailDate" class="text-xs mt-0.5" style="color:rgba(226,233,255,.56)"></div>
+          </div>
+          <button id="btnClosePostDetail" class="btn btn-ghost btn-sm" title="Fechar">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
         </div>
-        <button id="btnClosePostDetail" class="btn btn-ghost btn-sm" title="Fechar">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
+        <section id="postDetailMediaSection" class="post-detail-section hidden">
+          <h3 class="post-detail-section-title">M&iacute;dia</h3>
+          <div id="postDetailMedia"></div>
+        </section>
+        <section class="post-detail-section">
+          <h3 class="post-detail-section-title">Postagem</h3>
+          <div id="postDetailBody"></div>
+        </section>
+        <section class="post-detail-section">
+          <h3 class="post-detail-section-title">Intera&ccedil;&otilde;es</h3>
+          <div class="post-detail-stats">
+            <span id="postDetailLikes"></span>
+            <span id="postDetailCommentsCount"></span>
+          </div>
+        </section>
+        <section class="post-detail-section">
+          <h3 class="post-detail-section-title">Comunidade</h3>
+          <div id="postDetailComments"></div>
+        </section>
       </div>
-      <div id="postDetailBody" class="mb-3"></div>
-      <div class="flex gap-3 text-xs font-semibold pt-2 border-t border-white/10" style="color:rgba(226,233,255,.56)">
-        <span id="postDetailLikes"></span>
-      </div>
-      <div id="postDetailComments" class="mt-3"></div>
     </div>
   </div>
 
