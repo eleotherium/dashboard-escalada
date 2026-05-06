@@ -2822,6 +2822,34 @@
       return keys.size;
     }
 
+    function countDistinctTerritoryCities(rows, options = {}) {
+      const includeUnknown = Boolean(options?.includeUnknown);
+      const keys = new Set();
+      for (const row of rows || []) {
+        const cityRaw = resolveTerritoryCityLabel(row, { allowUnknown: true });
+        if (!cityRaw) continue;
+        if (!includeUnknown && isUnknownTerritoryCityLabel(cityRaw)) continue;
+        const ufRaw = String(row?.uf || "").trim();
+        const ufCode = resolveUfCode(ufRaw) || ufRaw;
+        keys.add(`${ufCode}|${normalizeTextKey(cityRaw)}`);
+      }
+      return keys.size;
+    }
+
+    function buildTerritoryCitySummary(rows, selectedUfCode) {
+      const ufCode = resolveUfCode(selectedUfCode);
+      if (!ufCode) return null;
+      const cityCount = countDistinctTerritoryCities(rows);
+      const totalCities = Number(UF_CITY_TOTALS[ufCode] || 0);
+      return {
+        ufCode,
+        cityCount,
+        coverageText: totalCities
+          ? `${fmtPct(cityCount / totalCities)} (${fmtInt(cityCount)}/${fmtInt(totalCities)})`
+          : "--",
+      };
+    }
+
     function ensureDerivedFields(events) {
       for (const e of events) {
         if (e.type === "acao") e.type = "atendimento";
@@ -4355,6 +4383,7 @@
       lastLoadSource: "none",
       ufPillsCountsByCode: new Map(),
       ufPillsValueByCode: new Map(),
+      territoryCitySummary: null,
       session: null,
       mapCityFocus: null,
       ufOnboardingUnlocked: false,
@@ -6705,18 +6734,19 @@
       if (!citiesEl) return;
       if (!selectedUfCode) {
         citiesEl.textContent = "—";
+        state.territoryCitySummary = null;
         return;
       }
-      const cityCount = countDistinctCities(heatData);
+      const summary = (
+        state.territoryCitySummary &&
+        state.territoryCitySummary.ufCode === selectedUfCode
+      )
+        ? state.territoryCitySummary
+        : buildTerritoryCitySummary(heatData, selectedUfCode);
+      const cityCount = Number(summary?.cityCount || 0);
       citiesEl.textContent = `${fmtInt(cityCount)} cidades`;
       if (coverageEl) {
-        const totalCities = Number(UF_CITY_TOTALS[selectedUfCode] || 0);
-        if (!totalCities) {
-          coverageEl.textContent = "--";
-        } else {
-          const pct = cityCount / totalCities;
-          coverageEl.textContent = `${fmtPct(pct)} (${fmtInt(cityCount)}/${fmtInt(totalCities)})`;
-        }
+        coverageEl.textContent = summary?.coverageText || "--";
       }
     }
 
@@ -7549,6 +7579,9 @@
       const topGeoCitiesOrdered = selectedUfCode
         ? topTerritoryCityRows(geoPoints, topCitiesLimit)
         : [];
+      state.territoryCitySummary = selectedUfCode
+        ? buildTerritoryCitySummary(geoPoints, selectedUfCode)
+        : null;
       const ufCoverage = computeUfCoverageFromRows(byCityRows, state.filters.uf, {
         byUfRows,
         metaCoverage: raw?.meta?.coverage,
@@ -7665,11 +7698,11 @@
         setText("terrRankTitle", territoryChartTitle);
         renderMapPoints("mapTerritory", geoPoints);
         setText("terrUfs", `${byUfRows.length} UFs`);
-        setText("terrCities", "—");
+        setText("terrCities", selectedUfCode ? `${fmtInt(Number(state.territoryCitySummary?.cityCount || 0))} cidades` : "—");
         setText("terrUsers", fmtInt(inscritos));
         setText("terrAtendDay", fmtInt(Math.round(atStats.avg)));
         renderTerritoryCoverageLabel(setText, selectedUfCode);
-        setText("terrUfCoverage", ufCoverage.text);
+        setText("terrUfCoverage", selectedUfCode ? (state.territoryCitySummary?.coverageText || "--") : ufCoverage.text);
         if (selectedUfCode) renderMapPoints("mapTerritory", geoPoints);
       }
 
@@ -7817,6 +7850,9 @@
       const topGeoCities = selectedUfCode
         ? topTerritoryCityRows(mapCityRows, topCitiesLimit)
         : [];
+      state.territoryCitySummary = selectedUfCode
+        ? buildTerritoryCitySummary(mapCityRows, selectedUfCode)
+        : null;
       renderTerritoryHighlightHeader(setText, selectedUfCode);
       if (selectedUfCode) {
         renderTerritoryCityButtons(setHtml, topGeoCities);
@@ -7870,12 +7906,12 @@
         setText("terrRankTitle", territoryChartTitle);
         renderMapPoints("mapTerritory", state.filtered);
         setText("terrUfs", `${coverage.ufs} UFs`);
-        setText("terrCities", "—");
+        setText("terrCities", selectedUfCode ? `${fmtInt(Number(state.territoryCitySummary?.cityCount || 0))} cidades` : "—");
         setText("terrUsers", fmtInt(coverage.users));
         setText("terrAtendDay", fmtInt(Math.round(coverage.atendPerDay)));
         const ufCoverage = computeUfCoverageFromEvents(state.filtered, state.filters.uf);
         renderTerritoryCoverageLabel(setText, selectedUfCode);
-        setText("terrUfCoverage", ufCoverage.text);
+        setText("terrUfCoverage", selectedUfCode ? (state.territoryCitySummary?.coverageText || "--") : ufCoverage.text);
         if (selectedUfCode) renderMapPoints("mapTerritory", state.filtered);
       }
 
