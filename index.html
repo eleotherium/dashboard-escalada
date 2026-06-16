@@ -4384,6 +4384,8 @@
       ufPillsCountsByCode: new Map(),
       ufPillsValueByCode: new Map(),
       territoryCitySummary: null,
+      ufPillsSnapshotKey: "",
+      ufPillsSnapshotRequestId: 0,
       session: null,
       mapCityFocus: null,
       ufOnboardingUnlocked: false,
@@ -4756,6 +4758,7 @@
           updateBootError("Dados carregados, mas houve falha ao renderizar parte do painel.");
         }
         hydrateSourcesForCurrentPage({ force: true, page: state.page });
+        refreshUfPillsSnapshotIfStale().catch(() => {});
         console.info("[UI] [data] refresh:done", {
           requestId,
           reason,
@@ -5689,7 +5692,16 @@
       });
     }
 
-    function updateUfPillsSnapshot(payload) {
+    function getUfPillsSnapshotKey(filters = state.filters) {
+      const params = getRpcParams({ ...filters, uf: "" });
+      return JSON.stringify({
+        from: params.p_date_from || "",
+        to: params.p_date_to || "",
+        publico: params.p_publico || "",
+      });
+    }
+
+    function updateUfPillsSnapshot(payload, options = {}) {
       const ufFiltered = Boolean(sanitizeFilterValue(state.filters.uf));
       const counts = new Map();
       const values = new Map(state.ufPillsValueByCode instanceof Map ? state.ufPillsValueByCode : []);
@@ -5722,10 +5734,39 @@
         values.set(code, preferredUfFilterValue(values.get(code), rawUf));
       }
 
-      if ((!ufFiltered || !state.ufPillsCountsByCode.size) && counts.size) {
+      const isUnfilteredSource = options.unfilteredSource === true || !ufFiltered;
+      if ((isUnfilteredSource || !state.ufPillsCountsByCode.size) && counts.size) {
         state.ufPillsCountsByCode = counts;
+        if (isUnfilteredSource) {
+          state.ufPillsSnapshotKey = options.snapshotKey || getUfPillsSnapshotKey();
+        }
       }
       state.ufPillsValueByCode = values;
+    }
+
+    async function refreshUfPillsSnapshotIfStale() {
+      const ufFilter = sanitizeFilterValue(state.filters.uf);
+      if (!ufFilter) return;
+      const hasRpcConfig = Boolean(SUPABASE_RPC.url && SUPABASE_RPC.anonKey);
+      if (!hasRpcConfig) return;
+
+      const targetKey = getUfPillsSnapshotKey();
+      if (state.ufPillsSnapshotKey === targetKey) return;
+
+      const requestId = ++state.ufPillsSnapshotRequestId;
+      const snapshotFilters = { ...state.filters, uf: "" };
+      const params = getRpcParams(snapshotFilters);
+      try {
+        const result = await callDashboardRpcWithRetry(params, SUPABASE_RPC.rpcName);
+        if (requestId !== state.ufPillsSnapshotRequestId) return;
+        const payload = Array.isArray(result) ? result[0] : result;
+        validatePayloadShape(payload);
+        const normalized = ensurePayloadMeta(payload, { limit: params.p_limit });
+        updateUfPillsSnapshot(normalized, { unfilteredSource: true, snapshotKey: targetKey });
+        if (state.page === "overview") render();
+      } catch (e) {
+        console.warn("[UI] [uf-pills] snapshot refresh failed", { err: String(e) });
+      }
     }
 
     const BRAZIL_VIEW_BOUNDS = [[-34.9, -74.6], [5.5, -32.8]];
