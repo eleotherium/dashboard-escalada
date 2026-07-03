@@ -1,23 +1,23 @@
 // Arquivo de configuracao do dashboard no browser (sem require/import).
-// Preencha com suas credenciais do Supabase para modo "internal" em producao.
+// Os dados agora sao buscados via Netlify Function (/api/dashboardv2), que
+// guarda SUPABASE_URL/SUPABASE_ANON_KEY como env vars no servidor. O browser
+// nunca ve o Supabase diretamente.
 window.__ENV = {
-  SUPABASE_URL: "https://database.tnledu.shop",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.FRcy1kxU_0vQ4JBPnkcxZPfc_RFOFKMGkj00MvBRmKM",
+  // Endpoint proprio (Netlify Function) que faz a ponte com o Supabase.
+  DASHBOARD_API_BASE: "/api/dashboardv2",
 
-  // "internal" (recomendado) ou "public"
+  // "internal" (login obrigatorio via Supabase Auth) ou "public".
+  // No modo "internal", o client-side ainda precisa de SUPABASE_URL/ANON_KEY
+  // (exclusivamente para o fluxo de OAuth) - preencha-os aqui se ativar esse modo.
   DASHBOARD_AUTH_MODE: "public",
   // Provedor OAuth para login no gate de autenticacao
   SUPABASE_OAUTH_PROVIDER: "google",
-
-  // Nome da RPC no Supabase
-  DASHBOARD_RPC_NAME: "dashboard_executivo_v2_interno",
-  DASHBOARD_SOURCES_RPC_NAME: "dashboard_fontes_v2_interno",
 
   // Limite maximo de registros retornados pela RPC
   RPC_LIMIT: 200000,
   // Timeout da chamada RPC (ms)
   RPC_TIMEOUT_MS: 12000,
 
-  // Em dev, pode ser true para cair no mock quando RPC falhar/nao configurar
+  // Em dev, pode ser true para cair no mock quando a API falhar/nao configurar
   USE_MOCK_FALLBACK: true,
 };

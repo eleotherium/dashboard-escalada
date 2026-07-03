@@ -3468,6 +3468,8 @@
     );
 
     const SUPABASE_RPC = {
+      // Usados apenas pelo fluxo de OAuth (modo "internal"). Os dados do
+      // dashboard nunca chamam o Supabase diretamente pelo browser.
       url: (
         window.__SUPABASE_URL__ ||
         ENV.SUPABASE_URL ||
@@ -3482,8 +3484,7 @@
         document.querySelector('meta[name="supabase-anon-key"]')?.content ||
         ""
       ).trim(),
-      rpcName: (window.__DASHBOARD_RPC_NAME__ || ENV.DASHBOARD_RPC_NAME || "dashboard_executivo_v2_interno").trim(),
-      sourcesRpcName: (window.__DASHBOARD_SOURCES_RPC_NAME__ || ENV.DASHBOARD_SOURCES_RPC_NAME || "dashboard_fontes_v2_interno").trim(),
+      apiBase: (window.__DASHBOARD_API_BASE__ || ENV.DASHBOARD_API_BASE || "/api/dashboardv2").trim(),
       authMode: String(window.__DASHBOARD_AUTH_MODE__ || ENV.DASHBOARD_AUTH_MODE || "internal").toLowerCase(),
       oauthProvider: String(window.__SUPABASE_OAUTH_PROVIDER__ || ENV.SUPABASE_OAUTH_PROVIDER || "google").toLowerCase(),
       rpcLimit: clamp(Number(window.__RPC_LIMIT__ || ENV.RPC_LIMIT || MAX_RPC_LIMIT), 1, MAX_RPC_LIMIT),
@@ -3696,8 +3697,7 @@
         }
       });
       console.info("[UI] [auth] supabase client initialized", {
-        mode: SUPABASE_RPC.authMode,
-        rpc: SUPABASE_RPC.rpcName
+        mode: SUPABASE_RPC.authMode
       });
       return sbClient;
     }
@@ -4096,8 +4096,7 @@
       return true;
     }
 
-    async function callDashboardRpc(params, rpcName = SUPABASE_RPC.rpcName) {
-      if (!sbClient) throw new Error("Cliente Supabase indisponivel.");
+    async function callDashboardApi(report, params) {
       const controller = new AbortController();
       const timeoutError = new Error(`RPC timeout (${SUPABASE_RPC.timeoutMs}ms)`);
       timeoutError.code = "RPC_TIMEOUT";
@@ -4110,99 +4109,99 @@
         }, SUPABASE_RPC.timeoutMs);
       });
 
-      const rpcOperation = (async () => {
-        let req = sbClient.rpc(rpcName, params);
-        if (req && typeof req.abortSignal === "function") {
-          req = req.abortSignal(controller.signal);
+      const apiOperation = (async () => {
+        const qs = new URLSearchParams({ report });
+        for (const [key, value] of Object.entries(params || {})) {
+          if (value === null || value === undefined || value === "") continue;
+          qs.set(key, String(value));
         }
-        const { data, error } = await req;
-        if (error) throw error;
+        const res = await fetch(`${SUPABASE_RPC.apiBase}?${qs.toString()}`, {
+          method: "GET",
+          signal: controller.signal,
+        });
+        const text = await res.text();
+        let data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (_) { data = null; }
+        if (!res.ok) {
+          const err = new Error(data?.error || `Falha na API (${res.status})`);
+          err.status = res.status;
+          throw err;
+        }
         return data;
       })();
 
       try {
-        return await Promise.race([rpcOperation, timeoutOperation]);
+        return await Promise.race([apiOperation, timeoutOperation]);
       } finally {
         if (timeoutHandle) clearTimeout(timeoutHandle);
       }
     }
 
-    async function callDashboardRpcWithRetry(params, rpcName = SUPABASE_RPC.rpcName) {
+    async function callDashboardApiWithRetry(report, params) {
       let attempt = 0;
       while (attempt <= RPC_RETRY_ATTEMPTS) {
         try {
-          return await callDashboardRpc(params, rpcName);
+          return await callDashboardApi(report, params);
         } catch (e) {
           attempt += 1;
           if (attempt > RPC_RETRY_ATTEMPTS || !isRetryableError(e)) throw e;
-          console.warn("[UI] [data] rpc retry", { rpc: rpcName, attempt, err: errorToLog(e) });
+          console.warn("[UI] [data] api retry", { report, attempt, err: errorToLog(e) });
           await wait(350 * attempt);
         }
       }
-      throw new Error("RPC failed after retries.");
+      throw new Error("API failed after retries.");
     }
 
     async function loadData() {
       const params = getRpcParams(state.filters);
       const t0 = performance.now();
-      const hasRpcConfig = Boolean(SUPABASE_RPC.url && SUPABASE_RPC.anonKey);
 
       console.debug("[UI] [data] load:start", {
-        mode: hasRpcConfig ? "rpc" : "mock",
-        rpc: SUPABASE_RPC.rpcName,
+        mode: "api",
+        api: SUPABASE_RPC.apiBase,
         auth_mode: SUPABASE_RPC.authMode,
         host: location.host,
         filters: { ...state.filters },
         params
       });
 
-      if (!hasRpcConfig) {
-        if (!DEV_MOCK_FALLBACK) {
-          throw new Error("Configuração Supabase ausente e fallback mock desabilitado.");
-        }
-        state.lastDataWarning = "RPC Supabase nao configurado. Exibindo dados mock (dev).";
-        state.lastLoadSource = "mock";
-        return getMockPayloadForFilters(state.filters);
-      }
-
-      if (!sbClient) {
-        try {
-          initSupabaseClient();
-        } catch (e) {
-          const logFn = DEV_MOCK_FALLBACK ? console.warn : console.error;
-          logFn("[UI] [auth] failed to init client", { err: String(e) });
-          if (!DEV_MOCK_FALLBACK) throw e;
-          state.lastDataWarning = "Falha ao iniciar Supabase client. Exibindo dados mock (dev).";
-          state.lastLoadSource = "mock";
-          return getMockPayloadForFilters(state.filters);
-        }
-      }
-
       if (SUPABASE_RPC.authMode === "internal") {
+        if (!sbClient) {
+          try {
+            initSupabaseClient();
+          } catch (e) {
+            const logFn = DEV_MOCK_FALLBACK ? console.warn : console.error;
+            logFn("[UI] [auth] failed to init client", { err: String(e) });
+            if (!DEV_MOCK_FALLBACK) throw e;
+            state.lastDataWarning = "Falha ao iniciar Supabase client. Exibindo dados mock (dev).";
+            state.lastLoadSource = "mock";
+            return getMockPayloadForFilters(state.filters);
+          }
+        }
         const allowed = await ensureAuthSession();
         if (!allowed) throw new Error("AUTH_REQUIRED");
       }
 
-      console.debug("[UI] [data] rpc:request", { rpc: SUPABASE_RPC.rpcName, params });
+      console.debug("[UI] [data] api:request", { api: SUPABASE_RPC.apiBase, params });
       try {
-        const result = await callDashboardRpcWithRetry(params, SUPABASE_RPC.rpcName);
+        const result = await callDashboardApiWithRetry("main", params);
         const payload = Array.isArray(result) ? result[0] : result;
         validatePayloadShape(payload);
         const normalized = ensurePayloadMeta(payload, { limit: params.p_limit });
         state.lastDataWarning = "";
         state.lastLoadSource = "rpc";
-        console.info("[UI] [data] rpc:ok", {
+        console.info("[UI] [data] api:ok", {
           ms: Math.round(performance.now() - t0),
           events: normalized.events.length,
           generated_at: normalized.generated_at
         });
         return normalized;
       } catch (e) {
-        console.error("[UI] [data] rpc:fail", { err: errorToLog(e), params });
+        console.error("[UI] [data] api:fail", { err: errorToLog(e), params });
         if (!DEV_MOCK_FALLBACK) {
           throw e;
         }
-        state.lastDataWarning = "Falha ao consultar RPC Supabase. Exibindo dados mock (dev).";
+        state.lastDataWarning = "Falha ao consultar a API do dashboard. Exibindo dados mock (dev).";
         state.lastLoadSource = "mock";
         return getMockPayloadForFilters(state.filters);
       }
@@ -4271,17 +4270,17 @@
       const params = getRpcParams(filters);
       const t0 = performance.now();
       console.debug("[UI] [sources] load:start", {
-        rpc: SUPABASE_RPC.sourcesRpcName,
+        api: SUPABASE_RPC.apiBase,
         filters: { ...filters },
         params
       });
 
-      const result = await callDashboardRpcWithRetry(params, SUPABASE_RPC.sourcesRpcName);
+      const result = await callDashboardApiWithRetry("sources", params);
       const payload = Array.isArray(result) ? result[0] : result;
       validateSourcesPayloadShape(payload);
       const normalized = normalizeSourcesPayload(payload);
-      console.info("[UI] [sources] rpc:ok", {
-        rpc: SUPABASE_RPC.sourcesRpcName,
+      console.info("[UI] [sources] api:ok", {
+        api: SUPABASE_RPC.apiBase,
         ms: Math.round(performance.now() - t0),
         generated_at: normalized.generated_at
       });
@@ -4334,8 +4333,8 @@
           return payload;
         })
         .catch((err) => {
-          console.error("[UI] [sources] rpc:fail", {
-            rpc: SUPABASE_RPC.sourcesRpcName,
+          console.error("[UI] [sources] api:fail", {
+            api: SUPABASE_RPC.apiBase,
             err: errorToLog(err),
             filters: filtersSnapshot
           });
@@ -7259,12 +7258,10 @@
       const cacheKey = `${dateFrom}|${dateTo}`;
       if (_pubCache.key === cacheKey && _pubCache.data) return _pubCache.data;
       try {
-        const client = initSupabaseClient();
-        const { data: rpc, error } = await client.rpc("comunidade_metricas_v2", {
+        const rpc = await callDashboardApiWithRetry("comunidade", {
           p_date_from: dateFrom,
           p_date_to: dateTo
         });
-        if (error) throw error;
         const d = rpc || {};
         const tp = d.top_post || null;
         const result = {
@@ -8858,14 +8855,16 @@
         if (authModeLabel) authModeLabel.textContent = SUPABASE_RPC.authMode;
         if (SUPABASE_RPC.authMode !== "internal") setAuthGate(false);
         bindAuthEvents();
-        try {
-          initSupabaseClient();
-          bindAuthEvents();
-        } catch (e) {
-          const logFn = DEV_MOCK_FALLBACK ? console.warn : console.error;
-          logFn("[UI] [auth] init failed", { err: String(e) });
-          if (!DEV_MOCK_FALLBACK) throw e;
-          state.lastDataWarning = "Supabase indisponivel. Exibindo dados mock (dev).";
+        if (SUPABASE_RPC.authMode === "internal") {
+          try {
+            initSupabaseClient();
+            bindAuthEvents();
+          } catch (e) {
+            const logFn = DEV_MOCK_FALLBACK ? console.warn : console.error;
+            logFn("[UI] [auth] init failed", { err: String(e) });
+            if (!DEV_MOCK_FALLBACK) throw e;
+            state.lastDataWarning = "Supabase indisponivel. Exibindo dados mock (dev).";
+          }
         }
 
         state.page = currentHashPage();

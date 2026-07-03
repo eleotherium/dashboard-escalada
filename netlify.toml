@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/dashboardv2"
+  to = "/.netlify/functions/dashboardv2"
+  status = 200
+  force = true
