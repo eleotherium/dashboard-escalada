@@ -685,6 +685,14 @@
       font-weight: 700;
     }
 
+    .kpi-subtext {
+      font-size: 0.7rem;
+      font-weight: 500;
+      line-height: 1.35;
+      color: rgba(226, 233, 255, 0.56);
+      margin-top: 2px;
+    }
+
     .progress {
       margin-top: 8px;
       width: 100%;
@@ -9069,7 +9077,8 @@
           <div class="progress mt-2"><span id="kpiAtivosBar"></span></div>
         </div>
         <div class="card p-4 kpi kpi-compact">
-          <div class="label">Taxa de ativa&ccedil;&atilde;o (inscritos atendidos / inscritos)</div>
+          <div class="label">Inscritos / Com atendimento</div>
+          <div class="kpi-subtext">Compara quantas pessoas se inscreveram com quantas realmente geraram atendimento.</div>
           <div id="kpiConv" class="value">&mdash;</div>
           <div class="flex items-center justify-between text-[11px] text-slate-600">
             <span id="kpiConvDelta" class="delta">&mdash;</span>
@@ -9469,7 +9478,8 @@
             <span id="sourceDetailAtendimentos" class="value">&mdash;</span>
           </div>
           <div class="metric col-span-2">
-            <span class="label">Conversao (inscritos atendidos / inscritos)</span>
+            <span class="label">Inscritos / Com atendimento</span>
+            <span class="kpi-subtext">Compara quantas pessoas se inscreveram com quantas realmente geraram atendimento.</span>
             <span id="sourceDetailConversao" class="value">&mdash;</span>
           </div>
         </div>
