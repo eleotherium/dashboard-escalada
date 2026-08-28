@@ -7262,13 +7262,15 @@
     // =========================================================
     let _pubCache = { key: "", data: null };
 
-    async function fetchPublicacoesData(dateFrom, dateTo) {
-      const cacheKey = `${dateFrom}|${dateTo}`;
+    async function fetchPublicacoesData(dateFrom, dateTo, uf) {
+      const pUf = resolveUfFilterValue(uf);
+      const cacheKey = `${dateFrom}|${dateTo}|${pUf || ""}`;
       if (_pubCache.key === cacheKey && _pubCache.data) return _pubCache.data;
       try {
         const rpc = await callDashboardApiWithRetry("comunidade", {
           p_date_from: dateFrom,
-          p_date_to: dateTo
+          p_date_to: dateTo,
+          p_uf: pUf
         });
         const d = rpc || {};
         const tp = d.top_post || null;
@@ -7331,7 +7333,7 @@
       const dateFrom = state.filters?.dateFrom;
       const dateTo = state.filters?.dateTo;
       if (!dateFrom || !dateTo) return;
-      const data = await fetchPublicacoesData(dateFrom, dateTo);
+      const data = await fetchPublicacoesData(dateFrom, dateTo, state.filters?.uf);
       setText("pubMetricPosts", fmtInt(data.totalPosts));
       setText("pubMetricComments", fmtInt(data.totalComments));
       setText("pubMetricMissions", fmtInt(data.totalMissions));

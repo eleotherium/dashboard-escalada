@@ -1,6 +1,7 @@
 create or replace function public.comunidade_metricas_v2(
   p_date_from date default null,
-  p_date_to   date default null
+  p_date_to   date default null,
+  p_uf        text default null
 )
 returns jsonb
 language plpgsql
@@ -15,7 +16,17 @@ begin
   if p_date_to   is null then p_date_to   := current_date;       end if;
 
   with
-  pubs as materialized (
+  participants_uf as materialized (
+    select
+      p."Circle ID" as usuario_id,
+      case
+        when p."UF" is null then null
+        when upper(btrim(p."UF")) in ('[]', 'N/A', 'NA', 'NULL') then null
+        else upper(btrim(p."UF"))
+      end as uf
+    from public."Participantes Escalada" p
+  ),
+  pubs_all as materialized (
     select
       pe.id,
       pe.tipo,
@@ -33,6 +44,14 @@ begin
       and pe.created_at >= p_date_from::timestamp
       and pe.created_at < (p_date_to + 1)::timestamp
       and lower(btrim(coalesce(pe.email, ''))) <> v_excluded_email
+  ),
+  pubs as materialized (
+    select pa.*
+    from pubs_all pa
+    inner join participants_uf pu on pu.usuario_id = pa.usuario_id
+    where
+      pu.uf is not null
+      and (p_uf is null or pu.uf = p_uf)
   ),
   totais as (
     select
@@ -78,7 +97,7 @@ begin
       c.created_at,
       c.conteudo,
       'Membro ' || dense_rank() over (order by c.usuario_id) as autor
-    from pubs c
+    from pubs_all c
     inner join top_post tp on tp.circle_post_id = c.circle_post_id
     where c.tipo = 'comentario'
     order by c.created_at

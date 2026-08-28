@@ -15,7 +15,11 @@ const REPORTS = {
   },
   comunidade: {
     rpcName: "comunidade_metricas_v2",
-    allowedParams: ["p_date_from", "p_date_to"],
+    allowedParams: ["p_date_from", "p_date_to", "p_uf"],
+  },
+  escalada_metricas: {
+    rpcName: "escalada_metricas_dashboard",
+    allowedParams: ["p_granularidade", "p_inicio", "p_fim"],
   },
 };
 
