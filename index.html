@@ -661,6 +661,16 @@
       color: #d11470;
     }
 
+    .delta.positive {
+      color: #00a64b;
+      font-weight: 700;
+    }
+
+    .delta.negative {
+      color: #d11470;
+      font-weight: 700;
+    }
+
     #kpiAtend {
       color: var(--brand-green-2);
     }
@@ -2064,6 +2074,37 @@
       { id: "ODS1", title: "Escolhas Sustentáveis na Prática", macrotemaId: "cidadania", bncc: "10", entrecomp: "1.5, 2.4, 3.1, 3.5", aliases: ["Nossa Pegada no Mundo", "Cidadania e Sustentabilidade", "Sustentabilidade prática"] },
     ]);
 
+    const BNCC_COMPETENCY_NAMES = Object.freeze({
+      "1": "Conhecimento",
+      "2": "Pensamento Crítico",
+      "3": "Repertório Cultural",
+      "4": "Comunicação",
+      "5": "Cultura Digital",
+      "6": "Projeto de Vida",
+      "7": "Argumentação",
+      "8": "Autoconhecimento",
+      "9": "Empatia",
+      "10": "Cidadania",
+    });
+
+    const ENTRECOMP_COMPETENCY_NAMES = Object.freeze({
+      "1.1": "Detectar oportunidades",
+      "1.2": "Criatividade",
+      "1.3": "Visão",
+      "1.4": "Valorizar ideias",
+      "1.5": "Pensamento ético e sustentável",
+      "2.1": "Autoconhecimento e autoeficácia",
+      "2.2": "Motivação e perseverança",
+      "2.3": "Mobilizar recursos",
+      "2.4": "Educação financeira",
+      "2.5": "Mobilizar outros",
+      "3.1": "Tomar iniciativa",
+      "3.2": "Planejar e gerir",
+      "3.3": "Lidar com incertezas",
+      "3.4": "Trabalhar com outros",
+      "3.5": "Aprender com a experiência",
+    });
+
     const MACROTEMA_ALIAS_TO_ID = (() => {
       const aliases = new Map();
       for (const [macrotemaId, def] of Object.entries(MACROTEMA_CATALOG)) {
@@ -2222,12 +2263,30 @@
       return Array.from(new Set(values.map((v) => v.trim()).filter(Boolean)));
     }
 
-    function formatCompetencyLabel(rawLabel) {
+    function formatCompetencyLabel(rawLabel, mode = COMPETENCY_MODES.BNCC) {
       const label = String(rawLabel || "").trim();
       if (!label) return "";
-      if (/^C-\s*/i.test(label)) return label.replace(/^C-\s*/i, "C-");
-      if (/^\d+(?:[.,]\d+)?$/.test(label)) return `C-${label.replace(",", ".")}`;
-      return label;
+
+      if (mode === COMPETENCY_MODES.ENTRECOMP) {
+        const codeMatch = label.match(/(\d+)[.,](\d+)/);
+        if (codeMatch) {
+          const key = `${codeMatch[1]}.${codeMatch[2]}`;
+          const name = ENTRECOMP_COMPETENCY_NAMES[key];
+          if (name) return name;
+        }
+        return label;
+      }
+
+      // BNCC: extrai o número da competência geral (1..10) e devolve o nome curto.
+      const cleaned = label.replace(/^C-\s*/i, "").trim();
+      const bnccNumMatch = cleaned.match(/^(\d+)(?:[.,]\d+)?$/);
+      if (bnccNumMatch) {
+        const key = bnccNumMatch[1];
+        const name = BNCC_COMPETENCY_NAMES[key];
+        if (name) return name;
+      }
+      // Códigos de habilidade (ex.: EF09CI15) — mantém como está.
+      return cleaned || label;
     }
 
     function normalizeContentTypeKey(rawValue) {
@@ -2297,7 +2356,7 @@
       return true;
     }
 
-    function addCompetencyDistribution(countMap, rawValue, weight = 1) {
+    function addCompetencyDistribution(countMap, rawValue, weight = 1, mode = COMPETENCY_MODES.BNCC) {
       const totalWeight = Number(weight || 0);
       if (!Number.isFinite(totalWeight) || totalWeight <= 0) return false;
       const competencies = splitCompetencyValues(rawValue);
@@ -2306,7 +2365,7 @@
       }
       const portion = totalWeight / competencies.length;
       for (const competency of competencies) {
-        addWeightedCount(countMap, formatCompetencyLabel(competency), portion);
+        addWeightedCount(countMap, formatCompetencyLabel(competency, mode), portion);
       }
       return true;
     }
@@ -2364,7 +2423,7 @@
         const fallbackRaw = mode === COMPETENCY_MODES.ENTRECOMP ? mod.entrecomp : mod.bncc;
         const raw = getEventCompetencyRaw(e, mode) || fallbackRaw;
         if (!raw) continue;
-        addCompetencyDistribution(counts, raw, 1);
+        addCompetencyDistribution(counts, raw, 1, mode);
       }
       return toSortedPairs(counts, limit);
     }
@@ -2378,7 +2437,7 @@
         if (!mod) continue;
         const raw = mode === COMPETENCY_MODES.ENTRECOMP ? mod.entrecomp : mod.bncc;
         if (!raw) continue;
-        addCompetencyDistribution(counts, raw, weight);
+        addCompetencyDistribution(counts, raw, weight, mode);
       }
       return toSortedPairs(counts, limit);
     }
@@ -7266,18 +7325,39 @@
       const pUf = resolveUfFilterValue(uf);
       const cacheKey = `${dateFrom}|${dateTo}|${pUf || ""}`;
       if (_pubCache.key === cacheKey && _pubCache.data) return _pubCache.data;
-      try {
-        const rpc = await callDashboardApiWithRetry("comunidade", {
-          p_date_from: dateFrom,
-          p_date_to: dateTo,
+
+      const prevWindow = (() => {
+        const days = diffDaysInclusive(dateFrom, dateTo);
+        if (!days) return null;
+        return { from: shiftDate(dateFrom, -days), to: shiftDate(dateFrom, -1) };
+      })();
+
+      async function loadWindow(from, to) {
+        return callDashboardApiWithRetry("comunidade", {
+          p_date_from: from,
+          p_date_to: to,
           p_uf: pUf
         });
+      }
+
+      try {
+        const [rpc, prevRpc] = await Promise.all([
+          loadWindow(dateFrom, dateTo),
+          prevWindow ? loadWindow(prevWindow.from, prevWindow.to).catch((err) => {
+            console.warn("[UI] comunidade previous window failed:", err);
+            return null;
+          }) : Promise.resolve(null),
+        ]);
         const d = rpc || {};
+        const dPrev = prevRpc || {};
         const tp = d.top_post || null;
         const result = {
           totalPosts: d.total_posts || 0,
           totalComments: d.total_comentarios || 0,
           totalMissions: d.total_missoes || 0,
+          prevTotalPosts: dPrev.total_posts || 0,
+          prevTotalComments: dPrev.total_comentarios || 0,
+          prevTotalMissions: dPrev.total_missoes || 0,
           topPost: tp ? {
             nome: tp.nome,
             created_at: tp.created_at,
@@ -7292,7 +7372,11 @@
         return result;
       } catch (err) {
         console.warn("[UI] comunidade_metricas_v2 error:", err);
-        return { totalPosts: 0, totalComments: 0, totalMissions: 0, topPost: null };
+        return {
+          totalPosts: 0, totalComments: 0, totalMissions: 0,
+          prevTotalPosts: 0, prevTotalComments: 0, prevTotalMissions: 0,
+          topPost: null
+        };
       }
     }
 
@@ -7337,6 +7421,9 @@
       setText("pubMetricPosts", fmtInt(data.totalPosts));
       setText("pubMetricComments", fmtInt(data.totalComments));
       setText("pubMetricMissions", fmtInt(data.totalMissions));
+      updateDeltaEl("pubMetricPostsDelta", data.totalPosts, data.prevTotalPosts || 0);
+      updateDeltaEl("pubMetricCommentsDelta", data.totalComments, data.prevTotalComments || 0);
+      updateDeltaEl("pubMetricMissionsDelta", data.totalMissions, data.prevTotalMissions || 0);
 
       const card = document.getElementById("engTopPostCard");
       if (!card) return;
@@ -7659,9 +7746,9 @@
         updateProgress("kpiAtivosBar", inscritos, KPI_TARGETS.inscritos);
         updateProgress("kpiConvBar", convRatio, KPI_TARGETS.conversaoAtendimento);
       }
-      updateDeltaEl("kpiAtendDelta", atendimentos, 0);
-      updateDeltaEl("kpiAtivosDelta", inscritos, 0);
-      updateDeltaEl("kpiConvDelta", convRatio, 0);
+      updateDeltaEl("kpiAtendDelta", atendimentos, prevKpis?.kpis?.atendimentos || 0);
+      updateDeltaEl("kpiAtivosDelta", inscritos, prevKpis?.kpis?.inscritos || 0);
+      updateDeltaEl("kpiConvDelta", convRatio, prevKpis?.kpis?.conversaoAtendimento || 0);
       syncProfessorRecurrenceKpi({
         visible: professorFilterActive,
         ratio: professorRecurrence?.ratio ?? null,
@@ -7685,6 +7772,9 @@
         "competencyTopLabel",
         topCompetency ? `${topCompetency[0]} (${fmtPct(Number(topCompetency[1] || 0) / 100)})` : "-"
       );
+
+      updateDeltaEl("inscrPeriodDelta", inscritos, prevKpis?.kpis?.inscritos || 0);
+      updateDeltaEl("atendPeriodDelta", atendimentos, prevKpis?.kpis?.atendimentos || 0);
 
       const summary = [
         `Volume do periodo: ${fmtInt(atendimentos)} atendimentos e ${fmtInt(inscritos)} inscritos.`,
@@ -7881,6 +7971,9 @@
         "competencyTopLabel",
         topCompetency ? `${topCompetency[0]} (${fmtPct(Number(topCompetency[1] || 0) / 100)})` : "-"
       );
+
+      updateDeltaEl("inscrPeriodDelta", ins.kpis.inscricoes, prev?.kpis.inscricoes || 0);
+      updateDeltaEl("atendPeriodDelta", ins.kpis.atendimentos, prev?.kpis.atendimentos || 0);
 
       const summary = buildSummary(state.filtered, state.competencyMode);
       const summaryHtml = summary.map((line) => `<li>${line}</li>`).join("");
@@ -9119,6 +9212,7 @@
                 <div class="flex flex-wrap gap-2 mt-2 text-xs text-slate-600">
                   <span class="badge">Pico <strong id="inscrPeak">&mdash;</strong></span>
                   <span class="badge">M&eacute;dia <strong id="inscrAvg">&mdash;</strong></span>
+                  <span id="inscrPeriodDelta" class="delta text-[11px]" title="Variação vs período anterior">&mdash;</span>
                 </div>
               </div>
               <button data-nav="overview" class="chip soft">
@@ -9249,6 +9343,7 @@
             <div class="text-sm text-slate-600">Picos podem indicar eventos regionais ou gargalos.</div>
             <div class="flex flex-wrap gap-2 mt-2 text-xs text-slate-600">
               <span class="badge">M&eacute;dia <strong id="atendAvg">&mdash;</strong></span>
+              <span id="atendPeriodDelta" class="delta text-[11px]" title="Variação vs período anterior">&mdash;</span>
             </div>
             <div class="mt-4 h-64"><canvas id="chartAtendLine"></canvas></div>
           </div>
@@ -9259,10 +9354,12 @@
               <div class="metric text-center" style="padding:16px 12px">
                 <span class="label">Publica&ccedil;&otilde;es</span>
                 <span id="pubMetricPosts" class="value" style="font-size:clamp(1.6rem,2.5vw,2.4rem)">&mdash;</span>
+                <span id="pubMetricPostsDelta" class="delta text-[11px] block mt-1" title="Variação vs período anterior">&mdash;</span>
               </div>
               <div class="metric text-center" style="padding:16px 12px">
                 <span class="label">Coment&aacute;rios</span>
                 <span id="pubMetricComments" class="value" style="font-size:clamp(1.6rem,2.5vw,2.4rem)">&mdash;</span>
+                <span id="pubMetricCommentsDelta" class="delta text-[11px] block mt-1" title="Variação vs período anterior">&mdash;</span>
               </div>
               <div class="metric has-help text-center" style="padding:16px 12px">
                 <details class="metric-help">
@@ -9273,6 +9370,7 @@
                 </details>
                 <span class="label">Miss&otilde;es</span>
                 <span id="pubMetricMissions" class="value" style="font-size:clamp(1.6rem,2.5vw,2.4rem)">&mdash;</span>
+                <span id="pubMetricMissionsDelta" class="delta text-[11px] block mt-1" title="Variação vs período anterior">&mdash;</span>
               </div>
             </div>
             <div id="engTopPostCard" class="mt-4 hidden">
