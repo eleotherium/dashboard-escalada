@@ -662,6 +662,11 @@
       position: relative;
     }
 
+    .card.has-help {
+      position: relative;
+      overflow: visible;
+    }
+
     #kpiAtend {
       color: var(--brand-green-2);
     }
@@ -7313,16 +7318,27 @@
     // =========================================================
     let _pubCache = { key: "", data: null };
 
+    // Coleta de publicacoes/comentarios so comeca a ter volume real a partir
+    // dessa data (confirmado via SQL: junho-dezembro/2025 tem comentario
+    // isolado de uma fase anterior, sem post nenhum -- nao comparavel com a
+    // operacao atual). Se a janela anterior tentar puxar dado de antes
+    // disso, o comparativo "vs periodo anterior" fica mudo em vez de mostrar
+    // um % enganoso.
+    const PUBLICACOES_TRACKING_START = "2026-04-01";
+
     async function fetchPublicacoesData(dateFrom, dateTo, uf) {
       const pUf = resolveUfFilterValue(uf);
       const cacheKey = `${dateFrom}|${dateTo}|${pUf || ""}`;
       if (_pubCache.key === cacheKey && _pubCache.data) return _pubCache.data;
 
-      const prevWindow = (() => {
+      const prevWindowRaw = (() => {
         const days = diffDaysInclusive(dateFrom, dateTo);
         if (!days) return null;
         return { from: shiftDate(dateFrom, -days), to: shiftDate(dateFrom, -1) };
       })();
+      const prevWindow = prevWindowRaw && prevWindowRaw.from >= PUBLICACOES_TRACKING_START
+        ? prevWindowRaw
+        : null;
 
       async function loadWindow(from, to) {
         return callDashboardApiWithRetry("comunidade", {
@@ -9344,7 +9360,13 @@
             </div>
             <div class="mt-4 h-64"><canvas id="chartAtendLine"></canvas></div>
           </div>
-          <div class="col-span-12 lg:col-span-5 card p-5">
+          <div class="col-span-12 lg:col-span-5 card p-5 has-help">
+            <details class="metric-help">
+              <summary class="metric-help-trigger" aria-label="Explicar coleta de dados de publicações">?</summary>
+              <div class="metric-help-popover">
+                A coleta de publicações e comentários começou em abril de 2026. Comparações vs. período anterior não aparecem quando esse período anterior cairia antes dessa data.
+              </div>
+            </details>
             <h2 class="section-title">Atividade na comunidade</h2>
             <div class="text-sm text-slate-600">O que anda acontecendo na comunidade Escalada?</div>
             <div class="grid grid-cols-3 gap-3 mt-4">
