@@ -667,6 +667,88 @@
       overflow: visible;
     }
 
+    .period-shortcuts {
+      position: relative;
+    }
+
+    .period-shortcuts summary {
+      list-style: none;
+      cursor: pointer;
+    }
+
+    .period-shortcuts summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .period-shortcuts-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .period-shortcuts-chevron {
+      transition: transform 0.18s ease;
+    }
+
+    .period-shortcuts[open] .period-shortcuts-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* Portado pro <body> via JS -- .section-band (que envolve o header) tem
+       backdrop-filter, que redefine o containing block de position:fixed;
+       dentro dele "fixed" nao fica fixo em relacao a viewport de verdade,
+       e overflow:hidden corta o menu. display comeca em "none" porque, fora
+       do <details>, perdeu o show/hide nativo -- .is-open e quem controla
+       agora (via JS, em sincronia com o evento "toggle"). */
+    .period-shortcuts-menu {
+      position: fixed;
+      z-index: 90;
+      width: max-content;
+      min-width: 190px;
+      max-width: min(240px, calc(100vw - 32px));
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(7, 15, 36, 0.96);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .period-shortcuts-menu.is-open {
+      display: flex;
+    }
+
+    .period-shortcuts-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: rgba(226, 233, 255, 0.82);
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .period-shortcuts-item:hover,
+    .period-shortcuts-item:focus-visible {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--ink-strong);
+      outline: none;
+    }
+
+    .period-shortcuts-item.is-active {
+      background: linear-gradient(90deg, var(--brand-green) 0%, var(--brand-green-2) 100%);
+      color: #07231a;
+    }
+
     #kpiAtend {
       color: var(--brand-green-2);
     }
@@ -4741,12 +4823,6 @@
         "btnOpenFilters",
         "btnApplyFilters",
         "btnResetFilters",
-        "btnPreset7",
-        "btnPresetPrevWeek",
-        "btnPreset2026",
-        "btnPreset30",
-        "btnPreset90",
-        "btnPresetAll",
         "btnClearUf",
         "btnCompModeBncc",
         "btnCompModeEntrecomp",
@@ -4758,6 +4834,11 @@
         const el = document.getElementById(id);
         if (el) el.disabled = isLoading;
       }
+      // .period-shortcuts-item sao <button> dentro de um <details> (o
+      // <summary> nao tem .disabled nativo, so os itens do menu mesmo).
+      document.querySelectorAll(".period-shortcuts-item").forEach((el) => {
+        el.disabled = isLoading;
+      });
       const app = document.getElementById("app");
       if (app) app.setAttribute("aria-busy", isLoading ? "true" : "false");
     }
@@ -7085,13 +7166,23 @@
       }
     }
 
+    const PERIOD_SHORTCUT_LABELS = {
+      "7": "Última semana",
+      "prev-week": "Semana passada",
+      "30": "30 dias",
+      "90": "90 dias",
+      "2026": "2026",
+      "all": "Período completo",
+    };
+
     function syncPresetButtons() {
-      const btn7 = document.getElementById("btnPreset7");
-      const btnPrevWeek = document.getElementById("btnPresetPrevWeek");
-      const btn2026 = document.getElementById("btnPreset2026");
-      const btn30 = document.getElementById("btnPreset30");
-      const btn90 = document.getElementById("btnPreset90");
-      const btnAll = document.getElementById("btnPresetAll");
+      const btn7 = document.querySelector('.period-shortcuts-item[data-preset="7"]');
+      const btnPrevWeek = document.querySelector('.period-shortcuts-item[data-preset="prev-week"]');
+      const btn2026 = document.querySelector('.period-shortcuts-item[data-preset="2026"]');
+      const btn30 = document.querySelector('.period-shortcuts-item[data-preset="30"]');
+      const btn90 = document.querySelector('.period-shortcuts-item[data-preset="90"]');
+      const btnAll = document.querySelector('.period-shortcuts-item[data-preset="all"]');
+      const triggerLabel = document.getElementById("periodShortcutsLabel");
       const customRangeChip = document.getElementById("customDateRangeChip");
       if (!state.fullRange.from || !state.fullRange.to) {
         if (customRangeChip) {
@@ -7099,6 +7190,12 @@
           customRangeChip.classList.remove("is-active");
           customRangeChip.textContent = "";
           customRangeChip.removeAttribute("title");
+        }
+        if (triggerLabel) {
+          const { dateFrom, dateTo } = state.filters;
+          triggerLabel.textContent = dateFrom && dateTo
+            ? `${fmtDateBr(dateFrom)} -> ${fmtDateBr(dateTo)}`
+            : "Atalhos de Período";
         }
         return;
       }
@@ -7128,6 +7225,11 @@
       if (btn30) btn30.classList.toggle("is-active", is30);
       if (btn90) btn90.classList.toggle("is-active", is90);
       if (btnAll) btnAll.classList.toggle("is-active", isAll);
+
+      if (triggerLabel) {
+        const activeKey = is7 ? "7" : isPrevWeek ? "prev-week" : is2026 ? "2026" : is30 ? "30" : is90 ? "90" : isAll ? "all" : null;
+        triggerLabel.textContent = activeKey ? PERIOD_SHORTCUT_LABELS[activeKey] : "Atalhos de Período";
+      }
 
       const hasCustomRange = Boolean(state.filters.dateFrom && state.filters.dateTo && !is7 && !isPrevWeek && !is2026 && !is30 && !is90 && !isAll);
       if (customRangeChip) {
@@ -8760,20 +8862,68 @@
         applyFilters(patch, { immediate: true, reason: `preset-${preset}` });
       };
 
-      const btnPreset7 = document.getElementById("btnPreset7");
-      const btnPresetPrevWeek = document.getElementById("btnPresetPrevWeek");
-      const btnPreset2026 = document.getElementById("btnPreset2026");
-      const btnPreset30 = document.getElementById("btnPreset30");
-      const btnPreset90 = document.getElementById("btnPreset90");
-      const btnPresetAll = document.getElementById("btnPresetAll");
+      const periodShortcuts = document.getElementById("periodShortcuts");
+      if (periodShortcuts && periodShortcuts.dataset.bound !== "1") {
+        periodShortcuts.dataset.bound = "1";
+        const summary = periodShortcuts.querySelector("summary");
+        const menu = periodShortcuts.querySelector(".period-shortcuts-menu");
+        // Portal pro <body> -- .section-band (que envolve o header) tem
+        // backdrop-filter, que redefine o containing block de
+        // position:fixed (um position:fixed dentro dele NAO fica fixo em
+        // relacao a viewport de verdade) e overflow:hidden corta o menu.
+        if (menu && menu.parentElement !== document.body) {
+          document.body.appendChild(menu);
+        }
+        const positionMenu = () => {
+          if (!menu || !summary) return;
+          const rect = summary.getBoundingClientRect();
+          const menuWidth = menu.offsetWidth || 200;
+          let left = rect.left;
+          if (left + menuWidth > window.innerWidth - 16) {
+            left = Math.max(16, window.innerWidth - 16 - menuWidth);
+          }
+          menu.style.top = `${Math.round(rect.bottom + 8)}px`;
+          menu.style.left = `${Math.round(left)}px`;
+        };
+        // O menu nao e mais filho do <details> (portado pro body) -- perde
+        // o show/hide nativo do <details>, precisa de classe manual em
+        // sincronia com o evento "toggle".
+        periodShortcuts.addEventListener("toggle", () => {
+          if (periodShortcuts.open) {
+            menu?.classList.add("is-open");
+            positionMenu();
+          } else {
+            menu?.classList.remove("is-open");
+          }
+        });
+        window.addEventListener("resize", () => {
+          if (periodShortcuts.open) positionMenu();
+        });
+        menu?.addEventListener("click", (e) => {
+          const item = e.target.closest(".period-shortcuts-item");
+          if (!item) return;
+          const raw = item.dataset.preset;
+          const preset = raw === "prev-week" || raw === "2026" || raw === "all" ? raw : Number(raw);
+          applyPreset(preset);
+          periodShortcuts.open = false;
+        });
+        // Fecha ao clicar fora -- do botao E do menu (que agora vive fora
+        // do <details>, entao periodShortcuts.contains() sozinho nao basta).
+        document.addEventListener("click", (e) => {
+          if (periodShortcuts.open && !periodShortcuts.contains(e.target) && !menu?.contains(e.target)) {
+            periodShortcuts.open = false;
+          }
+        });
+        // Fecha ao rolar a pagina/header -- fixed nao acompanha o botao.
+        window.addEventListener("scroll", () => {
+          if (periodShortcuts.open) periodShortcuts.open = false;
+        }, true);
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && periodShortcuts.open) periodShortcuts.open = false;
+        });
+      }
       const btnClearUf = document.getElementById("btnClearUf");
       const btnToggleTopMetrics = document.getElementById("btnToggleTopMetrics");
-      if (btnPreset7) btnPreset7.addEventListener("click", () => applyPreset(7));
-      if (btnPresetPrevWeek) btnPresetPrevWeek.addEventListener("click", () => applyPreset("prev-week"));
-      if (btnPreset2026) btnPreset2026.addEventListener("click", () => applyPreset("2026"));
-      if (btnPreset30) btnPreset30.addEventListener("click", () => applyPreset(30));
-      if (btnPreset90) btnPreset90.addEventListener("click", () => applyPreset(90));
-      if (btnPresetAll) btnPresetAll.addEventListener("click", () => applyPreset("all"));
       if (btnClearUf) btnClearUf.addEventListener("click", () => {
         applyFilters({ uf: "Todos" }, { immediate: true, reason: "clear-uf" });
       });
@@ -9122,14 +9272,20 @@
       <header class="dashboard-header mb-4 section-band p-4 wrap-hero blur-target">
       <div class="dashboard-header-top">
         <div class="dashboard-header-brand">
-          <div class="w-9 h-9 rounded-xl bg-white/95 flex items-center justify-center border border-white/20 shadow-md shrink-0">
+          <a
+            href="/dados-internos"
+            target="_blank"
+            rel="noopener"
+            title="Escalada"
+            class="w-9 h-9 rounded-xl bg-white/95 flex items-center justify-center border border-white/20 shadow-md shrink-0"
+          >
             <img
               src="./data/bandeira_escalada.svg"
               alt="Escalada"
               class="w-5 h-5 object-contain"
               loading="lazy"
             />
-          </div>
+          </a>
           <div>
             <h1 class="text-xl md:text-2xl font-display">Escalada &bull; Dashboard Executivo</h1>
             <div class="text-xs text-slate-600 mt-1">Coletando intelig&ecirc;ncia, gerando engajamento e impactando a sociedade</div>
@@ -9148,12 +9304,21 @@
       <div class="dashboard-hero-controls mt-3">
         <span id="dataCapLabel" class="chip hidden"></span>
         <span id="customDateRangeChip" class="chip soft hidden"></span>
-        <button id="btnPreset7" class="btn btn-ghost btn-sm" type="button">&Uacute;ltima semana</button>
-        <button id="btnPresetPrevWeek" class="btn btn-ghost btn-sm" type="button">Semana passada</button>
-        <button id="btnPreset30" class="btn btn-ghost btn-sm" type="button">30 dias</button>
-        <button id="btnPreset90" class="btn btn-ghost btn-sm" type="button">90 dias</button>
-        <button id="btnPreset2026" class="btn btn-ghost btn-sm" type="button">2026</button>
-        <button id="btnPresetAll" class="btn btn-ghost btn-sm" type="button">Per&iacute;odo completo</button>
+        <details id="periodShortcuts" class="period-shortcuts">
+          <summary class="btn btn-ghost btn-sm period-shortcuts-trigger">
+            <i data-lucide="calendar-range" class="w-4 h-4"></i>
+            <span id="periodShortcutsLabel">Atalhos de Per&iacute;odo</span>
+            <i data-lucide="chevron-down" class="w-4 h-4 period-shortcuts-chevron"></i>
+          </summary>
+          <div class="period-shortcuts-menu" role="menu">
+            <button type="button" class="period-shortcuts-item" data-preset="7" role="menuitem">&Uacute;ltima semana</button>
+            <button type="button" class="period-shortcuts-item" data-preset="prev-week" role="menuitem">Semana passada</button>
+            <button type="button" class="period-shortcuts-item" data-preset="30" role="menuitem">30 dias</button>
+            <button type="button" class="period-shortcuts-item" data-preset="90" role="menuitem">90 dias</button>
+            <button type="button" class="period-shortcuts-item" data-preset="2026" role="menuitem">2026</button>
+            <button type="button" class="period-shortcuts-item" data-preset="all" role="menuitem">Per&iacute;odo completo</button>
+          </div>
+        </details>
       </div>
 
       <button id="btnToggleTopMetrics" class="btn btn-ghost btn-sm dashboard-mobile-metrics-toggle hidden" type="button" aria-expanded="true">
