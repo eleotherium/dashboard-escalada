@@ -9293,32 +9293,29 @@
         </div>
 
         <div class="dashboard-header-actions">
+          <span id="dataCapLabel" class="chip hidden"></span>
+          <span id="customDateRangeChip" class="chip soft hidden"></span>
+          <details id="periodShortcuts" class="period-shortcuts">
+            <summary class="btn btn-ghost btn-sm period-shortcuts-trigger">
+              <i data-lucide="calendar-range" class="w-4 h-4"></i>
+              <span id="periodShortcutsLabel">Atalhos de Per&iacute;odo</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 period-shortcuts-chevron"></i>
+            </summary>
+            <div class="period-shortcuts-menu" role="menu">
+              <button type="button" class="period-shortcuts-item" data-preset="7" role="menuitem">&Uacute;ltima semana</button>
+              <button type="button" class="period-shortcuts-item" data-preset="prev-week" role="menuitem">Semana passada</button>
+              <button type="button" class="period-shortcuts-item" data-preset="30" role="menuitem">30 dias</button>
+              <button type="button" class="period-shortcuts-item" data-preset="90" role="menuitem">90 dias</button>
+              <button type="button" class="period-shortcuts-item" data-preset="2026" role="menuitem">2026</button>
+              <button type="button" class="period-shortcuts-item" data-preset="all" role="menuitem">Per&iacute;odo completo</button>
+            </div>
+          </details>
           <button id="btnOpenFilters" class="btn btn-outline btn-sm" title="Filtros">
             <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
             Filtros
           </button>
           <button id="btnClearUf" class="btn btn-ghost btn-sm" type="button">Limpar UF</button>
         </div>
-      </div>
-
-      <div class="dashboard-hero-controls mt-3">
-        <span id="dataCapLabel" class="chip hidden"></span>
-        <span id="customDateRangeChip" class="chip soft hidden"></span>
-        <details id="periodShortcuts" class="period-shortcuts">
-          <summary class="btn btn-ghost btn-sm period-shortcuts-trigger">
-            <i data-lucide="calendar-range" class="w-4 h-4"></i>
-            <span id="periodShortcutsLabel">Atalhos de Per&iacute;odo</span>
-            <i data-lucide="chevron-down" class="w-4 h-4 period-shortcuts-chevron"></i>
-          </summary>
-          <div class="period-shortcuts-menu" role="menu">
-            <button type="button" class="period-shortcuts-item" data-preset="7" role="menuitem">&Uacute;ltima semana</button>
-            <button type="button" class="period-shortcuts-item" data-preset="prev-week" role="menuitem">Semana passada</button>
-            <button type="button" class="period-shortcuts-item" data-preset="30" role="menuitem">30 dias</button>
-            <button type="button" class="period-shortcuts-item" data-preset="90" role="menuitem">90 dias</button>
-            <button type="button" class="period-shortcuts-item" data-preset="2026" role="menuitem">2026</button>
-            <button type="button" class="period-shortcuts-item" data-preset="all" role="menuitem">Per&iacute;odo completo</button>
-          </div>
-        </details>
       </div>
 
       <button id="btnToggleTopMetrics" class="btn btn-ghost btn-sm dashboard-mobile-metrics-toggle hidden" type="button" aria-expanded="true">
