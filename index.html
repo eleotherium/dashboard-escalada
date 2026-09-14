@@ -653,22 +653,13 @@
       text-transform: uppercase;
     }
 
-    .kpi .delta.positive {
-      color: #00a64b;
-    }
-
-    .kpi .delta.negative {
-      color: #d11470;
-    }
-
-    .delta.positive {
-      color: #00a64b;
-      font-weight: 700;
-    }
-
+    .delta.positive,
     .delta.negative {
-      color: #d11470;
       font-weight: 700;
+    }
+
+    .kpi.has-help {
+      position: relative;
     }
 
     #kpiAtend {
@@ -9172,9 +9163,14 @@
           </div>
           <div class="progress mt-2"><span id="kpiAtivosBar"></span></div>
         </div>
-        <div class="card p-4 kpi kpi-compact">
-          <div class="label">Inscritos / Com atendimento</div>
-          <div class="kpi-subtext">Compara quantas pessoas se inscreveram com quantas realmente geraram atendimento.</div>
+        <div class="card p-4 kpi kpi-compact has-help">
+          <details class="metric-help">
+            <summary class="metric-help-trigger" aria-label="Explicar a taxa de conversão">?</summary>
+            <div class="metric-help-popover">
+              Compara quantas pessoas se inscreveram com quantas realmente geraram atendimento para a UF.
+            </div>
+          </details>
+          <div class="label">Taxa de conversão</div>
           <div id="kpiConv" class="value">&mdash;</div>
           <div class="flex items-center justify-between text-[11px] text-slate-600">
             <span id="kpiConvDelta" class="delta">&mdash;</span>
