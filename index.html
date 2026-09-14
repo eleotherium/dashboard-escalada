@@ -3065,7 +3065,8 @@
 
     function sourceRowShouldAppear(row) {
       const atendimentos = Number(row?.atendimentos || 0);
-      return Number.isFinite(atendimentos) && atendimentos > 0;
+      const inscritos = Number(row?.inscritos || 0);
+      return (Number.isFinite(atendimentos) && atendimentos > 0) || (Number.isFinite(inscritos) && inscritos > 0);
     }
 
     function filterVisibleSourceRows(rows = []) {
